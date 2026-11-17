@@ -1,0 +1,448 @@
+{
+ "new": {
+  "version": 1,
+  "name": "Untitled",
+  "description": "",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "shape": "original",
+   "fit": "pad",
+   "anchor": "center",
+   "upscale": false,
+   "filter": "lanczos3",
+   "pad": {
+    "backdrop": "auto",
+    "fill": 100.0
+   },
+   "long_side": null,
+   "trim": null
+  },
+  "format": {
+   "id": "same",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "balanced",
+   "allow_downscale": false,
+   "never_bigger": true,
+   "progressive": true,
+   "max_kb": null
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "subfolder",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ },
+ "web-ready": {
+  "version": 1,
+  "name": "Web ready",
+  "description": "2560 px on the long side, WebP, balanced. Saved into a Wrangled folder.",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "long_side": 2560,
+   "shape": "original",
+   "fit": "pad",
+   "anchor": "center",
+   "upscale": false,
+   "filter": "lanczos3",
+   "pad": {
+    "backdrop": "auto",
+    "fill": 100.0
+   },
+   "trim": null
+  },
+  "format": {
+   "id": "webp",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "balanced",
+   "allow_downscale": false,
+   "never_bigger": true,
+   "progressive": true,
+   "max_kb": null
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "subfolder",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ },
+ "just-compress": {
+  "version": 1,
+  "name": "Just compress",
+  "description": "Same format and size, smaller files. Replaces originals; undo for 30 days.",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "shape": "original",
+   "fit": "pad",
+   "anchor": "center",
+   "upscale": false,
+   "filter": "lanczos3",
+   "pad": {
+    "backdrop": "auto",
+    "fill": 100.0
+   },
+   "long_side": null,
+   "trim": null
+  },
+  "format": {
+   "id": "same",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "high",
+   "allow_downscale": false,
+   "never_bigger": true,
+   "progressive": true,
+   "max_kb": null
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "replace",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ },
+ "shopify-product": {
+  "version": 1,
+  "name": "Shopify product",
+  "description": "Trimmed, centred on a 2048 px square with the photo's own backdrop, WebP.",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "long_side": 2048,
+   "shape": "1:1",
+   "fit": "pad",
+   "anchor": "center",
+   "upscale": true,
+   "filter": "lanczos3",
+   "trim": {
+    "tolerance": 4,
+    "margin": 0
+   },
+   "pad": {
+    "backdrop": "auto",
+    "fill": 85.0
+   }
+  },
+  "format": {
+   "id": "webp",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "high",
+   "max_kb": 400,
+   "allow_downscale": false,
+   "never_bigger": true,
+   "progressive": true
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "subfolder",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ },
+ "amazon-main-image": {
+  "version": 1,
+  "name": "Amazon main image",
+  "description": "Pure white 2000 px square, product filling 85%, JPEG.",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "long_side": 2000,
+   "shape": "1:1",
+   "fit": "pad",
+   "anchor": "center",
+   "upscale": true,
+   "filter": "lanczos3",
+   "trim": {
+    "tolerance": 6,
+    "margin": 0
+   },
+   "pad": {
+    "backdrop": "#ffffff",
+    "fill": 85.0
+   }
+  },
+  "format": {
+   "id": "jpg",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "high",
+   "allow_downscale": false,
+   "never_bigger": true,
+   "progressive": true,
+   "max_kb": null
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "subfolder",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ },
+ "email-safe": {
+  "version": 1,
+  "name": "Email safe",
+  "description": "1200 px, JPEG, under 200 KB each.",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "long_side": 1200,
+   "shape": "original",
+   "fit": "pad",
+   "anchor": "center",
+   "upscale": false,
+   "filter": "lanczos3",
+   "pad": {
+    "backdrop": "auto",
+    "fill": 100.0
+   },
+   "trim": null
+  },
+  "format": {
+   "id": "jpg",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "balanced",
+   "max_kb": 200,
+   "allow_downscale": true,
+   "never_bigger": true,
+   "progressive": true
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "subfolder",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ },
+ "social-card": {
+  "version": 1,
+  "name": "Social card",
+  "description": "1200 \u00d7 628 link previews, cropped from the centre, JPEG.",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "shape": "1200x628",
+   "fit": "crop",
+   "anchor": "center",
+   "upscale": true,
+   "filter": "lanczos3",
+   "pad": {
+    "backdrop": "auto",
+    "fill": 100.0
+   },
+   "long_side": null,
+   "trim": null
+  },
+  "format": {
+   "id": "jpg",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "high",
+   "allow_downscale": false,
+   "never_bigger": true,
+   "progressive": true,
+   "max_kb": null
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "subfolder",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ },
+ "square-thumbnails": {
+  "version": 1,
+  "name": "Square thumbnails",
+  "description": "800 px squares cropped from the centre, WebP.",
+  "addons": [],
+  "select": {
+   "include": [],
+   "exclude": [],
+   "recursive": false,
+   "min_kb": null
+  },
+  "size": {
+   "long_side": 800,
+   "shape": "1:1",
+   "fit": "crop",
+   "anchor": "center",
+   "upscale": false,
+   "filter": "lanczos3",
+   "pad": {
+    "backdrop": "auto",
+    "fill": 100.0
+   },
+   "trim": null
+  },
+  "format": {
+   "id": "webp",
+   "auto": false,
+   "matte": "#ffffff"
+  },
+  "quality": {
+   "look": "balanced",
+   "allow_downscale": false,
+   "never_bigger": true,
+   "progressive": true,
+   "max_kb": null
+  },
+  "rename": {
+   "mode": "keep",
+   "pattern": "{name}",
+   "case": "keep",
+   "replace": [],
+   "start": 1,
+   "step": 1
+  },
+  "metadata": {
+   "keep": "none"
+  },
+  "destination": {
+   "mode": "subfolder",
+   "suffix": "-web",
+   "folder": "Wrangled",
+   "on_conflict": "number",
+   "keep_dates": false
+  }
+ }
+}

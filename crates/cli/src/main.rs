@@ -51,6 +51,16 @@ enum Command {
     Info { files: Vec<PathBuf> },
     /// Formats Wrangler reads and writes.
     Formats,
+    /// Run a recipe on files picked in a file manager (what the right-click actions call when
+    /// the desktop app isn't installed). Shows a notification when done.
+    Quick {
+        #[arg(long, default_value = "just-compress")]
+        recipe: String,
+        #[arg(required = true)]
+        paths: Vec<PathBuf>,
+    },
+    /// Open files and folders in the Wrangler app.
+    Open { paths: Vec<PathBuf> },
     /// Add or remove right-click actions in your file manager.
     Integrate {
         #[command(subcommand)]
@@ -283,6 +293,54 @@ fn cmd_run(args: &RunArgs, dirs: &AppDirs, dry: bool) -> Result<ExitCode> {
     Ok(if summary.failed > 0 { ExitCode::from(2) } else { ExitCode::SUCCESS })
 }
 
+/// A desktop notification, best effort: the result of a quick action should be seen even
+/// though no terminal is open.
+fn notify(title: &str, body: &str) {
+    use std::process::Command as Proc;
+    let _ = if cfg!(target_os = "macos") {
+        let quote = |s: &str| s.replace('\\', "\\\\").replace('"', "\\\"");
+        Proc::new("osascript").args(["-e", &format!("display notification \"{}\" with title \"{}\"", quote(body), quote(title))]).status()
+    } else if cfg!(windows) {
+        let ps = format!("[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(6000, '{}', '{}', 'None'); Start-Sleep 6", title.replace('\'', "''"), body.replace('\'', "''"));
+        Proc::new("powershell").args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &ps]).spawn().map(|_| std::process::ExitStatus::default())
+    } else {
+        Proc::new("notify-send").args(["--app-name=Wrangler", title, body]).status()
+    };
+}
+
+fn cmd_quick(recipe: &str, paths: &[PathBuf], dirs: &AppDirs) -> Result<ExitCode> {
+    let r = presets::load(&dirs.recipes(), recipe)?;
+    let sources = scan::collect(paths, &r.select)?;
+    if sources.is_empty() {
+        notify(&r.name, "No images in the selection.");
+        bail!("no images found");
+    }
+    let plan = build(&sources, &r, &PlanCx::default());
+    let opts = RunOptions { threads: 0, memory_budget: 2 << 30, runs_dir: dirs.runs() };
+    let s = run(&plan, &r, &opts, &AtomicBool::new(false), &|_| {})?;
+    let pct = if s.bytes_in > 0 { (1.0 - s.bytes_out as f64 / s.bytes_in as f64) * 100.0 } else { 0.0 };
+    let mut msg = format!("{} images, {} → {} (−{pct:.0}%).", s.done + s.kept, human(s.bytes_in), human(s.bytes_out));
+    if s.failed > 0 {
+        msg.push_str(&format!(" {} failed.", s.failed));
+    }
+    msg.push_str(" Undo: img-wrangler undo");
+    println!("{msg}");
+    notify(&r.name, &msg);
+    Ok(if s.failed > 0 { ExitCode::from(2) } else { ExitCode::SUCCESS })
+}
+
+fn cmd_open(paths: &[PathBuf]) -> Result<ExitCode> {
+    let app = wrangler_integrate::default_program().context("the Wrangler app isn't installed; use `img-wrangler run` or `img-wrangler quick` instead")?;
+    if cfg!(target_os = "macos") {
+        // Through Launch Services, so a running app receives the files instead of a second copy starting.
+        let bundle = app.ancestors().nth(3).map(PathBuf::from).unwrap_or(app.clone());
+        std::process::Command::new("open").arg("-a").arg(bundle).arg("--args").arg("open").args(paths).spawn()?;
+    } else {
+        std::process::Command::new(app).arg("open").args(paths).spawn()?;
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
 fn main() -> ExitCode {
     match real_main() {
         Ok(code) => code,
@@ -349,6 +407,8 @@ fn real_main() -> Result<ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        Command::Quick { recipe, paths } => cmd_quick(&recipe, &paths, &dirs),
+        Command::Open { paths } => cmd_open(&paths),
         Command::Integrate { action } => integrate(action, &dirs),
     }
 }

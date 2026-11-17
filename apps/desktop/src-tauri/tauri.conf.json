@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Wrangler",
+  "mainBinaryName": "wrangler",
+  "version": "0.1.0",
+  "identifier": "com.genuinemoron.wrangler",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Wrangler",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1200,
+        "minHeight": 760,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "dragDropEnabled": true,
+        "visible": false,
+        "backgroundColor": "#e9e8e4"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob: thumb: preview: http://thumb.localhost http://preview.localhost asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Graphics",
+    "shortDescription": "Batch image compression and processing",
+    "longDescription": "Compress, convert, resize, pad, trim and rename images in batches, with previews and undo.",
+    "copyright": "Copyright (C) 2026 Sean Hawkey. AGPL-3.0-or-later.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "jpg",
+          "jpeg",
+          "png",
+          "webp",
+          "avif",
+          "heic",
+          "heif",
+          "tif",
+          "tiff",
+          "gif",
+          "bmp",
+          "svg",
+          "jxl",
+          "qoi",
+          "ico"
+        ],
+        "name": "Image",
+        "role": "Viewer"
+      }
+    ]
+  }
+}

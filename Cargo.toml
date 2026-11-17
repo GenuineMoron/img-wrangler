@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["crates/engine", "crates/integrate", "crates/cli"]
+members = ["crates/engine", "crates/integrate", "crates/cli", "apps/desktop/src-tauri"]
+# The desktop app needs WebKitGTK on Linux; build it with `pnpm tauri build` or `-p wrangler-desktop`.
 default-members = ["crates/engine", "crates/integrate", "crates/cli"]
 
 [workspace.package]

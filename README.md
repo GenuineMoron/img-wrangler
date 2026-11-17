@@ -7,8 +7,8 @@ anything is written, and keeps your originals so any run can be undone.
 
 It runs entirely on your computer: macOS, Linux and Windows. No accounts, no uploads, no telemetry.
 
-> **Status:** early development. The engine and command line tool work today; the desktop app and
-> file-manager actions are being built. See [docs/PLAN.md](docs/PLAN.md).
+> **Status:** early development, heading for 0.1. The engine, command line tool, desktop app and
+> file-manager actions are built; installers and packaging come next. See [docs/PLAN.md](docs/PLAN.md).
 
 ## What it does
 
@@ -24,8 +24,21 @@ It runs entirely on your computer: macOS, Linux and Windows. No accounts, no upl
 - **Renaming.** Patterns like `spring-24-{n:000}`, find and replace (plain or regex), slugs and case,
   with clashes numbered automatically.
 - **Safe by design.** Plans before runs, atomic writes, an undo store for every replaced original.
-- **Recipes.** Save a setup once and run it from the app, the command line, or (soon) a right-click
-  in Finder, Explorer, Dolphin, Nautilus, Nemo or Thunar.
+- **Recipes.** Save a setup once and run it from the app, the command line, or a right-click in
+  Finder, Explorer, Dolphin, Nautilus, Nemo or Thunar.
+
+## The app
+
+One window that works like a piece of hardware. Drop images or folders anywhere on it. The four
+channels along the bottom are the everyday controls, and each screen is the control itself:
+drag the Size frame's corner, drag the red size-limit line, pick a format from the list. The
+Recipe panel lists every step in the order it runs, with the rest of the settings one press away.
+The big display shows every file as it will come out, with a live preview of the selected one,
+before anything is written.
+
+From a file manager, right-click images or folders and choose a pinned recipe: a small window runs
+it, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads them into the
+main window instead. Set the menus up from Settings, or with `img-wrangler integrate install`.
 
 ## Command line
 
@@ -35,6 +48,7 @@ img-wrangler run ~/Shoot -r shopify-product            # do it
 img-wrangler run ~/Shoot --size 2048 --format webp --look balanced --to replace
 img-wrangler undo                                      # put the last run back
 img-wrangler recipes                                   # built-in and saved recipes
+img-wrangler integrate install --pin web-ready         # add right-click actions
 ```
 
 Recipes are plain TOML; `img-wrangler recipes show web-ready` prints one to start from.
@@ -44,9 +58,24 @@ Recipes are plain TOML; `img-wrangler recipes show web-ready` prints one to star
 You need Rust (stable). The engine and CLI need no other system libraries.
 
 ```sh
-cargo test --workspace
+cargo test                                  # engine, CLI, integrations
 cargo build --release -p img-wrangler
 ```
+
+The desktop app also needs Node 22 and pnpm, plus WebKitGTK on Linux
+(`libwebkit2gtk-4.1-dev` and friends, see the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)).
+
+```sh
+cd apps/desktop
+pnpm install
+pnpm tauri dev                              # the app, against the real engine
+pnpm dev                                    # the UI alone in a browser, with sample photos (add ?demo)
+pnpm check && pnpm test                     # types and tests
+pnpm tauri build                            # installers for this OS
+```
+
+If you change an engine type the app uses, regenerate the TypeScript types with
+`cargo test -p wrangler-engine --features ts export_bindings`.
 
 ## How it's built
 

@@ -16,8 +16,21 @@ Every feature is a module. A module has an engine half (Rust) and an app half (S
 4. Tests in the same file: settings round-trip through TOML, `plan` dimensions, and `apply` on a small fixture.
 
 **App**
-1. `apps/desktop/src/lib/modules/watermark/`: `index.ts` exporting the `UiModule` (id, label, accent, glyph, order, defaults, summary), and `Details.svelte` built from the shared components.
-2. Add it to `apps/desktop/src/lib/modules/registry.ts`.
+1. Regenerate the types: `cargo test -p wrangler-engine --features ts export_bindings`.
+2. `apps/desktop/src/lib/modules/watermark/index.ts`:
+   ```ts
+   const watermark: AddOnModule<'watermark'> = {
+     kind: 'addon', addon: 'watermark', id: 'watermark', label: 'Watermark',
+     blurb: 'Your logo in a corner of every image.', icon: 'image', accent: 'tool', order: 60,
+     create: () => ({ kind: 'watermark', enabled: true, /* defaults */ }),
+     active: r => r.addons.some(a => a.kind === 'watermark' && a.enabled),
+     summary: r => '…',
+     Details,
+   };
+   export default watermark;
+   ```
+3. `WatermarkDetails.svelte` takes `{ value }` (the add-on's settings, edited in place) and is built from the shared components (`Row`, `Key`, `KeyGroup`, `Slider`, `Field`, `ColourKey`, `AnchorPad`).
+4. Add it to `MODULES` in `apps/desktop/src/lib/modules/registry.ts`. It now appears under Add step, in the Recipe panel in run order, and in the command palette.
 
 **CLI**: add-ons are read from recipe files automatically. Add a flag in `crates/cli` only if it is common enough to deserve one.
 
@@ -26,10 +39,13 @@ Every feature is a module. A module has an engine half (Rust) and an app half (S
 2. Flip `encode: true` on its `FormatInfo` in `crates/engine/src/codec/mod.rs` and route it in `encoder_for`.
 3. Round-trip test. The app shows it under Format › More with no UI change.
 
-## Core module changes
-The four core modules (size, format, quality, name) have fixed places in the channel strip. Change their settings structs and components freely, but keep the recipe backward compatible: new fields need defaults, and removing a field means bumping `RECIPE_VERSION` with a migration in `recipe.rs`.
+## Core modules
+Core modules are always in a recipe: Files, Size, Format, Quality, Metadata, Name and Save. A core module may have a channel (`channel: { slot, glyph, Screen, Keys }`) for the everyday controls and `Details` for the rest; Size, Format, Quality and Name have channels, in slots 1–4 (also their number keys). A channel screen is the control itself: draw it with `ScreenChoice`, drag handles and typed values rather than a picture beside separate inputs.
+
+The four channels have fixed places in the strip. Change their settings structs and components freely, but keep the recipe backward compatible: new fields need defaults, and removing a field means bumping `RECIPE_VERSION` with a migration in `recipe.rs`.
 
 ## Rules every module follows
+- The UI reads and writes the recipe directly (`recipe.value.<section>`); no copies, no events.
 - Settings have defaults; a module with default settings changes nothing.
 - `plan` never decodes pixels.
 - `apply` never does IO.

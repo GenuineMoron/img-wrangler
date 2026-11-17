@@ -28,7 +28,7 @@ Wrangler is one Rust image engine with three front doors: a desktop app, a comma
 | `crates/integrate` (`wrangler-integrate`) | Generates and installs file-manager actions: Finder Quick Actions, Windows Explorer verbs, Dolphin service menus, Nautilus/Nemo/Thunar actions. Pure text generation plus small installers. |
 | `crates/cli` (`img-wrangler`) | The command line tool. Thin: parses arguments into a recipe and calls the engine. |
 | `apps/desktop` | The desktop app. `src-tauri/` is the Rust host; `src/` is the Svelte front end. |
-| `design/` | Design system source (`system/tokens.css`, `components.css`, textures) and the interactive prototype. |
+| `design/` | The design system (`system/`: tokens, component CSS, fonts, textures), the brand icon, and the first interactive prototype. |
 | `docs/` | This file, the plan, the module guide, research notes. |
 
 Dependencies point one way: `cli → engine, integrate`; `desktop → engine, integrate`. The engine depends on nothing of ours.
@@ -129,35 +129,49 @@ Decoders: `image` (JPEG, PNG, GIF, WebP, TIFF, BMP, ICO, QOI, TGA, PNM), `avif-d
 
 ## Desktop app
 
-### Host (`src-tauri`)
-- **Commands** are thin wrappers over the engine: `scan`, `plan`, `estimate`, `preview`, `run`, `cancel`, `undo`, `history`, `recipes_*`, `formats`, `integrations_*`.
-- **Events** stream progress and estimates (`batch://progress`, `batch://estimate`).
-- **Protocols** serve images without base64: `thumb://<file-id>` and `preview://<token>`.
-- **Windows**: the main window, and the compact quick-action window opened by right-click actions (`wrangler quick --recipe <id> <paths…>`). A single-instance guard folds the many processes Explorer starts (one per file) into one batch.
+### Host (`apps/desktop/src-tauri`)
+- **Commands** (`commands.rs`) are thin wrappers over the engine; anything slow runs on a blocking thread: `formats`, `recipes`, `load_recipe`, `save_recipe`, `delete_recipe`, `scan`, `forget`, `plan`, `estimate` (a newer one cancels an older one), `preview` (one image processed exactly as the run would, nothing written), `run` (progress streamed over a Tauri `Channel`), `quick_run`, `cancel`, `undo`, `history`, `take_launch`, `open_main`, `integrations`, `set_integrations`.
+- **Protocols** serve images without base64: `thumb://localhost/<path>` (a cached WebP thumbnail, only for files in the batch) and `preview://localhost/<token>` (the last few previews, kept in memory).
+- **Launch modes** (`launch.rs`): plain, `open <paths…>` and `quick --recipe <id> <paths…>`, which the right-click actions run. A single-instance guard sends later launches to the running app, and pending launches merge, so the one-process-per-file launches Explorer makes fold into one batch.
+- **Windows**: `main`, and `quick`, the small unit a right-click action opens. Quick runs use their own file list (`quick_run`), so they never disturb the main window's batch. When the quick window closes and the main window was never shown, the app exits.
 
-### Front end (`src`)
-- `lib/design/` holds the design tokens and component CSS (copied from `design/system`).
-- `lib/components/` holds generic components that know nothing about images: `Key`, `KeyGroup`, `Slider`, `Field`, `Screen`, `Led`, `Ladder`, `Readout`, `Tabs`, `Tile`, `Icon`.
-- `lib/modules/` holds one folder per module, each exporting a `UiModule`:
-  ```ts
-  interface UiModule<S> {
-    id: string; label: string; accent: Accent; glyph: string;
-    core: boolean; order: number;
-    summary(s: S, cx: Cx): string;
-    Screen?: Component;   // the instrument shown in the channel strip (core modules)
-    Keys?: Component;     // the key row under it
-    Details: Component;   // full settings, shown in the recipe panel
-  }
-  ```
-  `lib/modules/registry.ts` lists them. The channel strip renders core modules; the recipe panel renders all modules in run order. Nothing else knows which modules exist.
-- `lib/state/` holds Svelte 5 rune stores: the recipe being edited, the batch (files, plan, estimates), the selection, and UI state.
-- `lib/ipc/` wraps commands with types generated from the engine (`ts-rs`), plus a **mock backend** so the UI runs in a plain browser for design work and screenshot tests.
+### Front end (`apps/desktop/src`)
+```
+src/
+  main.ts, App.svelte        one bundle, two windows (index.html and index.html#quick)
+  views/                     the regions of the unit: Header, Display (Sheet, Monitor, Empty),
+                             RecipePanel, ChannelStrip, OutputPanel, dialogs, QuickWindow
+  lib/components/            generic parts that know nothing about images: Key, KeyGroup,
+                             ScreenChoice, Slider, Field, Screen, Ladder, Led, Tabs, Dialog,
+                             ColourKey, AnchorPad, Row, Icon (+ icons.ts)
+  lib/modules/               one folder per module, plus registry.ts and types.ts
+  lib/state/                 Svelte 5 rune stores: recipe, batch, catalog, ui, and the
+                             controller that keeps plan, estimate and preview current
+  lib/ipc/                   the Backend interface, the Tauri implementation, and a mock
+  lib/types/engine/          TypeScript types generated from the engine (ts-rs)
+  lib/geometry.ts            the frame layout mirrored from the engine, for instant diagrams
+```
+
+- **Design system.** `design/system` (tokens, component CSS, fonts, textures) is imported directly through the `@design` alias, so there is one copy of every token.
+- **Types.** `cargo test -p wrangler-engine --features ts export_bindings` regenerates `lib/types/engine`; the recipe the UI edits is the engine's own type, so the two can't drift.
+- **State flow.** Controls write straight into `recipe.value` (a deep `$state`). The controller watches it: the plan refreshes within 40 ms, the sampled estimate after 450 ms, and the preview of the selected image after 220 ms; stale replies are dropped by sequence number. `recipe.edited` compares against the last loaded or saved copy.
+- **Mock backend.** In `pnpm dev` outside Tauri, `lib/ipc/mock.ts` plays a product shoot from `dev/samples`, draws previews on a canvas with the same frame layout as the engine, and simulates runs. `?demo` starts with files; `#quick` opens the quick window. Production builds leave it out.
+- **Sheet.** The contact sheet draws only the rows in view, so thousands of files scroll as lightly as a dozen (WebKitGTK on Linux is the slowest webview we ship on).
+
+### The unit's layout
+| Region | Holds |
+|---|---|
+| Header | grille (Add, drop target), recipe selector, Save, Add/History/Settings/Commands keys |
+| Display | where the batch is, tabs (All, Ready, Done, Kept, Clash, Over, Skipped, Failed), the virtualised sheet, the monitor (result, original, split, 1:1 zoom) and the status line |
+| Recipe panel | every step in run order; open one (accordion) for its Details; add-on keys switch on and off; Add step |
+| Channel strip | the core modules that have channels: Size, Format, Quality, Name. Each screen is itself the control |
+| Output panel | the meter, Save to, Undo and Run |
 
 ## Testing
 - Engine: unit tests per op and module (geometry, naming, trim detection, quality search bounds), golden-image tests on small fixtures, round-trip tests per codec, journal/undo tests on temp folders.
 - CLI: end-to-end tests that run recipes on fixture folders.
 - Integrations: generated files compared against expected text for every OS (runs on any OS).
-- Front end: component tests (Vitest) and screenshot checks of the main views in mock mode.
+- Front end: `svelte-check` for types, Vitest for logic (the geometry mirror runs the engine's own frame tests), and screenshot checks of the main views in mock mode.
 
 ## Safety rules
 - Nothing is written until Run. Plans and previews never touch the source folder.

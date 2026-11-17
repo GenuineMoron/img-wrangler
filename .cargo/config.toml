@@ -1,0 +1,6 @@
+[env]
+# Where `cargo test -p wrangler-engine --features ts export_bindings` writes the TypeScript
+# types the desktop app imports, so the app and engine always agree on the recipe format.
+TS_RS_EXPORT_DIR = { value = "apps/desktop/src/lib/types/engine", relative = true }
+# JSON carries byte counts as plain numbers.
+TS_RS_LARGE_INT = "number"

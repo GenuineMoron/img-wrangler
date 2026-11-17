@@ -60,8 +60,11 @@ pub fn list(dir: &Path) -> Vec<RecipeEntry> {
     out
 }
 
-/// Load by id, by name, or from a path to a `.toml` file.
+/// Load by id, by name, or from a path to a `.toml` file. `new` gives the defaults.
 pub fn load(dir: &Path, key: &str) -> Result<Recipe> {
+    if key == "new" {
+        return Ok(Recipe::default());
+    }
     let as_path = Path::new(key);
     if as_path.extension().is_some_and(|x| x == "toml") && as_path.exists() {
         return Recipe::from_toml(&fs::read_to_string(as_path).map_err(|e| Error::io(as_path, e))?);
