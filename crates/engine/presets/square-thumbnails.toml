@@ -1,0 +1,12 @@
+name = "Square thumbnails"
+description = "800 px squares cropped from the centre, WebP."
+[size]
+long_side = 800
+shape = "1:1"
+fit = "crop"
+[format]
+id = "webp"
+[quality]
+look = "balanced"
+[destination]
+mode = "subfolder"

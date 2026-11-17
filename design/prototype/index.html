@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wrangler prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700;800&family=Doto:ROND,wght@0..100,700..900&family=Unbounded:wght@200..500&display=swap" rel="stylesheet">
+<style>@font-face { font-family: "Departure Mono"; src: url(https://cdn.jsdelivr.net/gh/rektdeckard/departure-mono@latest/public/assets/DepartureMono-Regular.woff2) format("woff2"); font-display: swap; }</style>
+<link rel="stylesheet" href="../system/tokens.css">
+<link rel="stylesheet" href="../system/components.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>Wrangler prototype</h1>
+      <p>Everything here is live: every key, slider and field drives one shared state, so the channel screens, thumbnails, names, meter and Run label all update together. Open <b>Tune</b> (top right) to adjust material, screens, keys, type and colour, then copy the values. Photos are AI-generated samples; sizes are estimates.</p>
+    </div>
+  </header>
+
+  <div class="stage"><div class="fit">
+    <div class="device mat-case" id="device">
+      <div class="head" id="head"></div>
+      <section class="display" aria-label="Batch preview"><div class="screen" id="main"></div></section>
+      <aside class="extras panel" id="extras" aria-label="Extras"></aside>
+      <div class="channels" id="channels"></div>
+      <section class="output panel" id="output" aria-label="Output"></section>
+    </div>
+  </div></div>
+
+  <h2>From the file manager</h2>
+  <p>Right-click images or folders in Finder, Explorer, Dolphin or Nautilus and pick a pinned recipe. A small unit runs it, shows where the files went and what was saved, with Undo one press away. "Open in Wrangler…" loads them into the main window instead.</p>
+  <div class="qa-row">
+    <div style="position:relative;width:560px;height:290px">
+      <div class="menu"><div>Open</div><div>Open With</div><hr><div>Get Info</div><div>Rename…</div><hr><div class="hi">Wrangler <span>›</span></div><div>Quick Look</div><hr><div class="dim">Copy</div><div class="dim">Share…</div></div>
+      <div class="menu" style="position:absolute;left:278px;top:76px;width:250px"><div>Web ready</div><div class="hi">Shopify product</div><div>Amazon main image</div><div>Just compress</div><hr><div>Open in Wrangler…</div><div>Pin recipes…</div></div>
+    </div>
+    <div class="qa mat-case" id="quick" aria-label="Quick action result"></div>
+  </div>
+</div>
+
+<button class="key key--dark tune-toggle" id="tuneToggle" aria-expanded="false" aria-controls="tune">Tune</button>
+<aside class="tune" id="tune" data-open="false" aria-label="Tune design values"></aside>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script src="tune.js"></script>
+</body>
+</html>

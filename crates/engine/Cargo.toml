@@ -1,0 +1,56 @@
+[package]
+name = "wrangler-engine"
+description = "The image engine behind Wrangler: recipes, modules, codecs, planning, running and undo."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+# Export TypeScript bindings for the desktop app (cargo test -p wrangler-engine --features ts).
+ts = ["dep:ts-rs"]
+# Link libheif for HEIC decoding instead of using the operating system's converter.
+heic = ["dep:libheif-rs"]
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rayon.workspace = true
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "tiff", "bmp", "webp", "ico", "qoi", "tga", "pnm"] }
+jpeg-decoder = { version = "0.3", default-features = false }
+avif-decode = { version = "3", default-features = false }
+avif-parse = "2"
+jxl-oxide = { version = "0.12", features = ["image"] }
+resvg = "0.50"
+fast_image_resize = "6"
+mozjpeg = "0.10"
+webp = { version = "0.3", default-features = false }
+ravif = "0.13"
+rgb = "0.8"
+imgref = "1"
+png = "0.18"
+oxipng = { version = "10", default-features = false, features = ["parallel", "zopfli"] }
+imagequant = "4"
+ssimulacra2 = "0.5"
+moxcms = "0.9"
+kamadak-exif = "0.6"
+img-parts = "0.4"
+blake3 = "1"
+walkdir = "2"
+natord = "1"
+globset = "0.4"
+regex = "1"
+deunicode = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+dirs = "6"
+toml = "0.9"
+uuid = { version = "1", features = ["v4", "serde"] }
+parking_lot = "0.12"
+ts-rs = { version = "12", optional = true, features = ["serde-compat"] }
+libheif-rs = { version = "2", optional = true }
+
+[dev-dependencies]
+tempfile = "3"

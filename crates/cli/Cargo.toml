@@ -1,0 +1,24 @@
+[package]
+name = "img-wrangler"
+description = "Batch image compression, resizing, conversion and renaming from the command line."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "img-wrangler"
+path = "src/main.rs"
+
+[dependencies]
+wrangler-engine.workspace = true
+wrangler-integrate.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+clap = { version = "4", features = ["derive"] }
+indicatif = "0.18"
+toml = "0.9"
+
+[dev-dependencies]
+tempfile = "3"

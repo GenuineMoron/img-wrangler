@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wrangler: mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700;800&family=Doto:wght@700;900&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: "Departure Mono"; src: url(https://cdn.jsdelivr.net/gh/rektdeckard/departure-mono@latest/public/assets/DepartureMono-Regular.woff2) format("woff2"); font-display: swap; }
+
+:root {
+  --alu: #dcdddf; --alu-hi: #eeeff0; --alu-lo: #b9bbbe; --seam-d: rgba(0,0,0,.16); --seam-l: rgba(255,255,255,.75);
+  --print: #26272a; --print-2: #6b6d72;
+  --cap: #f5f5f4; --cap-lo: #e2e2e1; --cap-wall: #a9aaad;
+  --dark: #2f3034; --dark-hi: #44464b; --dark-wall: #141518;
+  --screen: #050505; --line: #222; --txt: #e9e9e6; --txt-2: #8c8c88; --txt-3: #4d4d4a;
+  /* one colour per job, the same on the case and on every screen */
+  --size: #3d5cff; --format: #18c06a; --quality: #ffc61a; --name: #ff4f9a;
+  --trim: #ff4b3a; --canvas: #9a6bff; --sharpen: #2cc6ea; --run: #ff5a1f;
+  --ok: #18c06a; --warn: #ffc61a; --bad: #ff4b3a;
+  --ui: "Host Grotesk", system-ui, sans-serif; --mono: "Departure Mono", ui-monospace, monospace; --dot: "Doto", monospace;
+}
+* { box-sizing: border-box; margin: 0; }
+html { background: #1d1e20; color: #e7e7e4; font: 15px/1.55 var(--ui); }
+::selection { background: var(--run); color: #fff; }
+.page { max-width: 1520px; margin: 0 auto; padding: 44px 40px 90px; }
+.page > header h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+.page > header p { max-width: 76ch; color: #b9b9b5; margin-top: 8px; }
+.page h2 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin: 64px 0 6px; }
+.page h2 + p { max-width: 76ch; color: #b9b9b5; margin-bottom: 18px; }
+.stage { width: 100%; aspect-ratio: 1440 / 900; position: relative; margin-top: 28px; }
+.stage .fit { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; transform-origin: 0 0; }
+
+/* ---------- case ---------- */
+.unit { position: absolute; inset: 0; border-radius: 20px; overflow: hidden; color: var(--print);
+  background: var(--alu) url(assets/alu.jpg) center / cover;
+  box-shadow: 0 40px 90px rgba(0,0,0,.6), 0 10px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 0 rgba(0,0,0,.14);
+  display: grid; grid-template-columns: minmax(0,1fr) 360px; grid-template-rows: 62px minmax(0,1fr) 316px; gap: 14px 16px; padding: 0 18px 18px; }
+.unit::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,.25), rgba(255,255,255,0) 30%, rgba(0,0,0,.05)); }
+.unit > * { position: relative; min-width: 0; min-height: 0; }
+.p { font: 600 10px/1 var(--ui); letter-spacing: .1em; text-transform: uppercase; color: var(--print); }
+.p.dim { color: var(--print-2); font-weight: 500; }
+.dotc { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); vertical-align: 0; margin-right: 7px; box-shadow: inset 0 -1px 1px rgba(0,0,0,.2); }
+.seam { box-shadow: inset 0 0 0 1px var(--seam-d), 0 1px 0 var(--seam-l); }
+
+/* keys: TE-style rounded squares; lit keys take their channel colour */
+.key { --c: var(--print); display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; min-width: 30px; padding: 0 10px; border: 0; border-radius: 7px; cursor: pointer; user-select: none;
+  font: 600 10.5px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--print);
+  background: linear-gradient(180deg, #fbfbfa, var(--cap) 50%, var(--cap-lo));
+  box-shadow: inset 0 1px 0 #fff, 0 1.5px 0 var(--cap-wall), 0 2px 1px rgba(0,0,0,.14), 0 4px 8px rgba(0,0,0,.12);
+  transition: transform 60ms ease-out, box-shadow 60ms ease-out, background 120ms; }
+.key:active { transform: translateY(1.5px); box-shadow: inset 0 1px 2px rgba(0,0,0,.12), 0 0 0 var(--cap-wall), 0 1px 1px rgba(0,0,0,.2); }
+.key.on { color: #fff; background: linear-gradient(180deg, color-mix(in oklab, var(--c) 82%, #fff), var(--c) 55%, color-mix(in oklab, var(--c) 88%, #000));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1.5px 0 color-mix(in oklab, var(--c) 55%, #000), 0 2px 1px rgba(0,0,0,.18), 0 4px 10px color-mix(in oklab, var(--c) 35%, transparent); }
+.key.on.ink { color: #1a1a1a; }
+.key.dark { color: #ececea; background: linear-gradient(180deg, var(--dark-hi), var(--dark) 55%, #27282b); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 1.5px 0 var(--dark-wall), 0 2px 1px rgba(0,0,0,.25), 0 5px 10px rgba(0,0,0,.2); }
+.key:focus-visible, .fader:focus-visible, .ed:focus-visible { outline: 2px solid var(--run); outline-offset: 3px; }
+.keys { display: flex; gap: 6px; flex-wrap: wrap; }
+.keys.fill { display: grid; grid-template-columns: repeat(var(--n), minmax(0,1fr)); }
+.keys.fill .key { padding: 0 4px; }
+.led { width: 7px; height: 7px; border-radius: 50%; flex: none; --c: var(--run); background: #8e9094; box-shadow: inset 0 1px 1px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.7); }
+.led.on { background: radial-gradient(circle at 38% 32%, #fff 0 14%, var(--c) 50%); box-shadow: 0 0 6px var(--c), 0 1px 0 rgba(255,255,255,.6); }
+
+/* fader: a recessed slot with printed stops; the cap carries the channel colour */
+.fader { --v: 0; --c: var(--quality); position: relative; height: 40px; cursor: pointer; touch-action: none; }
+.fader .slot { position: absolute; left: 10px; right: 10px; top: 12px; height: 6px; border-radius: 3px; background: #2a2b2e; box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.8); }
+.fader .run { position: absolute; left: 10px; top: 12px; height: 6px; width: calc((100% - 20px) * var(--v)); border-radius: 3px; background: var(--c); box-shadow: 0 0 6px color-mix(in oklab, var(--c) 60%, transparent); }
+.fader .ticks { position: absolute; left: 10px; right: 10px; top: 24px; display: flex; justify-content: space-between; }
+.fader .ticks span { width: 1px; height: 4px; background: var(--print-2); }
+.fader .cap { position: absolute; top: 3px; left: calc(10px + (100% - 20px) * var(--v)); width: 16px; height: 24px; margin-left: -8px; border-radius: 4px;
+  background: linear-gradient(180deg, #fbfbfa, #e3e3e2); box-shadow: inset 0 1px 0 #fff, 0 1.5px 0 var(--cap-wall), 0 3px 6px rgba(0,0,0,.28); }
+.fader .cap::after { content: ""; position: absolute; left: 3px; right: 3px; top: 11px; height: 2.5px; border-radius: 2px; background: var(--c); }
+.stops { display: flex; justify-content: space-between; margin-top: -4px; }
+.stops span { font: 600 9.5px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--print-2); flex: 1; text-align: center; cursor: pointer; }
+.stops span:first-child { text-align: left; } .stops span:last-child { text-align: right; }
+.stops span.on { color: var(--print); }
+
+/* small black screens */
+.oled { background: var(--screen); border-radius: 8px; color: var(--txt); font: 11px/1.3 var(--mono); position: relative; overflow: hidden;
+  box-shadow: inset 0 0 0 1px #000, inset 0 2px 6px rgba(255,255,255,.04), 0 1px 0 var(--seam-l), 0 -1px 0 var(--seam-d); }
+.oled::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(120deg, rgba(255,255,255,.05), transparent 40%); }
+.oled svg { display: block; }
+.ed { cursor: text; border-radius: 2px; }
+.ed:hover { box-shadow: 0 1px 0 currentColor; }
+
+/* ---------- header ---------- */
+.head { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; }
+.grille { width: 74px; height: 38px; border-radius: 8px; flex: none; cursor: copy;
+  background: radial-gradient(circle, #121315 1.55px, transparent 1.9px) 2px 2px / 7px 7px, #cfd0d3;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.2), 0 1px 0 var(--seam-l); }
+.word { font: 700 22px/1 var(--ui); letter-spacing: -0.04em; color: #18191b; }
+.word small { font: 500 10px/1 var(--ui); letter-spacing: .1em; color: var(--print-2); text-transform: uppercase; margin-left: 8px; vertical-align: 3px; }
+.recipe { display: flex; align-items: center; gap: 6px; margin-left: 20px; }
+.recipe .oled { width: 320px; height: 36px; display: flex; align-items: center; gap: 12px; padding: 0 12px; font-size: 13px; white-space: nowrap; }
+.recipe .oled .n { color: var(--run); }
+.recipe .oled em { font-style: normal; margin-left: auto; font-size: 11px; color: var(--txt-2); }
+.recipe .oled em i { font-style: normal; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 3px; }
+.head .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* ---------- main screen ---------- */
+.display { border-radius: 14px; padding: 8px; background: #121315; box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 1px 0 var(--seam-l), inset 0 1px 0 rgba(255,255,255,.06); }
+.display .oled { height: 100%; display: grid; grid-template-rows: 34px minmax(0,1fr) 26px; border-radius: 8px; }
+.sbar { display: flex; align-items: center; gap: 14px; padding: 0 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.sbar .path { color: var(--txt-2); } .sbar .path b { color: var(--txt); font-weight: 400; }
+.sbar .tabs { display: flex; gap: 2px; margin-left: auto; }
+.sbar .tabs span { padding: 3px 8px; border-radius: 3px; color: var(--txt-2); cursor: pointer; }
+.sbar .tabs span i { font-style: normal; margin-left: 5px; color: var(--txt); }
+.sbar .tabs span.on { background: #fff; color: #000; } .sbar .tabs span.on i { color: #000; }
+.sbar .tabs span.w i { color: var(--warn); } .sbar .tabs span.b i { color: var(--bad); }
+.split { display: grid; grid-template-columns: minmax(0,1fr) 352px; min-height: 0; }
+.sheet { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px 12px; padding: 14px 14px; overflow: hidden; align-content: start; border-right: 1px solid var(--line); }
+.tile { cursor: pointer; }
+.tile .ph { aspect-ratio: 1; border-radius: 3px; overflow: hidden; display: grid; place-items: center; background: var(--bg); position: relative; }
+.tile .ph img { width: 86%; height: 86%; object-fit: cover; }
+.tile.picked .ph { box-shadow: 0 0 0 2px #000, 0 0 0 4px #fff; }
+.tile .nm { margin-top: 6px; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--name); }
+.tile .sz { font-size: 10.5px; display: flex; justify-content: space-between; color: var(--txt-3); }
+.tile .sz b { font-weight: 400; color: var(--quality); }
+.tile .flag { position: absolute; left: 5px; top: 5px; padding: 1px 4px; font: 9.5px/1.3 var(--mono); border-radius: 2px; color: #000; background: var(--warn); }
+.tile .flag.bad { background: var(--bad); color: #fff; }
+.mon { padding: 14px; display: grid; grid-template-rows: auto 1fr; gap: 12px; min-height: 0; }
+.cmp { --split: 50%; position: relative; aspect-ratio: 1; width: 100%; border-radius: 3px; overflow: hidden; cursor: ew-resize; touch-action: none; user-select: none; background: #d7bba0; }
+.cmp .s { position: absolute; inset: 0; }
+.cmp .before img { width: 100%; height: 100%; object-fit: cover; }
+.cmp .after { clip-path: inset(0 0 0 var(--split)); background: #d7bba0; overflow: hidden; }
+.cmp .after img { position: absolute; left: -6.5%; top: -9%; width: 113%; height: 113%; object-fit: cover; }
+.cmp .tbox { position: absolute; left: 36%; top: 8%; width: 28%; height: 84%; border: 1.5px solid var(--trim); }
+.cmp .cbox { position: absolute; inset: 7.5%; border: 1.5px solid var(--canvas); }
+.cmp .handle { position: absolute; top: 0; bottom: 0; left: var(--split); width: 2px; margin-left: -1px; background: #fff; }
+.cmp .handle::after { content: "◀ ▶"; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); padding: 3px 5px; font: 10px/1 var(--mono); color: #000; background: #fff; border-radius: 3px; white-space: nowrap; }
+.cmp .lab { position: absolute; top: 7px; padding: 2px 5px; font-size: 10px; color: #000; background: rgba(255,255,255,.9); border-radius: 2px; }
+.cmp .lab.l { left: 7px; } .cmp .lab.r { right: 7px; }
+.facts { display: grid; grid-template-columns: 58px minmax(0,1fr) auto; gap: 4px 10px; font-size: 11px; font-variant-numeric: tabular-nums; align-content: start; }
+.facts .k { color: var(--txt-3); } .facts .r { text-align: right; }
+.hints { display: flex; gap: 16px; align-items: center; padding: 0 12px; border-top: 1px solid var(--line); color: var(--txt-3); font-size: 10.5px; white-space: nowrap; }
+.hints kbd { font: inherit; color: var(--txt); margin-right: 5px; }
+.hints .live { margin-left: auto; color: var(--ok); }
+
+/* ---------- extras ---------- */
+.extras { border-radius: 14px; padding: 14px; display: grid; grid-auto-rows: min-content; gap: 6px; align-content: start; }
+.extras > .p { margin-bottom: 4px; display: flex; justify-content: space-between; }
+.xrow { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 8px 2px; border-top: 1px solid var(--seam-d); box-shadow: inset 0 1px 0 var(--seam-l); }
+.xrow:first-of-type { border-top: 0; box-shadow: none; }
+.xrow .key { width: 36px; padding: 0; }
+.xrow b { font: 600 13px/1.2 var(--ui); }
+.xrow small { display: block; font: 500 11.5px/1.3 var(--ui); color: var(--print-2); }
+.xrow .val { font: 11px/1 var(--mono); color: var(--print-2); }
+.xbody { display: grid; gap: 12px; padding: 4px 2px 10px 48px; }
+.xbody .lab { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.xbody .lab span:last-child { font: 11px/1 var(--mono); color: var(--print); }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+
+/* ---------- channels ---------- */
+.channels { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.ch { border-radius: 14px; padding: 12px; display: grid; grid-template-rows: auto 112px auto; gap: 10px; align-content: start; }
+.ch .top { display: flex; align-items: center; justify-content: space-between; }
+.ch .top .sum { font: 11px/1 var(--mono); color: var(--print-2); }
+.ch .oled { padding: 10px 12px; }
+.ch .big { font: 900 34px/0.9 var(--dot); letter-spacing: .01em; }
+.ch .cap2 { font-size: 10.5px; color: var(--txt-2); }
+.ch .cap2 b { font-weight: 400; color: var(--txt); }
+.ch .ctrls { display: grid; gap: 8px; }
+.field { display: flex; align-items: center; height: 30px; padding: 0 10px; border-radius: 7px; background: var(--screen); color: var(--txt); font: 12.5px/1 var(--mono);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.6), 0 1px 0 var(--seam-l); }
+.field .tok { color: var(--name); }
+.field .caret { width: 1px; height: 14px; background: var(--name); margin-left: 1px; animation: blink 1.1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- output ---------- */
+.output { border-radius: 14px; padding: 14px; display: grid; grid-template-rows: auto auto 1fr; gap: 12px; }
+.meter { padding: 12px 14px; display: grid; gap: 8px; }
+.lad { display: grid; grid-template-columns: 28px minmax(0,1fr) 62px; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.lad .k { color: var(--txt-2); } .lad .v { text-align: right; }
+.segs { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; height: 9px; }
+.segs i { background: #1b1b1b; border-radius: 1px; }
+.segs.a i.on { background: #e9e9e6; }
+.segs.b i.on { background: var(--run); box-shadow: 0 0 5px rgba(255,90,31,.7); }
+.meter .save { display: flex; align-items: flex-end; justify-content: space-between; }
+.meter .digits { font: 900 46px/0.85 var(--dot); color: var(--run); text-shadow: 0 0 10px rgba(255,90,31,.5); }
+.meter .save small { text-align: right; color: var(--txt-2); font-size: 10.5px; line-height: 1.4; }
+.meter .save small b { color: var(--txt); font-weight: 400; }
+.go { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; align-items: end; }
+.runkey { height: 76px; border: 0; border-radius: 12px; cursor: pointer; color: #fff; display: grid; place-items: center; align-content: center; gap: 4px;
+  font: 800 18px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase;
+  background: linear-gradient(180deg, #ff8650, var(--run) 50%, #ec4b12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 #b33a0b, 0 4px 2px rgba(0,0,0,.2), 0 10px 22px rgba(255,90,31,.35); transition: transform 70ms; }
+.runkey small { font: 600 10px/1 var(--ui); letter-spacing: .08em; opacity: .9; }
+.runkey:active { transform: translateY(3px); box-shadow: inset 0 2px 5px rgba(0,0,0,.25), 0 0 0 #b33a0b; }
+.undo { display: grid; gap: 6px; justify-items: stretch; }
+.undo .key { height: 76px; flex-direction: column; gap: 8px; border-radius: 12px; }
+
+/* ---------- quick unit ---------- */
+.qa-row { display: flex; gap: 56px; align-items: flex-start; flex-wrap: wrap; margin-top: 24px; }
+.menu { width: 290px; background: rgba(246,246,246,.97); color: #1d1d1f; border-radius: 9px; padding: 5px; font: 13px/1 -apple-system, "Segoe UI", var(--ui); box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 12px 32px rgba(0,0,0,.45); }
+.menu div { padding: 6px 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.menu hr { border: 0; border-top: 1px solid rgba(0,0,0,.12); margin: 4px 8px; }
+.menu .hi { background: #2f6fea; color: #fff; } .menu .dim { color: #8a8a8e; }
+.menu .sw { width: 9px; height: 9px; border-radius: 50%; }
+.qa { width: 300px; border-radius: 18px; padding: 16px; display: grid; gap: 14px; color: var(--print);
+  background: var(--alu) url(assets/alu.jpg) 30% 60% / 900px; box-shadow: 0 30px 60px rgba(0,0,0,.5), inset 0 1px 0 #fff, inset 0 -2px 0 rgba(0,0,0,.14); }
+.qa .oled { padding: 14px; display: grid; gap: 10px; }
+.qa .row { display: flex; justify-content: space-between; color: var(--txt-2); }
+.qa .row b { color: var(--txt); font-weight: 400; }
+.qa .digits { font: 900 52px/0.9 var(--dot); color: var(--run); text-shadow: 0 0 10px rgba(255,90,31,.5); }
+
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px 48px; margin-top: 10px; }
+.notes p { color: #c4c4c0; } .notes p b { color: #fff; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Wrangler v2: cleaner, simpler, more colour</h1>
+    <p>The four things people change most sit under the screen as four coloured channels: size, format, quality, name. Each has its own little screen drawn in its colour, and that colour marks the same thing everywhere else. Extras like trim and canvas wait in the side panel until you want them. Keys for choices, sliders for trade-offs, click any number to type it. Photos are AI-generated samples.</p>
+  </header>
+
+  <div class="stage"><div class="fit">
+    <div class="unit">
+      <!-- header -->
+      <div class="head">
+        <div class="grille" title="Drop images or folders here, or anywhere on the window" aria-label="Drop zone"></div>
+        <div class="word">wrangler<small>batch image unit</small></div>
+        <div class="recipe">
+          <button class="key" aria-label="Previous recipe" data-preset="-1">◀</button>
+          <div class="oled" aria-live="polite"><span class="n" id="pn">03</span><span id="pname">SHOPIFY PRODUCT</span><em>edited<i style="background:var(--size)"></i><i style="background:var(--format)"></i><i style="background:var(--quality)"></i><i style="background:var(--name)"></i><i style="background:var(--trim)"></i><i style="background:var(--canvas)"></i></em></div>
+          <button class="key" aria-label="Next recipe" data-preset="1">▶</button>
+          <button class="key">Save</button>
+        </div>
+        <div class="right"><button class="key dark">+ Add</button><button class="key dark">⌘K</button></div>
+      </div>
+
+      <!-- main screen -->
+      <div class="display"><div class="oled">
+        <div class="sbar">
+          <span class="path">~/Clients/Acme/<b>spring-catalogue</b> · 1,284 images · 1.82 GB</span>
+          <div class="tabs"><span class="on">ALL<i>1284</i></span><span>READY<i>1242</i></span><span class="w">KEPT<i>40</i></span><span class="b">CLASH<i>2</i></span><span>FAILED<i>0</i></span></div>
+        </div>
+        <div class="split">
+          <div class="sheet" id="sheet"></div>
+          <div class="mon">
+            <div class="cmp" id="cmp" role="slider" tabindex="0" aria-label="Before and after" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+              <div class="s before"><img data-src="p3" alt="Original photo"><span class="tbox"></span></div>
+              <div class="s after"><img data-src="p3" alt="Result"><span class="cbox"></span></div>
+              <span class="handle"></span><span class="lab l">BEFORE</span><span class="lab r">AFTER</span>
+            </div>
+            <div class="facts">
+              <span class="k">FILE</span><span>DSC_4473.JPG <span style="color:var(--txt-3)">→</span> <span style="color:var(--name)">spring-24-003.webp</span></span><span></span>
+              <span class="k">SIZE</span><span>6000×4000 <span style="color:var(--txt-3)">→</span> <span style="color:var(--size)">2048×2048</span></span><span></span>
+              <span class="k">WEIGHT</span><span>6.80 MB <span style="color:var(--txt-3)">→</span> <span style="color:var(--quality)">288 KB</span> &nbsp;<span style="color:var(--run)">−96%</span></span><span></span>
+              <span class="k">LOOK</span><span><span style="color:var(--format)">WEBP</span> · balanced · score 76</span><span class="r" style="color:var(--ok)">✓</span>
+            </div>
+          </div>
+        </div>
+        <div class="hints"><span><kbd>SPACE</kbd>full view</span><span><kbd>← →</kbd>next</span><span><kbd>B</kbd>before/after</span><span><kbd>1-4</kbd>channels</span><span><kbd>⌘↵</kbd>run</span><span><kbd>⌘Z</kbd>undo</span><span class="live">● live preview</span></div>
+      </div></div>
+
+      <!-- extras -->
+      <aside class="extras seam" aria-label="Extras">
+        <span class="p">Extras <span class="dim p">for product shots</span></span>
+        <div class="xrow"><button class="key on" style="--c:var(--trim)" aria-pressed="true">TR</button><div><b>Trim</b><small>cut empty background</small></div><span class="val">4%</span></div>
+        <div class="xrow"><button class="key on" style="--c:var(--canvas)" aria-pressed="true">CA</button><div><b>Canvas</b><small>centre on a backdrop at the Size</small></div><span class="val">1:1</span></div>
+        <div class="xbody">
+          <div><div class="lab"><span class="p dim">Shape</span></div><div class="keys fill" style="--n:4" data-group><button class="key on" style="--c:var(--canvas)">1:1</button><button class="key" style="--c:var(--canvas)">4:5</button><button class="key" style="--c:var(--canvas)">3:2</button><button class="key" style="--c:var(--canvas)">Size</button></div></div>
+          <div><div class="lab"><span class="p dim">Product fills</span><span id="fillv">85%</span></div>
+            <div class="fader" style="--c:var(--canvas);--v:.7" tabindex="0" role="slider" aria-label="Product fills" data-min="50" data-max="100" data-out="fillv" data-unit="%"><span class="slot"></span><span class="run"></span><span class="ticks"><span></span><span></span><span></span><span></span><span></span><span></span></span><span class="cap"></span></div></div>
+          <div><div class="lab"><span class="p dim">Backdrop</span><span>#D7BBA0 sampled</span></div><div class="keys fill" style="--n:4" data-group><button class="key on" style="--c:var(--canvas)">Auto</button><button class="key" style="--c:var(--canvas)"><span class="sw" style="background:#fff"></span>White</button><button class="key" style="--c:var(--canvas)">Clear</button><button class="key" style="--c:var(--canvas)">Pick</button></div></div>
+        </div>
+        <div class="xrow"><button class="key" style="--c:var(--sharpen)" aria-pressed="false">SH</button><div><b>Sharpen</b><small>crisp edges after shrinking</small></div><span class="val">off</span></div>
+        <div class="xrow"><button class="key" style="--c:#8e9094" aria-pressed="false">RO</button><div><b>Rotate</b><small>quarter turns and flips</small></div><span class="val">off</span></div>
+        <div class="xrow"><button class="key on" style="--c:#555a63" aria-pressed="true">MD</button><div><b>Metadata</b><small>remove location and camera data</small></div><span class="val">strip</span></div>
+      </aside>
+
+      <!-- the four channels -->
+      <div class="channels">
+        <section class="ch seam" style="--c:var(--size)" aria-label="Size">
+          <div class="top"><span class="p"><span class="dotc"></span>Size</span><span class="sum">long edge</span></div>
+          <div class="oled">
+            <svg width="100%" height="92" viewBox="0 0 220 92" aria-hidden="true">
+              <rect x="6" y="14" width="96" height="64" fill="none" stroke="#4d4d4a" stroke-dasharray="3 3"/>
+              <text x="6" y="9" fill="#8c8c88" font-family="Departure Mono" font-size="9">6000×4000</text>
+              <rect x="34" y="26" width="40" height="40" fill="rgba(61,92,255,.18)" stroke="#3d5cff" stroke-width="1.5"/>
+              <path d="M102 46 H118" stroke="#3d5cff" stroke-width="1.5"/><path d="M114 42 L118 46 L114 50" fill="none" stroke="#3d5cff" stroke-width="1.5"/>
+              <text x="126" y="58" fill="#3d5cff" font-family="Doto" font-weight="900" font-size="34" class="ed" tabindex="0">2048</text>
+              <text x="128" y="74" fill="#8c8c88" font-family="Departure Mono" font-size="9">px · no upscale</text>
+            </svg>
+          </div>
+          <div class="ctrls">
+            <div class="keys fill" style="--n:6" data-group><button class="key" style="--c:var(--size)">Orig</button><button class="key" style="--c:var(--size)">1200</button><button class="key" style="--c:var(--size)">1600</button><button class="key on" style="--c:var(--size)">2048</button><button class="key" style="--c:var(--size)">2560</button><button class="key" style="--c:var(--size)">4K</button></div>
+            <div class="keys fill" style="--n:3" data-group><button class="key on" style="--c:var(--size)">Long edge</button><button class="key" style="--c:var(--size)">Fit box</button><button class="key" style="--c:var(--size)">Exact</button></div>
+          </div>
+        </section>
+
+        <section class="ch seam" style="--c:var(--format)" aria-label="Format">
+          <div class="top"><span class="p"><span class="dotc"></span>Format</span><span class="sum">for the web</span></div>
+          <div class="oled">
+            <svg width="100%" height="92" viewBox="0 0 220 92" aria-hidden="true">
+              <g font-family="Departure Mono" font-size="9" text-anchor="middle">
+                <rect x="6" y="6" width="36" height="16" rx="3" fill="none" stroke="#4d4d4a"/><text x="24" y="17" fill="#8c8c88">JPG</text>
+                <rect x="48" y="6" width="36" height="16" rx="3" fill="none" stroke="#4d4d4a"/><text x="66" y="17" fill="#8c8c88">PNG</text>
+                <rect x="90" y="6" width="40" height="16" rx="3" fill="#18c06a"/><text x="110" y="17" fill="#000">WEBP</text>
+                <rect x="136" y="6" width="40" height="16" rx="3" fill="none" stroke="#4d4d4a"/><text x="156" y="17" fill="#8c8c88">AVIF</text>
+              </g>
+              <text x="6" y="62" fill="#18c06a" font-family="Doto" font-weight="900" font-size="34">WEBP</text>
+              <g transform="translate(150 34)"><rect width="62" height="6" rx="1" fill="#1b1b1b"/><rect width="60" height="6" rx="1" fill="#18c06a"/></g>
+              <text x="150" y="54" fill="#8c8c88" font-family="Departure Mono" font-size="9">97% browsers</text>
+              <text x="6" y="80" fill="#8c8c88" font-family="Departure Mono" font-size="9">keeps transparency · Shopify OK</text>
+            </svg>
+          </div>
+          <div class="ctrls">
+            <div class="keys fill" style="--n:5" data-group><button class="key" style="--c:var(--format)">Same</button><button class="key" style="--c:var(--format)">JPG</button><button class="key" style="--c:var(--format)">PNG</button><button class="key on" style="--c:var(--format)">WebP</button><button class="key" style="--c:var(--format)">AVIF</button></div>
+            <div class="keys fill" style="--n:2"><button class="key" style="--c:var(--format)"><span class="led"></span>Auto pick</button><button class="key" style="--c:var(--format)"><span class="sw" style="background:#fff"></span>Flatten white</button></div>
+          </div>
+        </section>
+
+        <section class="ch seam" style="--c:var(--quality)" aria-label="Quality">
+          <div class="top"><span class="p"><span class="dotc"></span>Quality</span><span class="sum">≤ 400 KB</span></div>
+          <div class="oled">
+            <svg width="100%" height="92" viewBox="0 0 220 92" aria-hidden="true">
+              <line x1="6" x2="214" y1="22" y2="22" stroke="#ffc61a" stroke-dasharray="2 3" opacity=".7"/><text x="214" y="17" fill="#ffc61a" text-anchor="end" font-family="Departure Mono" font-size="9">MAX 400 KB</text>
+              <g fill="#2a2a28"><rect x="6" y="60" width="22" height="14"/><rect x="34" y="52" width="22" height="22"/><rect x="62" y="40" width="22" height="34" fill="#ffc61a"/><rect x="90" y="28" width="22" height="46"/><rect x="118" y="12" width="22" height="62" opacity=".7"/></g>
+              <text x="152" y="56" fill="#ffc61a" font-family="Doto" font-weight="900" font-size="30">288</text>
+              <text x="152" y="72" fill="#8c8c88" font-family="Departure Mono" font-size="9">KB each, avg</text>
+              <text x="6" y="88" fill="#4d4d4a" font-family="Departure Mono" font-size="8">small   bal   high  prist  lossless</text>
+            </svg>
+          </div>
+          <div class="ctrls">
+            <div>
+              <div class="fader" id="qfader" style="--c:var(--quality);--v:.25" tabindex="0" role="slider" aria-label="Quality" data-steps="5"><span class="slot"></span><span class="run"></span><span class="ticks"><span></span><span></span><span></span><span></span><span></span></span><span class="cap"></span></div>
+              <div class="stops" id="qstops"><span>Small</span><span class="on">Balanced</span><span>High</span><span>Pristine</span><span>Lossless</span></div>
+            </div>
+            <div class="keys fill" style="--n:2"><button class="key on ink" style="--c:var(--quality)">Max 400 KB</button><button class="key on ink" style="--c:var(--quality)">Never bigger</button></div>
+          </div>
+        </section>
+
+        <section class="ch seam" style="--c:var(--name)" aria-label="Name">
+          <div class="top"><span class="p"><span class="dotc"></span>Name</span><span class="sum">pattern</span></div>
+          <div class="oled">
+            <svg width="100%" height="92" viewBox="0 0 220 92" aria-hidden="true">
+              <text x="6" y="16" fill="#8c8c88" font-family="Departure Mono" font-size="10">DSC_4471.JPG</text>
+              <path d="M10 22 V34 H18" fill="none" stroke="#ff4f9a" stroke-width="1.5"/><path d="M15 31 L18 34 L15 37" fill="none" stroke="#ff4f9a" stroke-width="1.5"/>
+              <text x="22" y="38" fill="#ff4f9a" font-family="Departure Mono" font-size="12">spring-24-001.webp</text>
+              <text x="6" y="58" fill="#8c8c88" font-family="Departure Mono" font-size="10">DSC_4472.JPG</text>
+              <path d="M10 64 V76 H18" fill="none" stroke="#ff4f9a" stroke-width="1.5"/><path d="M15 73 L18 76 L15 79" fill="none" stroke="#ff4f9a" stroke-width="1.5"/>
+              <text x="22" y="80" fill="#ff4f9a" font-family="Departure Mono" font-size="12">spring-24-002.webp</text>
+              <text x="214" y="88" fill="#ffc61a" text-anchor="end" font-family="Departure Mono" font-size="9">2 clashes → -2</text>
+            </svg>
+          </div>
+          <div class="ctrls">
+            <div class="field">spring-24-<span class="tok">{n:000}</span><span class="caret"></span></div>
+            <div class="keys fill" style="--n:5"><button class="key" style="--c:var(--name)">Name</button><button class="key on" style="--c:var(--name)">№</button><button class="key" style="--c:var(--name)">Date</button><button class="key" style="--c:var(--name)">W×H</button><button class="key" style="--c:var(--name)">slug</button></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- output -->
+      <div class="output seam">
+        <div class="oled meter">
+          <div class="lad"><span class="k">IN</span><div class="segs a" id="la"></div><span class="v">1.82 GB</span></div>
+          <div class="lad"><span class="k">OUT</span><div class="segs b" id="lb"></div><span class="v">≈214 MB</span></div>
+          <div class="save"><span class="digits">−88%</span><small>1,284 images<br><b>40</b> keep original · <b>2</b> clash</small></div>
+        </div>
+        <div>
+          <div class="p dim" style="margin-bottom:7px;display:flex;justify-content:space-between"><span>Save to</span><span>undo keeps originals 30 days</span></div>
+          <div class="keys fill" style="--n:3" data-group><button class="key on" style="--c:#2f3034">Replace</button><button class="key" style="--c:#2f3034">Beside</button><button class="key" style="--c:#2f3034">Folder…</button></div>
+        </div>
+        <div class="go">
+          <div class="undo"><button class="key"><span class="led"></span>Undo</button></div>
+          <button class="runkey">Run<small>1,284 images · ⌘↵</small></button>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <h2>From the file manager</h2>
+  <p>Right-click images or folders in Finder, Explorer, Dolphin or Nautilus. Pinned recipes run straight away in a small unit that reports the saving with Undo one press away; "Open in Wrangler…" loads them into the main window instead.</p>
+  <div class="qa-row">
+    <div style="position:relative;width:560px;height:300px">
+      <div class="menu"><div>Open</div><div>Open With</div><hr><div>Get Info</div><div>Rename…</div><hr><div class="hi">Wrangler <span>▸</span></div><div>Quick Look</div><hr><div class="dim">Copy</div><div class="dim">Share…</div></div>
+      <div class="menu" style="position:absolute;left:278px;top:76px;width:250px">
+        <div><span>Web ready</span><span class="sw" style="background:var(--size)"></span></div><div class="hi"><span>Shopify product</span><span class="sw" style="background:var(--canvas)"></span></div><div><span>Amazon main image</span><span class="sw" style="background:var(--trim)"></span></div><div><span>Just compress</span><span class="sw" style="background:var(--quality)"></span></div><hr><div>Open in Wrangler…</div><div class="dim">Pin recipes…</div>
+      </div>
+    </div>
+    <div class="qa">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="p">wrangler · quick</span><span class="led on" style="--c:var(--ok)"></span></div>
+      <div class="oled">
+        <div class="row"><span>SHOPIFY PRODUCT</span><b>48/48</b></div>
+        <div class="segs b" id="lq"></div>
+        <div class="digits">−86%</div>
+        <div class="row"><span>41.2 MB → 5.8 MB</span><b>3 s</b></div>
+        <div class="row"><span style="color:var(--warn)">2 kept original</span><span>0 failed</span></div>
+      </div>
+      <div class="keys fill" style="--n:2"><button class="key"><span class="led"></span>Undo</button><button class="key dark">Open</button></div>
+    </div>
+  </div>
+
+  <h2>What changed and why</h2>
+  <div class="notes">
+    <p><b>The everyday four come first.</b> Size, format, quality and name are always on screen in the same place. Most jobs are one press per channel: 2048, WebP, Balanced, done.</p>
+    <p><b>No knobs.</b> Choices are keys (one press, always visible, no guessing which way to turn). Trade-offs are sliders with printed stops. Any number on a screen can be clicked and typed.</p>
+    <p><b>Colour tells you what controls what.</b> Blue is size, green format, yellow quality, pink name; on the main screen the new size is blue, the new weight yellow, the new name pink. Extras have their own colours: trim red, canvas purple.</p>
+    <p><b>Product-shot tools stay out of the way.</b> Trim, canvas, sharpen, rotate and metadata sit in the side panel; canvas reuses the Size channel instead of asking for dimensions twice. Steps always run in the same sensible order, so there is nothing to reorder.</p>
+    <p><b>Each channel's little screen explains itself.</b> Size draws the old and new shape, format shows browser support, quality shows how big files get at each stop against your size limit, name shows real before and after names.</p>
+    <p><b>The meter and Run never move.</b> Bottom right, always: what goes in, what comes out, the saving, where it saves, Undo and Run.</p>
+  </div>
+</div>
+
+<script>
+  const pics = {};
+  for (let i = 1; i <= 8; i++) pics['p' + i] = `mock-assets/p${i}.jpg`;
+  document.querySelectorAll('img[data-src]').forEach(im => im.src = pics[im.dataset.src]);
+  const bg = ['#fdfdfd', '#c9c9c8', '#d7bba0', '#fefefe', '#e9e5e0', '#c1d7e5', '#fefefe', '#fefefe'];
+  const rows = [
+    ['spring-24-001.webp', '4.2M → 312K', '−93%'], ['spring-24-002.webp', '3.9M → 401K', '−90%'], ['spring-24-003.webp', '6.8M → 288K', '−96%'], ['spring-24-004.webp', '2.1M → 355K', '−83%'],
+    ['spring-24-005.webp', '5.5M → 384K', '−93%'], ['spring-24-006.webp', '38M → 398K', '−99%'], ['bottle-steel.jpg', '1.4M', 'kept', 'KEPT'], ['spring-24-008.webp', '3.3M → 298K', '−91%'],
+    ['spring-24-009.webp', '2.7M → 264K', '−90%'], ['spring-24-010.webp', '4.1M → 330K', '−92%', 'CLASH'], ['spring-24-011.webp', '4.4M → 330K', '−93%'], ['spring-24-012.webp', '3.1M → 290K', '−91%']
+  ];
+  document.getElementById('sheet').innerHTML = rows.map((r, i) => `<div class="tile ${i === 2 ? 'picked' : ''}"><div class="ph" style="--bg:${bg[i % 8]}"><img src="${pics['p' + ((i % 8) + 1)]}" alt="">${r[3] ? `<span class="flag ${r[3] === 'CLASH' ? 'bad' : ''}">${r[3]}</span>` : ''}</div><div class="nm">${r[0]}</div><div class="sz"><span>${r[1]}</span><b>${r[2]}</b></div></div>`).join('');
+  const lad = (id, n, lit) => document.getElementById(id).innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < lit ? 'on' : ''}"></i>`).join('');
+  lad('la', 24, 24); lad('lb', 24, 3); lad('lq', 24, 24);
+
+  // latching key groups
+  document.querySelectorAll('[data-group]').forEach(g => g.addEventListener('click', e => { const k = e.target.closest('.key'); if (!k) return; g.querySelectorAll('.key').forEach(x => x.classList.toggle('on', x === k)); }));
+  document.querySelectorAll('.xrow .key').forEach(k => k.addEventListener('click', () => k.setAttribute('aria-pressed', k.classList.toggle('on'))));
+
+  // faders: drag or arrow keys; stepped faders snap to their printed stops
+  const qnames = ['Small', 'Balanced', 'High', 'Pristine', 'Lossless'];
+  document.querySelectorAll('.fader').forEach(f => {
+    const steps = +f.dataset.steps || 0;
+    let v = parseFloat(f.style.getPropertyValue('--v')) || 0;
+    const set = nv => {
+      v = Math.max(0, Math.min(1, nv)); if (steps) v = Math.round(v * (steps - 1)) / (steps - 1);
+      f.style.setProperty('--v', v);
+      if (f.id === 'qfader') { const i = Math.round(v * 4); document.querySelectorAll('#qstops span').forEach((s, j) => s.classList.toggle('on', i === j)); f.setAttribute('aria-valuetext', qnames[i]); }
+      if (f.dataset.out) { const val = Math.round(+f.dataset.min + v * (f.dataset.max - f.dataset.min)) + f.dataset.unit; document.getElementById(f.dataset.out).textContent = val; f.setAttribute('aria-valuetext', val); }
+    };
+    const fromX = x => { const r = f.getBoundingClientRect(); set((x - r.left - 10) / (r.width - 20)); };
+    f.addEventListener('pointerdown', e => { f.setPointerCapture(e.pointerId); fromX(e.clientX); const m = ev => fromX(ev.clientX); f.addEventListener('pointermove', m); f.addEventListener('pointerup', () => f.removeEventListener('pointermove', m), { once: true }); });
+    f.addEventListener('keydown', e => { const d = steps ? 1 / (steps - 1) : (e.shiftKey ? .01 : .04); if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { set(v + d); e.preventDefault(); } if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { set(v - d); e.preventDefault(); } });
+  });
+  document.querySelectorAll('#qstops span').forEach((s, i) => s.addEventListener('click', () => { const f = document.getElementById('qfader'); f.style.setProperty('--v', i / 4); document.querySelectorAll('#qstops span').forEach((x, j) => x.classList.toggle('on', i === j)); }));
+
+  // recipe display
+  const names = ['WEB READY', 'JUST COMPRESS', 'SHOPIFY PRODUCT', 'AMAZON MAIN IMAGE', 'EMAIL SAFE', 'SOCIAL SQUARE']; let p = 2;
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => { p = (p + +b.dataset.preset + names.length) % names.length; document.getElementById('pn').textContent = String(p + 1).padStart(2, '0'); document.getElementById('pname').textContent = names[p]; }));
+
+  // before/after
+  const cmp = document.getElementById('cmp');
+  const split = x => { const r = cmp.getBoundingClientRect(); const pct = Math.max(0, Math.min(100, (x - r.left) / r.width * 100)); cmp.style.setProperty('--split', pct + '%'); cmp.setAttribute('aria-valuenow', Math.round(pct)); };
+  cmp.addEventListener('pointerdown', e => { cmp.setPointerCapture(e.pointerId); split(e.clientX); const m = ev => split(ev.clientX); cmp.addEventListener('pointermove', m); cmp.addEventListener('pointerup', () => cmp.removeEventListener('pointermove', m), { once: true }); });
+
+  const fit = () => document.querySelectorAll('.stage').forEach(s => s.querySelector('.fit').style.transform = `scale(${s.clientWidth / 1440})`);
+  addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+name = "Amazon main image"
+description = "Pure white 2000 px square, product filling 85%, JPEG."
+[size]
+long_side = 2000
+shape = "1:1"
+fit = "pad"
+upscale = true
+trim = { tolerance = 6 }
+pad = { backdrop = "#ffffff", fill = 85 }
+[format]
+id = "jpg"
+[quality]
+look = "high"
+[destination]
+mode = "subfolder"

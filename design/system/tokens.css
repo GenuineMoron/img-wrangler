@@ -1,0 +1,125 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Wrangler design tokens. Every colour, size and duration the UI uses lives here;
+   components read these and never hard-code values. */
+
+:root {
+  /* the accent a component uses unless an ancestor sets one */
+  --accent: var(--accent-tool);
+  --on-accent: var(--on-tool);
+
+  /* ---------- surfaces ---------- */
+  --surface-case: oklch(93.5% 0.0053 85);          /* bead-blasted anodised aluminium, tuned */
+  --surface-key: #f5f5f4;           /* light keycap */
+  --surface-key-lo: #e2e2e1;
+  --surface-key-wall: #a9aaad;
+  --surface-dark: #2f3034;          /* rubber keycap */
+  --surface-dark-hi: #44464b;
+  --surface-dark-wall: #141518;
+  --surface-screen: #050505;        /* OLED black */
+  --surface-bezel: #121315;
+  --surface-slot: #2a2b2e;          /* slider groove */
+  --seam-dark: rgba(0, 0, 0, .16);  /* engraved panel line */
+  --seam-light: rgba(255, 255, 255, .75);
+
+  /* ---------- ink: every pair meets WCAG AA for its use ---------- */
+  --ink-1: #1f2023;                 /* case text, 14.6:1 on case */
+  --ink-2: #55575c;                 /* printed secondary labels, 5.3:1 on case */
+  --ink-on-dark: #ececea;
+  --screen-1: #ecebe7;              /* screen primary, 17:1 */
+  --screen-2: #a3a39e;              /* screen secondary, 8.4:1 */
+  --screen-3: #7c7c77;              /* screen tertiary, 4.8:1 — lowest allowed for text */
+  --screen-line: #242424;           /* rules and frames on screens */
+  --screen-dim: #2e2e2b;            /* inactive graphics (bars, ladder segments) */
+
+  /* ---------- accents: one job each, same on case, keys and screens ---------- */
+  --accent-size: #3d5cff;
+  --accent-size-text: #7b8fff;      /* blue as text on black, 6.3:1 */
+  --accent-canvas-text: #a58bff;    /* violet as text on black */
+  --accent-format: #18c06a;
+  --accent-quality: #ffc61a;
+  --accent-name: #ff4f9a;
+  --accent-trim: #16b5a2;
+  --accent-canvas: #7c4dff;
+  --accent-tool: #4a4e57;           /* sharpen, rotate, metadata: neutral graphite */
+  /* legend colour on a lit key of that accent (contrast-checked) */
+  --on-size: #ffffff;  --on-format: #07130c; --on-quality: #1a1505; --on-name: #1d0710;
+  --on-trim: #04140f;  --on-canvas: #ffffff;  --on-tool: #ffffff;
+
+  /* output side: Run, the meter and the saving readout share one colour */
+  --output: #ff5a1f;
+  --output-hi: #ff8650;
+  --output-lo: #ec4b12;
+  --output-wall: #b33a0b;
+
+  /* status: red is the only alarm; everything else speaks in text and glyphs */
+  --status-alarm: #ff4438;          /* clash, failed, over the size limit */
+  --status-info: var(--screen-1);   /* kept original, skipped */
+  --status-done: var(--screen-1);
+
+  /* ---------- type ---------- */
+  --font-ui: "Host Grotesk", system-ui, sans-serif;        /* printed on the case */
+  --font-data: "Departure Mono", ui-monospace, monospace;  /* text on screens */
+  --font-value: "Unbounded", var(--font-ui);               /* big thin numerals on screens */
+  --font-led: "Doto", var(--font-data);                    /* dot-matrix LED readout */
+
+  --fs-legend: 10px;     /* uppercase printed legends */
+  --fs-key: 10px;      /* key labels */
+  --fs-small: 11.5px;      /* screen data */
+  --fs-body: 13px;       /* case body text */
+  --fs-field: 12.5px;    /* text in fields */
+  --fs-value: 30px;      /* channel screen value */
+  --fs-led: 40px;        /* meter readout */
+  --fs-led-lg: 52px;
+  --tracking-legend: 0.09em;
+
+  /* ---------- space, radius, size ---------- */
+  --sp-1: 2px; --sp-2: 4px; --sp-3: 6px; --sp-4: 8px; --sp-5: 10px; --sp-6: 12px; --sp-7: 14px; --sp-8: 16px; --sp-9: 24px;
+  --r-chip: 3px; --r-screen: 5px; --r-key: 8px; --r-key-lg: 12px; --r-panel: 13px; --r-case: 20px;
+  --key-h: 27px;          /* every standard key */
+  --key-h-lg: 62px;       /* Run, Undo */
+  --target-min: 24px;     /* WCAG 2.2 minimum target */
+  --focus: 2px solid #111;
+  --focus-on-screen: 2px solid var(--screen-1);
+  --focus-offset: 3px;
+
+  /* ---------- elevation ---------- */
+  --elev-key: inset 0 1px 0 #fff, 0 var(--key-depth) 0 var(--surface-key-wall), 0 calc(var(--key-depth) + .5px) 1px rgba(0,0,0,.14), 0 4px var(--key-soft) rgba(0,0,0,.12);
+  --elev-key-pressed: inset 0 1px 2px rgba(0,0,0,.12), 0 0 0 var(--surface-key-wall), 0 1px 1px rgba(0,0,0,.2);
+  --elev-dark: inset 0 1px 0 rgba(255,255,255,.1), 0 var(--key-depth) 0 var(--surface-dark-wall), 0 calc(var(--key-depth) + .5px) 1px rgba(0,0,0,.25), 0 5px calc(var(--key-soft) + 2px) rgba(0,0,0,.2);
+  --elev-case: 0 40px 90px rgba(0,0,0,.6), 0 10px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 0 rgba(0,0,0,.14);
+  --elev-panel: inset 0 0 0 1px var(--seam-dark), 0 1px 0 var(--seam-light);
+  --elev-screen: inset 0 0 0 1px #000, inset 0 2px 6px rgba(255,255,255,.04), 0 1px 0 var(--seam-light), 0 -1px 0 var(--seam-dark);
+
+  /* ---------- motion ---------- */
+  --dur-press: 60ms;
+  --dur-latch: 120ms;
+  --dur-screen: 160ms;
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+
+  /* ---------- material: texture layers, applied per surface with soft-light ---------- */
+  --tex-fine: url(tex/fine.png);        /* 256 px bead-blast grain, shared by every surface */
+  --tex-scratch: url(tex/scratch-l.jpg);/* CC0 ambientCG Metal050C, neutral-grey */
+  --tex-dust: url(tex/dust-l.jpg);      /* CC0 ambientCG SurfaceImperfections015, neutral-grey */
+  --light-top: linear-gradient(180deg, rgba(255,255,255,var(--light-amt)), rgba(255,255,255,0) 32%, rgba(0,0,0,calc(var(--light-amt) * .16)));
+
+  /* ---------- tunable values (the Tune panel writes these) ---------- */
+  --light-amt: 0.54;          /* top light falloff on the case */
+  --tex-fine-size: 304px;    /* grain tile size */
+  --tex-scratch-size: 1920px;
+  --tex-dust-size: 896px;
+  --px-grid: 0.08;            /* small-screen pixel grid strength */
+  --px-pitch: 3px;           /* pixel grid pitch */
+  --glass: 0.09;             /* glass reflection on screens */
+  --bloom: 4.5px;              /* glow radius on screen graphics */
+  --bloom-amt: 100%;          /* glow strength */
+  --led-glow: 14px;          /* LED readout glow radius */
+  --led-rond: 45;             /* Doto dot roundness, 0 square to 100 round */
+  --key-depth: 2.75px;        /* keycap wall height */
+  --key-soft: 8px;           /* keycap shadow softness */
+  --value-weight: 270;       /* Unbounded numerals on screens */
+  --gutter: 12px;            /* space between panels */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-press: 0ms; --dur-latch: 0ms; --dur-screen: 0ms; }
+}

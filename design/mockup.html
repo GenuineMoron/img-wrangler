@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wrangler: final mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500;600;700;800&family=Doto:wght@700;900&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: "Departure Mono"; src: url(https://cdn.jsdelivr.net/gh/rektdeckard/departure-mono@latest/public/assets/DepartureMono-Regular.woff2) format("woff2"); font-display: swap; }
+
+:root {
+  /* chassis */
+  --chassis: #d6d2c9; --chassis-hi: #ebe8e1; --chassis-lo: #b3aea3; --well: #c4bfb5;
+  --legend: #2a2824; --legend-2: #5d5951;
+  /* keys */
+  --cream: #efebe2; --cream-lo: #d9d3c6; --cream-wall: #a49d8f;
+  --rubber: #2c2b29; --rubber-hi: #45433f; --rubber-wall: #141312;
+  --signal: #ff5a1f; --signal-hi: #ff8a52; --signal-wall: #b23a0c;
+  /* screen */
+  --screen: #0b0c0c; --screen-2: #141615; --line: #2a2d2b; --phos: #ece5d5; --phos-2: #9a9486; --phos-3: #5f5b52;
+  --hot: #ff6a2b; --ok: #8fd47f; --warn: #ffb547; --bad: #ff5148;
+  /* module identity: one colour per kind of step, the same everywhere */
+  --trim: #d8432c; --canvas: #ee7f24; --resize: #e8b53a; --compress: #2f4f9e; --rename: #b89569;
+  --ui: "Host Grotesk", system-ui, sans-serif; --mono: "Departure Mono", ui-monospace, monospace; --dot: "Doto", "Departure Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; }
+html { background: #2f2d2a; color: #e9e4d9; font: 15px/1.55 var(--ui); }
+::selection { background: var(--signal); color: #fff; }
+.page { max-width: 1520px; margin: 0 auto; padding: 44px 40px 90px; }
+.page > header h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+.page > header p { max-width: 74ch; color: #c9c3b6; margin-top: 8px; }
+.page h2 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin: 64px 0 6px; }
+.page h2 + p { max-width: 74ch; color: #c9c3b6; margin-bottom: 18px; }
+.stage { width: 100%; aspect-ratio: 1440 / 900; position: relative; margin-top: 28px; }
+.stage .fit { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; transform-origin: 0 0; }
+
+/* ---------- materials ---------- */
+.unit { position: absolute; inset: 0; border-radius: 18px; overflow: hidden;
+  background: var(--chassis) url(assets/chassis.jpg) center / cover;
+  box-shadow: 0 40px 80px rgba(0,0,0,.55), 0 12px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.18);
+  display: grid; grid-template-columns: minmax(0,1fr) 372px; grid-template-rows: 70px minmax(0,1fr) 150px; gap: 0 14px; padding: 0 18px 0 18px; color: var(--legend); }
+.unit::before { /* light falls from above: a top-down shading pass over the whole case */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 26%, rgba(0,0,0,0) 70%, rgba(0,0,0,.10)); }
+.legend { font: 600 10px/1 var(--ui); letter-spacing: .1em; text-transform: uppercase; color: var(--legend); }
+.legend.dim { color: var(--legend-2); font-weight: 500; }
+.screw { position: absolute; width: 11px; height: 11px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f6f4ef, #a19c92 72%, #8a857b);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.22), 0 1px 0 rgba(255,255,255,.7), 0 -1px 1px rgba(0,0,0,.18); }
+.screw::after { content: ""; position: absolute; left: 2px; right: 2px; top: 5px; height: 1.5px; background: rgba(60,56,50,.55); transform: rotate(var(--r, 35deg)); }
+
+/* keycaps */
+.key { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 30px; height: 26px; padding: 0 10px;
+  font: 600 10px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--legend); cursor: pointer; user-select: none;
+  background: linear-gradient(180deg, #f7f4ee, var(--cream) 45%, var(--cream-lo));
+  border-radius: 5px; border: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 2px rgba(0,0,0,.06), 0 2px 0 var(--cream-wall), 0 3px 1px rgba(0,0,0,.18), 0 5px 9px rgba(0,0,0,.16);
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out; }
+.key:active, .key.on { transform: translateY(2px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 2px 4px rgba(0,0,0,.12), 0 0 0 var(--cream-wall), 0 1px 1px rgba(0,0,0,.25); }
+.key.dark { color: #e9e4d8; background: linear-gradient(180deg, var(--rubber-hi), var(--rubber) 55%, #232220);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 2px 0 var(--rubber-wall), 0 3px 1px rgba(0,0,0,.3), 0 6px 10px rgba(0,0,0,.25); }
+.key.dark:active, .key.dark.on { box-shadow: inset 0 2px 4px rgba(0,0,0,.5), 0 0 0 var(--rubber-wall), 0 1px 1px rgba(0,0,0,.35); }
+.key:focus-visible, .knob:focus-visible, .sel:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+.led { width: 7px; height: 7px; border-radius: 50%; flex: none; --c: var(--signal);
+  background: radial-gradient(circle at 40% 35%, #6d5d55, #2c2522); box-shadow: inset 0 1px 1px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.5); }
+.led.on { background: radial-gradient(circle at 38% 32%, #fff 0 12%, var(--c) 46%, color-mix(in oklab, var(--c) 60%, #000) 100%);
+  box-shadow: 0 0 5px 1px color-mix(in oklab, var(--c) 70%, transparent), 0 1px 0 rgba(255,255,255,.5); }
+
+/* knobs: knurled aluminium body, coloured cap, value arc around a recessed well */
+.knob { --s: 40px; --v: .5; --cap: var(--compress); position: relative; width: calc(var(--s) + 16px); height: calc(var(--s) + 16px); border-radius: 50%; cursor: ns-resize; touch-action: none;
+  background: radial-gradient(circle, rgba(0,0,0,.14) 55%, transparent 72%); }
+.knob .arc { position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 225deg, var(--cap) 0 calc(var(--v) * 270deg), rgba(40,36,30,.16) 0 270deg, transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px)); }
+.knob .body { position: absolute; inset: 8px; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, #8f8a81 0 5deg, #cfcbc3 5deg 10deg);
+  box-shadow: 0 3px 3px rgba(0,0,0,.35), 0 7px 12px rgba(0,0,0,.22), inset 0 0 0 1px rgba(0,0,0,.2); }
+.knob .cap { position: absolute; inset: 4px; border-radius: 50%; transform: rotate(calc(-135deg + var(--v) * 270deg));
+  background: radial-gradient(circle at 40% 28%, color-mix(in oklab, var(--cap) 62%, #fff), var(--cap) 52%, color-mix(in oklab, var(--cap) 72%, #000));
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.55), inset 0 -2px 3px rgba(0,0,0,.28); }
+.knob .cap::after { content: ""; position: absolute; left: calc(50% - 1.5px); top: 3px; width: 3px; height: 32%; border-radius: 2px; background: #fbf8f1; box-shadow: 0 0 0 .5px rgba(0,0,0,.25); }
+.knob.big { --s: 70px; }
+.ctl { display: grid; justify-items: center; gap: 6px; }
+.lcd { font: 11px/1 var(--mono); color: var(--phos); background: var(--screen); padding: 4px 6px 3px; border-radius: 3px; min-width: 52px; text-align: center;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
+.lcd b { color: var(--hot); font-weight: 400; }
+
+/* ---------- header plate ---------- */
+.head { grid-column: 1 / -1; display: flex; align-items: center; gap: 22px; position: relative; z-index: 1; }
+.head::after { content: ""; position: absolute; left: -18px; right: -18px; bottom: 7px; height: 2px; background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(255,255,255,.55)); }
+.deck::before { content: ""; position: absolute; left: -22px; right: -22px; top: 6px; height: 2px; background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(255,255,255,.55)); }
+.lights { display: flex; gap: 8px; margin-right: 4px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #d7cfc4; box-shadow: inset 0 1px 1px rgba(0,0,0,.25), 0 1px 0 rgba(255,255,255,.6); }
+.lights i:first-child { background: #e0614f; } .lights i:nth-child(2) { background: #e8b44b; } .lights i:nth-child(3) { background: #7cb66a; }
+.word { display: flex; align-items: baseline; gap: 10px; }
+.word strong { font: 800 23px/1 var(--ui); letter-spacing: -0.035em; color: #1e1c19; text-shadow: 0 1px 0 rgba(255,255,255,.55); }
+.preset { display: flex; align-items: center; gap: 8px; margin-left: 18px; }
+.preset .win { white-space: nowrap; display: flex; align-items: center; gap: 12px; width: 330px; height: 38px; padding: 0 12px; border-radius: 6px; background: var(--screen);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.7), 0 0 0 1px rgba(0,0,0,.35); font: 13px/1 var(--mono); color: var(--phos); }
+.preset .win small { color: var(--phos-3); font-size: 11px; }
+.preset .win span.n { color: var(--hot); }
+.preset .win em { font-style: normal; margin-left: auto; color: var(--phos-2); font-size: 11px; }
+.head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.head .right .legend { margin-right: 6px; }
+
+/* ---------- display ---------- */
+.bezel { position: relative; z-index: 1; min-height: 0; min-width: 0; margin-top: 8px; border-radius: 16px; padding: 9px; background: linear-gradient(180deg, #1d1d1b, #2a2a27);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 -1px 0 rgba(0,0,0,.25), 0 1px 0 rgba(255,255,255,.75), inset 0 1px 0 rgba(255,255,255,.08); }
+.screen { position: relative; height: 100%; border-radius: 9px; background: var(--screen); overflow: hidden; color: var(--phos); font: 11.5px/1.4 var(--mono);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,.9); display: grid; grid-template-rows: 38px minmax(0,1fr) 28px; }
+.screen::after { /* glass: a faint reflection, never over the photos' colours */ content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, rgba(255,255,255,.045), rgba(255,255,255,0) 32%); }
+.bar { display: flex; align-items: center; gap: 18px; padding: 0 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.bar .path { color: var(--phos-2); }
+.bar .path b { color: var(--phos); font-weight: 400; }
+.tabs { display: flex; gap: 2px; margin-left: auto; }
+.tab { padding: 4px 9px; border-radius: 3px; color: var(--phos-2); cursor: pointer; }
+.tab.on { background: #23261f; color: var(--phos); box-shadow: inset 0 0 0 1px #3b4036; }
+.tab i { font-style: normal; color: var(--phos); margin-left: 6px; }
+.tab.w i { color: var(--warn); } .tab.b i { color: var(--bad); }
+.panes { display: grid; grid-template-columns: minmax(0,1fr) 404px; gap: 16px; padding: 18px 14px 10px; min-height: 0; }
+.pane { position: relative; border: 1px solid var(--line); border-radius: 5px; min-height: 0; min-width: 0; }
+.pane > .t { position: absolute; top: -8px; left: 10px; padding: 0 6px; background: var(--screen); color: var(--phos); font-size: 11px; }
+.pane > .t s { text-decoration: none; color: var(--phos-3); }
+.pane > .tr { position: absolute; top: -8px; right: 10px; padding: 0 6px; background: var(--screen); color: var(--phos-2); font-size: 11px; }
+
+.sheet { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px 14px; padding: 18px 14px; overflow: hidden; height: 100%; align-content: start; }
+.tile { position: relative; cursor: pointer; }
+.tile .ph { aspect-ratio: 1; border-radius: 2px; overflow: hidden; display: grid; place-items: center; background: var(--bg, #f4f3f0); }
+.tile .ph img { width: 86%; height: 86%; object-fit: cover; }
+.tile.picked .ph { outline: 2px solid var(--hot); outline-offset: 2px; }
+.tile .nm { margin-top: 6px; font-size: 10.5px; color: var(--phos); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .sz { font-size: 10.5px; color: var(--phos-3); display: flex; justify-content: space-between; }
+.tile .sz b { color: var(--hot); font-weight: 400; }
+.tile .pip { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+.tile.kept .pip { background: var(--warn); } .tile.clash .pip { background: var(--bad); }
+.tile.kept .sz b { color: var(--warn); } .tile.clash .nm { color: var(--bad); }
+
+.monitor { padding: 18px 16px 12px; display: grid; grid-template-rows: auto 1fr; gap: 12px; }
+.compare { --split: 50%; position: relative; height: 352px; aspect-ratio: 1; justify-self: center; border-radius: 2px; overflow: hidden; cursor: ew-resize; touch-action: none; user-select: none; }
+.compare .side { position: absolute; inset: 0; }
+.compare .before img { width: 100%; height: 100%; object-fit: cover; }
+.compare .after { clip-path: inset(0 0 0 var(--split)); background: #d9bca2; overflow: hidden; }
+.compare .after img { position: absolute; left: -6.5%; top: -9%; width: 113%; height: 113%; object-fit: cover; }
+.compare .trim { position: absolute; left: 36%; top: 8%; width: 28%; height: 84%; border: 1.5px dashed var(--trim); }
+.compare .frame85 { position: absolute; inset: 7.5%; border: 1.5px dashed var(--canvas); }
+.compare .handle { position: absolute; top: 0; bottom: 0; left: var(--split); width: 2px; margin-left: -1px; background: var(--phos); box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.compare .handle::after { content: ""; position: absolute; top: 50%; left: 50%; width: 20px; height: 36px; margin: -18px 0 0 -10px; border-radius: 4px;
+  background: repeating-linear-gradient(90deg, #d8d2c4 0 2px, #9c968a 2px 4px); box-shadow: 0 2px 6px rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.3); }
+.compare .lab { position: absolute; bottom: 8px; padding: 2px 6px; background: rgba(11,12,12,.82); color: var(--phos); font-size: 10.5px; border-radius: 2px; }
+.compare .lab.l { left: 8px; } .compare .lab.r { right: 8px; }
+.facts { display: grid; grid-template-columns: 70px minmax(0,1fr) auto auto; gap: 3px 12px; font-size: 11px; align-content: start; font-variant-numeric: tabular-nums; }
+.facts .k { color: var(--phos-3); }
+.facts .r { text-align: right; }
+.facts .hot { color: var(--hot); }
+.facts .ok { color: var(--ok); }
+.facts hr { grid-column: 1 / -1; border: 0; border-top: 1px dashed var(--line); margin: 4px 0; }
+.hints { display: flex; gap: 18px; align-items: center; padding: 0 14px; border-top: 1px solid var(--line); color: var(--phos-3); font-size: 10.5px; }
+.hints kbd { font: inherit; color: var(--phos); background: #1c1e1c; border-radius: 2px; padding: 1px 4px; margin-right: 5px; }
+.hints .pulse { margin-left: auto; color: var(--ok); }
+
+/* ---------- module rack ---------- */
+.rack { position: relative; z-index: 1; min-width: 0; min-height: 0; margin-top: 8px; display: grid; grid-auto-rows: min-content; gap: 8px; align-content: start; }
+.module { position: relative; border-radius: 9px; padding: 9px 12px 11px;
+  background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.04) 40%, rgba(0,0,0,.04)), var(--chassis);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 0 rgba(0,0,0,.14), 0 1px 0 rgba(255,255,255,.4), 0 3px 6px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+.module::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: url(assets/grain.png); opacity: .07; pointer-events: none; }
+.mhead { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.mhead .tag { font: 700 10px/1 var(--ui); letter-spacing: .1em; color: #fff; background: var(--c); padding: 4px 6px 3px; border-radius: 2px; text-transform: uppercase;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.2); }
+.mhead .sum { margin-left: auto; font: 500 11.5px/1 var(--ui); color: var(--legend-2); }
+.mhead .grip { width: 10px; height: 14px; background: radial-gradient(circle, rgba(60,56,50,.55) 1px, transparent 1.5px) 0 0 / 5px 5px; margin-left: 2px; cursor: grab; }
+.mhead .en { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 7px; min-width: 0; }
+.mbody { display: flex; align-items: flex-start; gap: 14px; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.chips .key { height: 22px; padding: 0 7px; font-size: 9.5px; }
+.swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; vertical-align: -3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 1px 0 rgba(255,255,255,.6); }
+.col { display: grid; gap: 7px; align-content: start; }
+.pad { display: grid; grid-template-columns: repeat(3, 13px); gap: 3px; padding: 4px; border-radius: 4px; background: var(--well); box-shadow: inset 0 1px 2px rgba(0,0,0,.25), 0 1px 0 rgba(255,255,255,.6); }
+.pad i { width: 13px; height: 13px; border-radius: 2px; background: linear-gradient(#f5f2ec, #ddd8cd); box-shadow: 0 1px 0 #a49d8f; }
+.pad i.on { background: radial-gradient(circle at 40% 35%, #ffb489, var(--canvas) 60%); box-shadow: 0 0 4px var(--canvas); }
+.field { font: 12px/1 var(--mono); color: var(--phos); background: var(--screen); border-radius: 4px; padding: 7px 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.6); }
+.field .tok { color: var(--rename); color: #e3c58f; }
+.eg { font: 10.5px/1.3 var(--mono); color: var(--legend-2); }
+.eg b { color: var(--legend); font-weight: 400; }
+.flow { height: 0; position: relative; }
+.empty-slot { border-radius: 9px; height: 40px; display: grid; place-items: center; color: var(--legend-2);
+  background: repeating-linear-gradient(135deg, rgba(0,0,0,.035) 0 6px, transparent 6px 12px); box-shadow: inset 0 1px 3px rgba(0,0,0,.22), 0 1px 0 rgba(255,255,255,.55); }
+
+/* selector: a rotary switch with positions printed round it */
+.sel { position: relative; width: 120px; height: 92px; }
+.sel .knob { position: absolute; left: 50%; top: 50%; margin: -28px 0 0 -28px; --s: 40px; cursor: pointer; }
+.sel .knob .arc { display: none; }
+.sel span { position: absolute; font: 600 9px/1 var(--ui); letter-spacing: .08em; color: var(--legend-2); white-space: nowrap; }
+.sel span.on { color: var(--legend); }
+.sel span.on::before { content: ""; position: absolute; left: -9px; top: 1px; width: 5px; height: 5px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 4px var(--signal); }
+
+/* ---------- transport ---------- */
+.deck { grid-column: 1 / -1; position: relative; z-index: 1; display: flex; align-items: center; gap: 22px; padding: 0 4px; }
+.grille { width: 158px; height: 104px; border-radius: 10px; display: grid; place-items: end start; padding: 8px 10px;
+  background: radial-gradient(circle, #1b1a18 1.7px, transparent 2.1px) 3px 3px / 8px 8px, linear-gradient(#c9c4ba, #bdb8ad);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.28), 0 1px 0 rgba(255,255,255,.7); }
+.grille .legend { background: var(--chassis); padding: 3px 5px; border-radius: 2px; }
+.addkeys { display: grid; gap: 10px; }
+.addkeys .key { width: 104px; height: 34px; }
+.meter { flex: 1; min-width: 0; height: 112px; border-radius: 10px; background: var(--screen); position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; gap: 18px; padding: 14px 18px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.75), 0 0 0 1px rgba(0,0,0,.3); color: var(--phos); font: 11px/1 var(--mono); }
+.meter::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px), linear-gradient(115deg, rgba(255,255,255,.05), transparent 35%); }
+.ladders { display: grid; gap: 10px; align-content: center; }
+.ladder { display: grid; grid-template-columns: 30px minmax(0,1fr) 70px; align-items: center; gap: 10px; }
+.ladder .k { color: var(--phos-2); }
+.ladder .v { text-align: right; font-variant-numeric: tabular-nums; }
+.segs { display: grid; grid-template-columns: repeat(32, 1fr); gap: 3px; height: 12px; }
+.segs i { border-radius: 1px; background: #1e211f; }
+.segs.in i.on { background: #e9e2d0; box-shadow: 0 0 4px rgba(233,226,208,.45); }
+.segs.hot i.on { background: var(--hot); box-shadow: 0 0 5px rgba(255,106,43,.7); }
+.counter { color: var(--phos-3); margin-top: 2px; }
+.counter b { color: var(--phos); font-weight: 400; }
+.saved { text-align: right; display: grid; align-content: center; justify-items: end; gap: 4px; }
+.digits { position: relative; font: 900 56px/0.9 var(--dot); color: var(--hot); text-shadow: 0 0 10px rgba(255,106,43,.55), 0 0 2px rgba(255,140,80,.9); letter-spacing: 0.02em; }
+.digits .ghost { position: absolute; right: 0; top: 0; color: rgba(255,106,43,.07); text-shadow: none; }
+.saved small { color: var(--phos-2); font-size: 11px; }
+.outsel { display: grid; justify-items: center; gap: 4px; }
+.outsel small { font: 500 10px/1.25 var(--ui); color: var(--legend-2); text-align: center; max-width: 140px; }
+.undo { display: grid; justify-items: center; gap: 8px; }
+.undo .key { width: 62px; height: 40px; }
+.run { display: grid; justify-items: center; gap: 8px; }
+.run .status { display: flex; align-items: center; gap: 6px; }
+.runkey { width: 132px; height: 80px; border-radius: 10px; cursor: pointer; display: grid; place-items: center; gap: 2px; align-content: center; color: #fff;
+  font: 800 17px/1 var(--ui); letter-spacing: .06em; text-transform: uppercase; border: 0;
+  background: linear-gradient(180deg, var(--signal-hi), var(--signal) 50%, #ea4c12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -3px 4px rgba(0,0,0,.12), 0 4px 0 var(--signal-wall), 0 5px 2px rgba(0,0,0,.25), 0 12px 22px rgba(0,0,0,.3);
+  transition: transform 80ms ease-out, box-shadow 80ms ease-out; }
+.runkey small { font: 600 10px/1 var(--ui); letter-spacing: .08em; opacity: .9; }
+.runkey:active { transform: translateY(4px); box-shadow: inset 0 2px 5px rgba(0,0,0,.25), 0 0 0 var(--signal-wall), 0 1px 2px rgba(0,0,0,.3); }
+
+/* ---------- quick action ---------- */
+.qa-row { display: flex; gap: 48px; align-items: flex-start; flex-wrap: wrap; margin-top: 24px; }
+.menu { width: 300px; background: rgba(244,242,238,.97); color: #1d1d1f; border-radius: 9px; padding: 5px; font: 13px/1 -apple-system, "Segoe UI", var(--ui);
+  box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 12px 32px rgba(0,0,0,.45); position: relative; }
+.menu div { padding: 6px 10px; border-radius: 5px; display: flex; justify-content: space-between; }
+.menu hr { border: 0; border-top: 1px solid rgba(0,0,0,.12); margin: 4px 8px; }
+.menu .hi { background: #2f6fea; color: #fff; }
+.menu .dim { color: #8a8a8e; }
+.submenu { position: absolute; left: 288px; top: 106px; width: 238px; }
+.qa { position: relative; width: 300px; height: 452px; border-radius: 16px; padding: 18px; display: grid; grid-template-rows: auto 1fr auto; gap: 16px; color: var(--legend);
+  background: var(--chassis) url(assets/chassis.jpg) 30% 60% / 900px; box-shadow: 0 30px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.18); }
+.qa .top { display: flex; justify-content: space-between; align-items: center; }
+.qa .oled { border-radius: 8px; background: var(--screen); padding: 14px; display: grid; gap: 10px; color: var(--phos); font: 11px/1.3 var(--mono);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.7); }
+.qa .oled .digits { font-size: 56px; text-align: left; }
+.qa .oled .digits .ghost { left: 0; right: auto; }
+.qa .oled .segs { height: 10px; }
+.qa .oled .row { display: flex; justify-content: space-between; color: var(--phos-2); }
+.qa .oled .row b { color: var(--phos); font-weight: 400; }
+.qa .keys { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.qa .keys .key { height: 44px; }
+.qa .grille { width: auto; height: 58px; grid-column: 1 / -1; }
+
+/* ---------- notes ---------- */
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 48px; margin-top: 10px; }
+.notes p { color: #cfc9bc; }
+.notes p b { color: #fff; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Wrangler: the main window and the right-click quick action</h1>
+    <p>Hardware outside, terminal inside. The case holds every control as something you can turn or press; the black display holds your photos and the facts about them. Knobs turn (drag up or down, or focus and use the arrow keys), keys press, and the before/after split drags. Photos are AI-generated samples.</p>
+  </header>
+
+  <div class="stage" id="main"><div class="fit">
+    <div class="unit">
+      <span class="screw" style="left:9px;top:9px"></span><span class="screw" style="right:9px;top:9px;--r:-20deg"></span>
+      <span class="screw" style="left:9px;bottom:9px;--r:70deg"></span><span class="screw" style="right:9px;bottom:9px;--r:10deg"></span>
+
+      <!-- header plate -->
+      <div class="head">
+        <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="word"><strong>WRANGLER</strong><span class="legend dim">Batch image unit · W-1</span></div>
+        <div class="preset">
+          <button class="key" aria-label="Previous recipe" data-preset="-1">◀</button>
+          <div class="win" aria-live="polite"><small>RECIPE</small><span class="n" id="pn">03</span><span id="pname">SHOPIFY PRODUCT</span><em>4 STEPS</em></div>
+          <button class="key" aria-label="Next recipe" data-preset="1">▶</button>
+          <button class="key">Load</button><button class="key">Save</button>
+        </div>
+        <div class="right">
+          <span class="legend dim">Command</span><button class="key dark">⌘ K</button><button class="key dark" aria-label="All keys">?</button>
+        </div>
+      </div>
+
+      <!-- display -->
+      <div class="bezel"><div class="screen">
+        <div class="bar">
+          <span class="path">~/Clients/Acme/<b>spring-catalogue</b> &nbsp;1.82 GB</span>
+          <div class="tabs" role="tablist" aria-label="Show">
+            <span class="tab on" role="tab" aria-selected="true">ALL<i>1284</i></span>
+            <span class="tab" role="tab">READY<i>1242</i></span>
+            <span class="tab w" role="tab">KEPT<i>40</i></span>
+            <span class="tab b" role="tab">CLASH<i>2</i></span>
+            <span class="tab" role="tab">FAILED<i>0</i></span>
+          </div>
+        </div>
+        <div class="panes">
+          <div class="pane">
+            <span class="t">SHEET <s>· after · attention first</s></span>
+            <span class="tr">GRID · LIST</span>
+            <div class="sheet" id="sheet"></div>
+          </div>
+          <div class="pane monitor">
+            <span class="t">MONITOR <s>· spring-24-003.webp</s></span>
+            <span class="tr">FIT · 1:1 · 2:1</span>
+            <div class="compare" id="compare" role="slider" tabindex="0" aria-label="Before and after split" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+              <div class="side before"><img data-src="p3" alt="Original: amber dropper bottle on beige paper"><span class="trim" aria-hidden="true"></span></div>
+              <div class="side after"><img data-src="p3" alt="Result: the bottle trimmed and centred on a square canvas"><span class="frame85" aria-hidden="true"></span></div>
+              <span class="handle" aria-hidden="true"></span>
+              <span class="lab l">BEFORE</span><span class="lab r">AFTER</span>
+            </div>
+            <div class="facts">
+              <span class="k">BEFORE</span><span>DSC_4473.JPG</span><span class="r">6000×4000</span><span class="r">6.80 MB</span>
+              <span class="k">AFTER</span><span>spring-24-003.webp</span><span class="r">2048×2048</span><span class="r hot">288 KB</span>
+              <hr>
+              <span class="k">LOOK</span><span>score 76.4, aim 75</span><span class="r ok">MET</span><span class="r">WEBP Q78</span>
+              <span class="k">BACKDROP</span><span>#D9BCA2 sampled</span><span class="r"></span><span class="r"></span>
+              <span class="k">SAVED</span><span>−95.8%</span><span class="r"></span><span class="r hot">−6.51 MB</span>
+            </div>
+          </div>
+        </div>
+        <div class="hints">
+          <span><kbd>SPACE</kbd>monitor</span><span><kbd>← →</kbd>next</span><span><kbd>B</kbd>before/after</span><span><kbd>1–4</kbd>modules</span><span><kbd>/</kbd>filter</span><span><kbd>⌘↵</kbd>run</span><span><kbd>⌘Z</kbd>undo</span>
+          <span class="pulse">● previews live · 8 cores</span>
+        </div>
+      </div></div>
+
+      <!-- module rack: the recipe, top to bottom in the order it runs -->
+      <aside class="rack" aria-label="Recipe steps">
+        <section class="module" style="--c: var(--trim)">
+          <div class="mhead"><button class="key en on" aria-pressed="true"><span class="led on" style="--c:var(--trim)"></span></button><span class="tag">Trim</span><span class="sum">4% · tight</span><span class="grip" aria-hidden="true"></span></div>
+          <div class="mbody">
+            <div class="ctl"><span class="legend">Tolerance</span><div class="knob" style="--cap:var(--trim);--v:.2" tabindex="0" role="slider" aria-label="Trim tolerance" data-min="0" data-max="20" data-unit="%" data-dec="0"><span class="arc"></span><span class="body"><span class="cap"></span></span></div><span class="lcd">4%</span></div>
+            <div class="ctl"><span class="legend">Margin</span><div class="knob" style="--cap:var(--trim);--v:0" tabindex="0" role="slider" aria-label="Trim margin" data-min="0" data-max="200" data-unit=" px" data-dec="0"><span class="arc"></span><span class="body"><span class="cap"></span></span></div><span class="lcd">0 px</span></div>
+            <div class="col" style="margin-left:auto"><span class="legend">Backdrop seen</span><span class="eg"><span class="swatch" style="background:#d9bca2"></span> sampled per photo</span><span class="eg">clean edges <b>1,231</b><br>white fallback <b>53</b></span></div>
+          </div>
+        </section>
+
+        <section class="module" style="--c: var(--canvas)">
+          <div class="mhead"><button class="key en on" aria-pressed="true"><span class="led on" style="--c:var(--canvas)"></span></button><span class="tag">Canvas</span><span class="sum">2048² · fills 85%</span><span class="grip" aria-hidden="true"></span></div>
+          <div class="mbody">
+            <div class="col">
+              <span class="legend">Size</span>
+              <span class="lcd" style="font-size:13px;padding:6px 8px">2048 × 2048</span>
+              <div class="chips"><button class="key on">1:1</button><button class="key">4:5</button><button class="key">3:2</button><button class="key">Free</button></div>
+            </div>
+            <div class="ctl"><span class="legend">Fill</span><div class="knob" style="--cap:var(--canvas);--v:.7" tabindex="0" role="slider" aria-label="Fill" data-min="50" data-max="100" data-unit="%" data-dec="0"><span class="arc"></span><span class="body"><span class="cap"></span></span></div><span class="lcd">85%</span></div>
+            <div class="col"><span class="legend">Anchor</span><div class="pad" aria-label="Anchor: centre"><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+          </div>
+          <div class="col" style="margin-top:10px"><span class="legend">Backdrop</span>
+            <div class="chips"><button class="key on">Auto</button><button class="key"><span class="swatch" style="background:#fff"></span>&nbsp; White</button><button class="key">Clear</button><button class="key">Pick ◉</button></div></div>
+        </section>
+
+        <section class="module" style="--c: var(--compress)">
+          <div class="mhead"><button class="key en on" aria-pressed="true"><span class="led on" style="--c:#5b8cff"></span></button><span class="tag">Compress</span><span class="sum">WebP · balanced</span><span class="grip" aria-hidden="true"></span></div>
+          <div class="mbody">
+            <div class="sel" role="radiogroup" aria-label="Format">
+              <span style="left:2px;top:4px">SAME</span><span style="left:48px;top:0">JPEG</span><span class="on" style="right:2px;top:4px">WEBP</span>
+              <span style="left:0;bottom:4px">PNG</span><span style="right:2px;bottom:4px">AVIF</span>
+              <div class="knob" style="--cap:#3a3936;--v:.65"><span class="arc"></span><span class="body"><span class="cap"></span></span></div>
+            </div>
+            <div class="ctl"><span class="legend">Look</span><div class="knob" style="--cap:var(--compress);--v:.5" tabindex="0" role="slider" aria-label="Look" data-steps="Small,Balanced,High,Pristine,Lossless"><span class="arc"></span><span class="body"><span class="cap"></span></span></div><span class="lcd">Balanced</span></div>
+            <div class="col">
+              <span class="legend">Max size</span><span class="lcd">≤ 400 KB</span>
+              <button class="key on" style="justify-content:start;gap:6px;display:inline-flex"><span class="led on" style="--c:#8fd47f"></span>Never bigger</button>
+              <button class="key on" style="justify-content:start;gap:6px;display:inline-flex"><span class="led on" style="--c:#8fd47f"></span>Strip GPS</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="module" style="--c: var(--rename)">
+          <div class="mhead"><button class="key en on" aria-pressed="true"><span class="led on" style="--c:#e8c48c"></span></button><span class="tag">Rename</span><span class="sum">2 clashes numbered</span><span class="grip" aria-hidden="true"></span></div>
+          <div class="field">spring-24-<span class="tok">{n:000}</span></div>
+          <div class="mbody" style="margin-top:8px;align-items:center">
+            <div class="chips"><button class="key">Name</button><button class="key">№</button><button class="key">Date</button><button class="key">W×H</button><button class="key">SKU</button></div>
+            <span class="eg" style="margin-left:auto">slug ▾</span>
+          </div>
+          <div class="eg" style="margin-top:7px">DSC_4471.JPG → <b>spring-24-001.webp</b></div>
+        </section>
+
+        <div class="empty-slot"><span class="legend dim">+ Add step &nbsp;·&nbsp; resize · sharpen · rotate</span></div>
+      </aside>
+
+      <!-- transport deck -->
+      <div class="deck">
+        <div class="grille" title="Drop images or folders anywhere"><span class="legend">Drop in</span></div>
+        <div class="addkeys"><button class="key dark">+ Files</button><button class="key dark">+ Folder</button></div>
+        <div class="meter" aria-label="Batch size before and after">
+          <div class="ladders">
+            <div class="ladder"><span class="k">IN</span><div class="segs in" id="segIn"></div><span class="v">1.82 GB</span></div>
+            <div class="ladder"><span class="k">OUT</span><div class="segs hot" id="segOut"></div><span class="v">≈ 214 MB</span></div>
+            <div class="counter">FILES <b>0000/1284</b> &nbsp;·&nbsp; KEEP ORIGINAL <b>40</b> &nbsp;·&nbsp; CLASH <b>2</b> &nbsp;·&nbsp; EST. <b>00:41</b></div>
+          </div>
+          <div class="saved"><div class="digits"><span class="ghost" aria-hidden="true">−88%</span>−88%</div><small>saves ≈ 1.61 GB</small></div>
+        </div>
+        <div class="outsel">
+          <div class="sel" style="width:140px;height:96px" role="radiogroup" aria-label="Output">
+            <span class="on" style="left:6px;top:6px">REPLACE</span><span style="right:0;top:6px">BESIDE</span>
+            <span style="left:0;bottom:4px">FOLDER</span><span style="right:0;bottom:4px">SUBFOLDER</span>
+            <div class="knob" style="--cap:#2c2b29;--v:.12"><span class="arc"></span><span class="body"><span class="cap"></span></span></div>
+          </div>
+          <small>Originals kept 30 days in the undo store</small>
+        </div>
+        <div class="undo"><span class="led"></span><button class="key dark">Undo</button><span class="legend dim">last run</span></div>
+        <div class="run"><div class="status"><span class="led on" style="--c:#8fd47f"></span><span class="legend">Ready</span></div><button class="runkey">Run<small>1,284 · ⌘↵</small></button></div>
+      </div>
+    </div>
+  </div></div>
+
+  <h2>From the file manager</h2>
+  <p>Select images or folders in Finder, Explorer, Dolphin or Nautilus, right-click, and pick a pinned recipe. A small unit opens, runs the batch and reports what it saved, with undo one press away. "Open in Wrangler…" loads the same files into the main window instead.</p>
+  <div class="qa-row">
+    <div style="position:relative;width:540px;height:300px">
+      <div class="menu">
+        <div>Open</div><div>Open With</div><hr><div>Get Info</div><div>Rename…</div><div>Compress</div><hr>
+        <div class="hi">Wrangler <span>▸</span></div><div>Quick Look</div><hr><div class="dim">Copy</div><div class="dim">Share…</div>
+      </div>
+      <div class="menu submenu">
+        <div>Web ready</div><div class="hi">Shopify product</div><div>Amazon main image</div><div>Just compress</div><hr><div>Open in Wrangler…</div><div class="dim">Edit pinned recipes…</div>
+      </div>
+    </div>
+    <div class="qa" aria-label="Quick action unit">
+      <div class="top"><span class="legend">Wrangler · quick</span><span class="led on" style="--c:#8fd47f"></span></div>
+      <div class="oled">
+        <div class="row"><span>SHOPIFY PRODUCT</span><b>48/48</b></div>
+        <div class="segs hot" id="segQa" style="grid-template-columns:repeat(24,1fr)"></div>
+        <div class="digits"><span class="ghost" aria-hidden="true">−88%</span>−86%</div>
+        <div class="row"><span>41.2 MB → 5.8 MB</span><b>DONE 00:03</b></div>
+        <div class="row"><span>2 kept original</span><span>0 failed</span></div>
+      </div>
+      <div class="keys"><button class="key dark">Undo</button><button class="key">Open</button><div class="grille" style="height:52px"><span class="legend">Closes in 6 s</span></div></div>
+    </div>
+  </div>
+
+  <h2>Why it is laid out like this</h2>
+  <div class="notes">
+    <p><b>The display shows the whole plan before anything is written.</b> The sheet shows every photo as it will come out, with its new name and size; the monitor shows one photo before and after, with the trim box in red and the canvas edge in orange (the same colours as their modules).</p>
+    <p><b>The rack is the recipe, top to bottom in the order it runs.</b> One colour per kind of step, on its tag and knob caps. The lit key turns a step off without losing its settings. Drag the grip to reorder; the empty slot adds a step.</p>
+    <p><b>Plain words first, numbers underneath.</b> "Look: Balanced" aims at a measured visual score, so it means the same thing for every photo and format. The exact encoder setting is still shown in the monitor for anyone who wants it.</p>
+    <p><b>Attention comes to you.</b> The tabs count files that need a decision (kept original because the new one was bigger, name clashes, failures) and the sheet sorts them first, so a 1,284-file batch can be checked in seconds.</p>
+    <p><b>The meter is the receipt.</b> IN and OUT ladders and the dot-matrix saving are estimates before the run, count live during it, and stay as the receipt afterwards, next to Undo.</p>
+    <p><b>Everything works from the keyboard.</b> The hint strip lists the keys for what is on screen; ⌘K finds any action. Knobs take arrows, Shift for fine steps, and a double-click to type an exact value.</p>
+  </div>
+</div>
+
+<script>
+  const pics = {};
+  for (let i = 1; i <= 8; i++) pics['p' + i] = `mock-assets/p${i}.jpg`;
+  document.querySelectorAll('img[data-src]').forEach(im => im.src = pics[im.dataset.src]);
+
+  // the sheet: the batch as it will come out (canvas applied, backdrop sampled per photo)
+  const bg = ['#fdfdfd', '#c9c9c8', '#d7bba0', '#fefefe', '#e9e5e0', '#c1d7e5', '#fefefe', '#fefefe'];
+  const rows = [
+    ['spring-24-001.webp', '4.2M → 312K', '−93%'], ['spring-24-002.webp', '3.9M → 401K', '−90%'], ['spring-24-003.webp', '6.8M → 288K', '−96%'],
+    ['spring-24-004.webp', '2.1M → 355K', '−83%'], ['spring-24-005.webp', '5.5M → 420K', '−92%'], ['spring-24-006.webp', '38M → 510K', '−99%'],
+    ['bottle-steel.jpg', '1.4M kept', 'KEEP', 'kept'], ['spring-24-008.webp', '3.3M → 298K', '−91%'], ['spring-24-009.webp', '2.7M → 264K', '−90%'],
+    ['spring-24-010.webp', 'clash → -2', '−93%', 'clash'], ['spring-24-011.webp', '4.4M → 330K', '−93%'], ['spring-24-012.webp', '3.1M → 290K', '−91%'],
+    ['spring-24-013.webp', '2.9M → 270K', '−91%'], ['spring-24-014.webp', '5.0M → 377K', '−92%'], ['spring-24-015.webp', '3.6M → 310K', '−91%'], ['spring-24-016.webp', '4.0M → 351K', '−91%']
+  ];
+  document.getElementById('sheet').innerHTML = rows.map((r, i) =>
+    `<div class="tile ${r[3] || ''} ${i === 2 ? 'picked' : ''}"><div class="ph" style="--bg:${bg[i % 8]}"><img src="${pics['p' + ((i % 8) + 1)]}" alt=""></div><span class="pip"></span><div class="nm">${r[0]}</div><div class="sz"><span>${r[1]}</span><b>${r[2]}</b></div></div>`).join('');
+
+  // LED ladders
+  const ladder = (id, n, lit) => document.getElementById(id).innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < lit ? 'on' : ''}"></i>`).join('');
+  ladder('segIn', 32, 32); ladder('segOut', 32, 4); ladder('segQa', 24, 24);
+
+  // knobs: drag up/down, arrows, shift for fine
+  document.querySelectorAll('.knob[role=slider]').forEach(k => {
+    const lcd = k.parentElement.querySelector('.lcd');
+    const steps = k.dataset.steps ? k.dataset.steps.split(',') : null;
+    const min = +k.dataset.min || 0, max = +k.dataset.max || 100, unit = k.dataset.unit || '';
+    const show = v => {
+      k.style.setProperty('--v', v);
+      const text = steps ? steps[Math.round(v * (steps.length - 1))] : Math.round(min + v * (max - min)) + unit;
+      if (lcd) lcd.textContent = text;
+      k.setAttribute('aria-valuetext', text);
+    };
+    let v = parseFloat(getComputedStyle(k).getPropertyValue('--v')) || 0;
+    if (steps) v = Math.round(v * (steps.length - 1)) / (steps.length - 1);
+    const set = nv => { v = Math.max(0, Math.min(1, nv)); if (steps) v = Math.round(v * (steps.length - 1)) / (steps.length - 1); show(v); };
+    k.addEventListener('pointerdown', e => {
+      k.setPointerCapture(e.pointerId); const y0 = e.clientY, v0 = v;
+      const move = ev => set(v0 + (y0 - ev.clientY) / (ev.shiftKey ? 600 : 150));
+      const up = () => { k.removeEventListener('pointermove', move); k.removeEventListener('pointerup', up); };
+      k.addEventListener('pointermove', move); k.addEventListener('pointerup', up);
+    });
+    k.addEventListener('keydown', e => {
+      const step = steps ? 1 / (steps.length - 1) : (e.shiftKey ? 0.005 : 0.02);
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { set(v + step); e.preventDefault(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { set(v - step); e.preventDefault(); }
+    });
+  });
+
+  // latching keys
+  document.querySelectorAll('.chips').forEach(group => group.addEventListener('click', e => {
+    const key = e.target.closest('.key'); if (!key) return;
+    group.querySelectorAll('.key').forEach(k => k.classList.toggle('on', k === key));
+  }));
+  document.querySelectorAll('.key.en').forEach(key => key.addEventListener('click', () => {
+    const on = key.classList.toggle('on'); key.setAttribute('aria-pressed', on); key.querySelector('.led').classList.toggle('on', on);
+    key.closest('.module').style.opacity = on ? 1 : .62;
+  }));
+
+  // recipe display
+  const names = ['WEB READY', 'JUST COMPRESS', 'SHOPIFY PRODUCT', 'AMAZON MAIN IMAGE', 'EMAIL SAFE', 'SOCIAL SQUARE'];
+  let p = 2;
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    p = (p + +b.dataset.preset + names.length) % names.length;
+    document.getElementById('pn').textContent = String(p + 1).padStart(2, '0');
+    document.getElementById('pname').textContent = names[p];
+  }));
+
+  // before/after split
+  const cmp = document.getElementById('compare');
+  const split = x => { const r = cmp.getBoundingClientRect(); const pct = Math.max(0, Math.min(100, (x - r.left) / r.width * 100)); cmp.style.setProperty('--split', pct + '%'); cmp.setAttribute('aria-valuenow', Math.round(pct)); };
+  cmp.addEventListener('pointerdown', e => { cmp.setPointerCapture(e.pointerId); split(e.clientX); const m = ev => split(ev.clientX); cmp.addEventListener('pointermove', m); cmp.addEventListener('pointerup', () => cmp.removeEventListener('pointermove', m), { once: true }); });
+  cmp.addEventListener('keydown', e => { const now = +cmp.getAttribute('aria-valuenow'); const d = e.key === 'ArrowLeft' ? -2 : e.key === 'ArrowRight' ? 2 : 0; if (d) { const r = cmp.getBoundingClientRect(); split(r.left + r.width * (now + d) / 100); e.preventDefault(); } });
+
+  // scale the 1440x900 window to the page
+  const fit = () => document.querySelectorAll('.stage').forEach(s => s.querySelector('.fit').style.transform = `scale(${s.clientWidth / 1440})`);
+  addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>

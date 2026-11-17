@@ -1,0 +1,12 @@
+name = "Social card"
+description = "1200 × 628 link previews, cropped from the centre, JPEG."
+[size]
+shape = "1200x628"
+fit = "crop"
+upscale = true
+[format]
+id = "jpg"
+[quality]
+look = "high"
+[destination]
+mode = "subfolder"

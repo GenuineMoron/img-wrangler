@@ -1,0 +1,16 @@
+name = "Shopify product"
+description = "Trimmed, centred on a 2048 px square with the photo's own backdrop, WebP."
+[size]
+long_side = 2048
+shape = "1:1"
+fit = "pad"
+upscale = true
+trim = { tolerance = 4 }
+pad = { backdrop = "auto", fill = 85 }
+[format]
+id = "webp"
+[quality]
+look = "high"
+max_kb = 400
+[destination]
+mode = "subfolder"
