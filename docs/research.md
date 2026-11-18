@@ -1,7 +1,7 @@
 # Research notes (November 2026)
 
-Condensed from the research done before the rewrite. Sources are linked in the original reports
-figures were checked against GitHub and crates.io where possible.
+Condensed from the research done before the rewrite. Figures were checked against GitHub and
+crates.io where possible.
 
 ## Stack
 - **UI:** Tauri 2 (2.12) with Svelte 5. Native Rust kits were ruled out for now: Iced and egui
