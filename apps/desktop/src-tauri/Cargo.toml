@@ -13,7 +13,8 @@ repository.workspace = true
 name = "wrangler_desktop"
 
 [[bin]]
-name = "wrangler"
+# Not "wrangler": that is Cloudflare's CLI, and on Linux both would want /usr/bin/wrangler.
+name = "img-wrangler-app"
 path = "src/main.rs"
 
 [build-dependencies]

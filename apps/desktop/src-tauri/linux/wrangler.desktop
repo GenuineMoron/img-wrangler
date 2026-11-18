@@ -1,0 +1,12 @@
+[Desktop Entry]
+Categories={{categories}}
+{{#if comment}}
+Comment={{comment}}
+{{/if}}
+Exec={{exec}} %F
+StartupWMClass={{exec}}
+Icon={{icon}}
+Name={{name}}
+Terminal=false
+Type=Application
+MimeType=image/jpeg;image/png;image/webp;image/avif;image/heic;image/heif;image/tiff;image/gif;image/bmp;image/svg+xml;image/jxl;image/x-icon;image/qoi;image/x-tga;image/x-portable-anymap;inode/directory;

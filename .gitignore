@@ -11,3 +11,11 @@ PRODUCT.md
 # System clutter
 .DS_Store
 *.log
+
+# Local AI tool configs, written per project by the machine's MCP setup
+.mcp.json
+.omp/
+opencode.json
+
+# Package caches
+.pnpm-store/

@@ -1,8 +1,8 @@
-<img src=".github/assets/hero.svg" width="1200" alt="Wrangler, a batch image unit. A run plays on its screen: nine product photos are trimmed, squared up on their own backdrop and compressed, from 1.8 MB to 599 KB." />
+<img src=".github/assets/hero.svg" width="1200" alt="Wrangler, a batch image unit. A real run plays on its screen: eight photos through the Web ready recipe, 135 KB to 57 KB, 58 percent smaller." />
 
 <p align="center">
   <b>Batch image processing for people with a few thousand photos and a deadline.</b><br />
-  Resize, square up, compress, convert, rename and watermark. macOS, Windows and Linux. Free and open source.
+  Resize, reshape, compress, convert, rename and watermark. macOS, Windows and Linux. Free and open source.
 </p>
 
 <p align="center">
@@ -21,17 +21,19 @@
   <a href="https://github.com/GenuineMoron/img-wrangler/releases"><img src="https://img.shields.io/github/v/release/GenuineMoron/img-wrangler?include_prereleases&style=flat-square&color=18c06a&label=release" alt="Latest release" /></a>
 </p>
 
-A product shoot comes back as a few hundred files called DSC_something, each one heavier than any website will forgive, all of them a slightly different shape. The shop wants 2048 px squares on a clean backdrop, under 400 KB, named after the product.
+Images never arrive the way you need them. A phone full of HEICs, a folder of 40 MB TIFFs from a photographer, a shoot named DSC_something, a pile of screenshots for a blog post. Too heavy, the wrong shape, named by a camera.
 
-Wrangler does that in one pass. It shows you every file as it will come out, new name, new size, new weight, before it writes a thing. Then you press Run. And if you change your mind afterwards, Undo puts the originals back.
+Wrangler sorts the lot in one pass. It shows every file as it will come out, new name, new size, new weight, before it writes a thing. Then you press Run. And if you change your mind afterwards, Undo puts the originals back.
+
+Websites, online shops, email, social posts, slide decks, archives: whatever needs images in a particular size, shape, format or weight, a recipe does it the same way every time.
 
 It all happens on your computer. No accounts, no uploads, no telemetry.
 
 ## See every file before anything is written
 
-<img src=".github/assets/demo.webp" width="1080" alt="The Wrangler window: a shoot is added, the Shopify product recipe is chosen, the size frame is dragged to 1600 px and Run processes every photo, each tile ticking off as it finishes." />
+<img src=".github/assets/demo.webp" width="1080" alt="The Wrangler window: photos are added, the Email safe recipe is chosen, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
 
-<sub>Recorded from the browser preview of the app, which plays a sample shoot with simulated sizes. The figures in the banner above are from a real run.</sub>
+<sub>Recorded from the browser preview of the app, which plays sample photos with simulated sizes. The figures in the banner above and the right-click card are from a real run of the Web ready recipe on eight sample photos.</sub>
 
 ## What it does
 
@@ -54,17 +56,17 @@ Drop files or folders anywhere on it. The four screens along the bottom are the 
 
 ### Right-click
 
-<img src=".github/assets/right-click.svg" width="1200" alt="Nine product photos selected in a file manager. Right-click, Wrangler, Shopify product. A small Wrangler window runs the recipe: 1.8 MB to 599 KB, with Undo, Show and Open." />
+<img src=".github/assets/right-click.svg" width="1200" alt="Eight photos selected in a file manager. Right-click, Wrangler, Web ready. A small Wrangler window runs the recipe: 135 KB to 57 KB, with Undo, Show and Open." />
 
 Pin recipes to the right-click menu in Finder, Explorer, Dolphin, Files (Nautilus), Nemo or Thunar. Pick one and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Set it up from Settings, or with `img-wrangler integrate install`.
 
 ### The command line
 
 ```sh
-img-wrangler plan ~/Shoot -r shopify-product          # what would happen, nothing written
-img-wrangler run ~/Shoot -r shopify-product            # do it
-img-wrangler run ~/Shoot --size 2048 --format webp --look balanced --to replace
-img-wrangler run ~/Shoot --names skus.csv --watermark logo.png
+img-wrangler plan ~/Pictures/to-sort -r web-ready     # what would happen, nothing written
+img-wrangler run ~/Pictures/to-sort -r web-ready       # do it
+img-wrangler run ~/Pictures/to-sort --size 2048 --format webp --look balanced --to replace
+img-wrangler run ~/Pictures/to-sort --names new-names.csv --watermark logo.png
 img-wrangler undo                                      # put the last run back
 ```
 
@@ -86,7 +88,21 @@ A recipe is every setting in one plain TOML file. `img-wrangler recipes show web
 
 ## Get it
 
-The first alpha is out. Download it from [Releases](https://github.com/GenuineMoron/img-wrangler/releases): a `.dmg` for macOS, a setup `.exe` for Windows, and an `.AppImage`, `.deb` or `.rpm` for Linux, plus the command line tool on its own. The builds aren't signed yet, so the release notes explain how to get past macOS and Windows being suspicious. It's an alpha: try it on copies first, and [say what breaks](https://github.com/GenuineMoron/img-wrangler/issues).
+The first alpha is out. Install it with one line:
+
+```sh
+# macOS and Linux
+curl -fsSL https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/install.sh | sh
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/install.ps1 | iex
+```
+
+On Linux it uses your own package manager: a native package on Arch and CachyOS (through `makepkg`), the `.deb` on Debian and Ubuntu, the `.rpm` on Fedora and openSUSE, and the AppImage anywhere else. The scripts are short, so read them first if you like: [install.sh](install.sh), [install.ps1](install.ps1).
+
+Or download the files yourself from [Releases](https://github.com/GenuineMoron/img-wrangler/releases), where the notes cover each system. The builds aren't signed by Apple or Microsoft yet, so a downloaded app needs one extra click the first time. It's an alpha: try it on copies first, and [say what breaks](https://github.com/GenuineMoron/img-wrangler/issues).
 
 ### Or build it
 

@@ -244,6 +244,15 @@ fn recipe_from(args: &RunArgs, dirs: &AppDirs) -> Result<Recipe> {
     Ok(r)
 }
 
+/// The size change as people read it: −58% when smaller, +12% when bigger.
+fn change(before: u64, after: u64) -> String {
+    if before == 0 {
+        return "no change".into();
+    }
+    let pct = (after as f64 / before as f64 - 1.0) * 100.0;
+    if pct < 0.0 { format!("−{:.0}%", -pct) } else { format!("+{pct:.0}%") }
+}
+
 fn human(bytes: u64) -> String {
     let b = bytes as f64;
     if b >= 1e9 { format!("{:.2} GB", b / 1e9) } else if b >= 1e6 { format!("{:.1} MB", b / 1e6) } else { format!("{:.0} KB", b / 1e3) }
@@ -296,11 +305,9 @@ fn cmd_run(args: &RunArgs, dirs: &AppDirs, dry: bool) -> Result<ExitCode> {
     })?;
     if let Some(b) = bar {
         b.finish_and_clear();
-        let saved = summary.bytes_in.saturating_sub(summary.bytes_out);
-        let pct = if summary.bytes_in > 0 { saved as f64 / summary.bytes_in as f64 * 100.0 } else { 0.0 };
         println!(
-            "{} done, {} kept as they were, {} over the size limit, {} skipped, {} failed. {} → {} (−{pct:.0}%) in {:.1}s. Run {}",
-            summary.done, summary.kept, summary.over_limit, summary.skipped, summary.failed, human(summary.bytes_in), human(summary.bytes_out), summary.seconds, summary.run_id
+            "{} done, {} kept as they were, {} over the size limit, {} skipped, {} failed. {} → {} ({}) in {:.1}s. Run {}",
+            summary.done, summary.kept, summary.over_limit, summary.skipped, summary.failed, human(summary.bytes_in), human(summary.bytes_out), change(summary.bytes_in, summary.bytes_out), summary.seconds, summary.run_id
         );
     }
     Ok(if summary.failed > 0 { ExitCode::from(2) } else { ExitCode::SUCCESS })
@@ -331,8 +338,7 @@ fn cmd_quick(recipe: &str, paths: &[PathBuf], dirs: &AppDirs) -> Result<ExitCode
     let plan = build(&sources, &r, &PlanCx::default());
     let opts = RunOptions { threads: 0, memory_budget: 2 << 30, runs_dir: dirs.runs() };
     let s = run(&plan, &r, &opts, &AtomicBool::new(false), &|_| {})?;
-    let pct = if s.bytes_in > 0 { (1.0 - s.bytes_out as f64 / s.bytes_in as f64) * 100.0 } else { 0.0 };
-    let mut msg = format!("{} images, {} → {} (−{pct:.0}%).", s.done + s.kept, human(s.bytes_in), human(s.bytes_out));
+    let mut msg = format!("{} images, {} → {} ({}).", s.done + s.kept, human(s.bytes_in), human(s.bytes_out), change(s.bytes_in, s.bytes_out));
     if s.failed > 0 {
         msg.push_str(&format!(" {} failed.", s.failed));
     }

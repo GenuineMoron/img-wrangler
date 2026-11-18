@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Wrangler",
-  "mainBinaryName": "wrangler",
+  "mainBinaryName": "img-wrangler-app",
   "version": "0.1.0-alpha.1",
   "identifier": "com.genuinemoron.wrangler",
   "build": {
@@ -40,7 +40,7 @@
       "rpm",
       "appimage"
     ],
-    "category": "Graphics",
+    "category": "GraphicsAndDesign",
     "shortDescription": "Batch image compression and processing",
     "longDescription": "Compress, convert, resize, pad, trim and rename images in batches, with previews and undo.",
     "copyright": "Copyright (C) 2026 Sean Hawkey. AGPL-3.0-or-later.",
@@ -73,6 +73,18 @@
         "name": "Image",
         "role": "Viewer"
       }
-    ]
+    ],
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "11.0"
+    },
+    "linux": {
+      "deb": {
+        "desktopTemplate": "linux/wrangler.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "linux/wrangler.desktop"
+      }
+    }
   }
 }

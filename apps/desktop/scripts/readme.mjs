@@ -2,7 +2,7 @@
 // Builds the README's graphics from the app itself, so they change when the app does.
 //
 //   pnpm readme            animated SVG banners into .github/assets
-//   pnpm readme --shots    also a screenshot, the demo recording and the social preview card
+//   pnpm readme --shots    also the demo recording and the social preview card
 //
 // Colours come from design/system/tokens.css, type from design/system/fonts, the hat from the
 // app's HatScreen component, and every photo is made by the real CLI, which also shrinks the
@@ -71,20 +71,31 @@ const HAT = fs.readFileSync(path.join(APP, 'src/lib/components/HatScreen.svelte'
 const hat = (x, y, size, colour = C.quality) => `<g transform="translate(${x} ${y}) scale(${size / 256})" fill="${colour}" filter="url(#bloom)"><path d="${HAT}"/></g>`;
 const hatScreen = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#050505"/>${hat(x + (w - h * 0.82) / 2, y + h * 0.09, h * 0.82)}`;
 
-// The nine product photos of the README's example run, squared up by the CLI.
-const thumbDir = wrangle(fs.readdirSync(SAMPLES).filter(f => f.endsWith('.jpg')).sort().map(f => path.join(SAMPLES, f)), ['--shape', '1:1', '--fit', 'crop', '--size', '128', '--format', 'jpg', '--look', 'high'], path.join(TMP, 'thumbs'));
-const thumb = i => dataUri(path.join(thumbDir, `p${(i % 8) + 1}.jpg`));
+// The sample photos, squared up by the CLI for the file-manager window.
+const photos = fs.readdirSync(SAMPLES).filter(f => f.endsWith('.jpg')).sort();
+const thumbDir = wrangle(photos.map(f => path.join(SAMPLES, f)), ['--shape', '1:1', '--fit', 'crop', '--size', '128', '--format', 'jpg', '--look', 'high'], path.join(TMP, 'thumbs'));
+const thumb = i => dataUri(path.join(thumbDir, photos[i % photos.length]));
 
-// ---------------------------------------------------------------- hero: a run playing on the unit's screen
-// The figures are a real run: nine product photos through the Shopify recipe, 1.8 MB to 599 KB.
+// A real run of the Web ready recipe over the sample photos. Every figure on the hero and the
+// right-click card comes from these files.
+const webDir = wrangle(photos.map(f => path.join(SAMPLES, f)), ['-r', 'web-ready'], path.join(TMP, 'web-ready'));
+const files = photos.map(f => ({ in: fs.statSync(path.join(SAMPLES, f)).size, out: fs.statSync(path.join(webDir, f.replace(/\.jpg$/, '.webp'))).size }));
+const totalIn = files.reduce((a, f) => a + f.in, 0);
+const size = n => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.round(n / 1e3)} KB`);
+/** After `k` files: the batch's size so far (finished files at their new size, the rest as they were). */
+const after = k => files.reduce((a, f, i) => a + (i < k ? f.out : f.in), 0);
+const pct = n => `−${Math.round((1 - n / totalIn) * 100)}%`;
+const N = files.length, totalOut = after(N);
+
+// ---------------------------------------------------------------- hero: a real run on the unit's screen
 function hero() {
-  const W = 1200, H = 420, T = 10;
+  const W = 1200, H = 420, T = 10, start = 1.4, each = 0.6;
   const css = [], b = [kase(W, H)];
   b.push(hatScreen(56, 50, 54, 36));
   b.push(label(126, 74, 'BATCH IMAGE UNIT'));
   b.push(`<text x="50" y="178" class="hg" font-size="96" font-weight="700" letter-spacing="-4.5" fill="#18191b">wrangler</text>`);
-  b.push(`<text x="56" y="226" class="hg" font-size="21" font-weight="500" fill="#3c3e43">Resize, square up, compress, convert and</text>`);
-  b.push(`<text x="56" y="254" class="hg" font-size="21" font-weight="500" fill="#3c3e43">rename a whole shoot. See every file first.</text>`);
+  b.push(`<text x="56" y="226" class="hg" font-size="21" font-weight="500" fill="#3c3e43">Resize, reshape, compress, convert and</text>`);
+  b.push(`<text x="56" y="254" class="hg" font-size="21" font-weight="500" fill="#3c3e43">rename folders of images. See every file first.</text>`);
   let x = 56;
   for (const [g, name, c] of [['■', 'size', C.size], ['●', 'format', C.format], ['▲', 'quality', '#e0a800'], ['◆', 'name', C.name]]) {
     b.push(`<text x="${x}" y="298" class="dm" font-size="14" fill="${c}">${g}</text><text x="${x + 18}" y="298" class="dm" font-size="14" fill="${C.ink2}">${name}</text>`);
@@ -95,47 +106,39 @@ function hero() {
   b.push(`<g transform="translate(190 328)"><rect y="3" width="250" height="50" rx="11" fill="#b33a0b"/><g class="run"><rect width="250" height="50" rx="11" fill="url(#run)"/><rect width="250" height="50" rx="11" fill="#fff" filter="url(#grain)" opacity=".18"/><text x="125" y="32" class="hg" font-size="17" font-weight="800" letter-spacing="1.2" fill="#fff" text-anchor="middle">RUN</text></g></g>`);
 
   const sw = 538, sh = 316, inner = [];
-  inner.push(`<text x="16" y="26" class="dm" font-size="12" fill="${C.screen2}">~/Shoot/<tspan fill="${C.screen1}">products</tspan> · 9 · 1.8 MB</text><text x="${sw - 16}" y="26" class="dm" font-size="12" fill="${C.screen1}" text-anchor="end">SHOPIFY PRODUCT</text><rect y="38" width="${sw}" height="1" fill="#242424"/>`);
-  // photos tick off as they finish
-  for (let i = 0; i < 9; i++) {
-    const cx = 16 + (i % 3) * 60, cy = 52 + Math.floor(i / 3) * 60, t = 1.4 + i * 0.55;
+  inner.push(`<text x="16" y="26" class="dm" font-size="12" fill="${C.screen2}">~/Pictures/<tspan fill="${C.screen1}">to-sort</tspan> · ${N} · ${size(totalIn)}</text><text x="${sw - 16}" y="26" class="dm" font-size="12" fill="${C.screen1}" text-anchor="end">WEB READY</text><rect y="38" width="${sw}" height="1" fill="#242424"/>`);
+  files.forEach((_, i) => {
+    const cx = 16 + (i % 3) * 60, cy = 52 + Math.floor(i / 3) * 60;
     inner.push(`<image x="${cx}" y="${cy}" width="52" height="52" href="${thumb(i)}"/>`);
-    css.push(window_(`tick${i}`, t, T - 0.4, T));
+    css.push(window_(`tick${i}`, start + i * each, T - 0.4, T));
     inner.push(`<g class="tick${i} final"><rect x="${cx + 2}" y="${cy + 2}" width="22" height="13" rx="2" fill="#050505" fill-opacity=".86"/><text x="${cx + 13}" y="${cy + 12}" class="dm" font-size="10" fill="${C.screen1}" text-anchor="middle">✓</text></g>`);
-  }
-  // the size diagram: a 3:2 outline, and the frame going square with the photo padded inside
+  });
+  // the recipe's settings: long side 2560, each photo keeps its shape, WebP at the balanced look
   const dx = 222, dy = 52;
-  inner.push(`<rect x="${dx + 0.5}" y="${dy + 0.5}" width="111" height="74" fill="none" stroke="${C.screen3}" stroke-dasharray="2 2"/>`);
-  css.push(`@keyframes frame{0%,6%{transform:scale(1.5,1)}16%,94%{transform:scale(1,1)}100%{transform:scale(1.5,1)}}.frame{transform-box:fill-box;transform-origin:0 0;animation:frame ${T}s ease-in-out infinite}`);
-  css.push(`@keyframes pic{0%,6%{transform:none}16%,94%{transform:translate(5.5px,16px) scale(.5676)}100%{transform:none}}.pic{transform-box:fill-box;transform-origin:0 0;transform:translate(5.5px,16px) scale(.5676);animation:pic ${T}s ease-in-out infinite}`);
-  inner.push(`<rect class="frame" x="${dx}" y="${dy}" width="74" height="74" fill="${C.size}" fill-opacity=".14" stroke="${C.sizeText}" stroke-width="1.5" filter="url(#bloom)"/><rect class="pic" x="${dx}" y="${dy}" width="111" height="74" fill="${C.screen1}" fill-opacity=".16"/>`);
-  inner.push(`<text x="${dx + 132}" y="${dy + 48}" class="hg" font-size="30" font-weight="300" fill="${C.sizeText}" filter="url(#bloom)">2048</text><text x="${dx + 133}" y="${dy + 68}" class="dm" font-size="12" fill="${C.sizeText}">trim · 1:1 · pad 85%</text><text x="${dx + 133}" y="${dy + 86}" class="dm" font-size="12" fill="${C.screen2}">backdrop from the photo</text>`);
-  // the meter: IN full, OUT falls to 8 of 24 segments (599 KB of 1.8 MB is 33%)
-  const my = 210, lx = 258;
+  inner.push(`<rect x="${dx + 0.5}" y="${dy + 0.5}" width="111" height="74" fill="none" stroke="${C.screen3}" stroke-dasharray="2 2"/><rect x="${dx + 0.75}" y="${dy + 0.75}" width="110.5" height="73.5" fill="${C.size}" fill-opacity=".14" stroke="${C.sizeText}" stroke-width="1.5" filter="url(#bloom)"/>`);
+  inner.push(`<text x="${dx + 132}" y="${dy + 48}" class="hg" font-size="30" font-weight="300" fill="${C.sizeText}" filter="url(#bloom)">2560</text><text x="${dx + 133}" y="${dy + 68}" class="dm" font-size="12" fill="${C.sizeText}">long side · own shape</text><text x="${dx + 133}" y="${dy + 86}" class="dm" font-size="12" fill="${C.format}">jpg → webp · balanced</text>`);
+  // the meter: OUT falls as each file finishes, to the run's real total
+  const my = 210, lx = 258, lit = k => Math.round((24 * after(k)) / totalIn);
   inner.push(`<text x="222" y="${my + 9}" class="dm" font-size="12" fill="${C.screen2}">IN</text><text x="222" y="${my + 31}" class="dm" font-size="12" fill="${C.screen2}">OUT</text>`);
   for (let i = 0; i < 24; i++) {
     inner.push(`<rect x="${lx + i * 9}" y="${my}" width="7" height="10" rx="1" fill="${C.screen1}"/>`);
-    if (i >= 8) {
-      const pa = ((1.4 + (23 - i) * 0.3) / T) * 100;
+    const k = files.findIndex((_, j) => lit(j + 1) <= i);
+    if (k >= 0) {
+      const pa = ((start + k * each) / T) * 100;
       css.push(`@keyframes seg${i}{0%,${pa.toFixed(2)}%{fill:${C.output}}${(pa + 0.01).toFixed(2)}%,96%{fill:#1b1b1b}96.01%,100%{fill:${C.output}}}.seg${i}{animation:seg${i} ${T}s step-end infinite}`);
     }
     inner.push(`<rect class="seg${i}" x="${lx + i * 9}" y="${my + 22}" width="7" height="10" rx="1" fill="${C.output}"/>`);
   }
-  inner.push(`<text x="${lx + 228}" y="${my + 9}" class="dm" font-size="12" fill="${C.screen1}">1.8 MB</text>`);
-  const frames = [[0, '1.8 MB', '−0%'], [2.2, '1.4 MB', '−22%'], [3.2, '1.1 MB', '−39%'], [4.2, '880 KB', '−51%'], [5.2, '702 KB', '−61%'], [6.2, '599 KB', '−67%']];
-  frames.forEach(([t0, out, pct], k) => {
-    css.push(window_(`rd${k}`, t0, frames[k + 1]?.[0] ?? T, T));
-    inner.push(`<g class="rd${k}${k === frames.length - 1 ? ' final' : ''}"><text x="${lx + 228}" y="${my + 31}" class="dm" font-size="12" fill="${C.screen1}">${out}</text><text x="${sw - 16}" y="${sh - 14}" class="do" font-size="58" fill="${C.output}" text-anchor="end" filter="url(#bloom)">${pct}</text></g>`);
-  });
-  const counts = [0, 1.4, 1.95, 2.5, 3.05, 3.6, 4.15, 4.7, 5.25, 5.8];
-  counts.forEach((t0, k) => {
-    css.push(window_(`ct${k}`, t0, counts[k + 1] ?? T, T));
-    inner.push(`<text class="ct${k} dm${k === 9 ? ' final' : ''}" x="16" y="${sh - 18}" font-size="12" fill="${C.screen1}">${k}/9</text>`);
-  });
+  inner.push(`<text x="${lx + 228}" y="${my + 9}" class="dm" font-size="12" fill="${C.screen1}">${size(totalIn)}</text>`);
+  for (let k = 0; k <= N; k++) {
+    const t0 = k === 0 ? 0 : start + (k - 1) * each, t1 = k === N ? T : start + k * each;
+    css.push(window_(`rd${k}`, t0, t1, T));
+    inner.push(`<g class="rd${k}${k === N ? ' final' : ''}"><text x="${lx + 228}" y="${my + 31}" class="dm" font-size="12" fill="${C.screen1}">${size(after(k))}</text><text x="${sw - 16}" y="${sh - 14}" class="do" font-size="58" fill="${C.output}" text-anchor="end" filter="url(#bloom)">${pct(after(k))}</text><text x="16" y="${sh - 18}" class="dm" font-size="12" fill="${C.screen1}">${k}/${N}</text></g>`);
+  }
   inner.push(`<text x="58" y="${sh - 18}" class="dm" font-size="12" fill="${C.screen2}">done · into Wrangled/</text>`);
   b.push(screen(606, 52, sw, sh, inner.join('')));
-  css.push(`@media (prefers-reduced-motion: reduce){.final{opacity:1!important}${Array.from({ length: 16 }, (_, i) => `.seg${i + 8}{fill:#1b1b1b}`).join('')}}`);
-  return svg(W, H, 'Wrangler, a batch image unit. A run plays on its screen: nine product photos are trimmed, squared up on their own backdrop and compressed, from 1.8 MB to 599 KB, 67 percent smaller.', css.join(''), b.join(''));
+  css.push(`@media (prefers-reduced-motion: reduce){.final{opacity:1!important}${Array.from({ length: 24 }, (_, i) => (i >= lit(N) ? `.seg${i}{fill:#1b1b1b}` : '')).join('')}}`);
+  return svg(W, H, `Wrangler, a batch image unit. A real run plays on its screen: ${N} photos through the Web ready recipe, ${size(totalIn)} to ${size(totalOut)}, ${Math.round((1 - totalOut / totalIn) * 100)} percent smaller.`, css.join(''), b.join(''));
 }
 
 // ---------------------------------------------------------------- right-click, then the quick window
@@ -144,10 +147,10 @@ function rightClick() {
   const css = [], b = [kase(W, H)];
   b.push(label(56, 52, 'FROM THE FILE MANAGER  ·  FINDER, EXPLORER, DOLPHIN, FILES, NEMO, THUNAR'));
   const wx = 56, wy = 76, ww = 600, wh = 272;
-  b.push(`<g transform="translate(${wx} ${wy})"><rect width="${ww}" height="${wh}" rx="10" fill="#fbfbfa" stroke="#000" stroke-opacity=".12"/><rect width="${ww}" height="34" rx="10" fill="#f0f0ee"/><rect y="24" width="${ww}" height="10" fill="#f0f0ee"/><rect y="34" width="${ww}" height="1" fill="#000" opacity=".08"/><circle cx="18" cy="17" r="5.5" fill="#d9d9d6"/><circle cx="36" cy="17" r="5.5" fill="#d9d9d6"/><circle cx="54" cy="17" r="5.5" fill="#d9d9d6"/><text x="${ww / 2}" y="22" class="hg" font-size="13" font-weight="600" fill="${C.ink2}" text-anchor="middle">products</text>`);
-  const names = ['DSC_4471', 'DSC_4472', 'DSC_4473', 'board_oak', 'cushion', 'bottle_01', 'wallet', 'succulent', 'DSC_4480', 'notes.txt'];
+  b.push(`<g transform="translate(${wx} ${wy})"><rect width="${ww}" height="${wh}" rx="10" fill="#fbfbfa" stroke="#000" stroke-opacity=".12"/><rect width="${ww}" height="34" rx="10" fill="#f0f0ee"/><rect y="24" width="${ww}" height="10" fill="#f0f0ee"/><rect y="34" width="${ww}" height="1" fill="#000" opacity=".08"/><circle cx="18" cy="17" r="5.5" fill="#d9d9d6"/><circle cx="36" cy="17" r="5.5" fill="#d9d9d6"/><circle cx="54" cy="17" r="5.5" fill="#d9d9d6"/><text x="${ww / 2}" y="22" class="hg" font-size="13" font-weight="600" fill="${C.ink2}" text-anchor="middle">to-sort</text>`);
+  const names = [...photos.map((_, i) => ['IMG_2041', 'IMG_2042', 'DSC_4473', 'IMG_2047', 'cushion', 'IMG_2051', 'wallet', 'succulent'][i] ?? `IMG_${2060 + i}`), 'notes.txt'];
   names.forEach((n, i) => {
-    const cx = 26 + (i % 5) * 112, cy = 52 + Math.floor(i / 5) * 104, sel = i < 9, txt = n.endsWith('.txt');
+    const cx = 26 + (i % 5) * 112, cy = 52 + Math.floor(i / 5) * 104, txt = n.endsWith('.txt'), sel = !txt;
     if (sel) b.push(`<rect x="${cx - 6}" y="${cy - 6}" width="88" height="94" rx="7" fill="#2f6fea" fill-opacity=".14"/>`);
     b.push(txt ? `<path d="M${cx + 18} ${cy}h30l14 14v52h-44z" fill="#fff" stroke="#bbb"/><path d="M${cx + 26} ${cy + 30}h28M${cx + 26} ${cy + 40}h28M${cx + 26} ${cy + 50}h20" stroke="#ccc"/>` : `<image x="${cx + 6}" y="${cy}" width="64" height="64" href="${thumb(i)}"/>`);
     b.push(`<text x="${cx + 38}" y="${cy + 80}" class="hg" font-size="11" font-weight="500" fill="${sel ? '#2f6fea' : C.ink2}" text-anchor="middle">${n}${txt ? '' : '.jpg'}</text>`);
@@ -170,29 +173,27 @@ function rightClick() {
     return o.join('') + '</g>';
   };
   b.push(menu(mx, my, ['Open', 'Get Info', 'Rename…', '-', 'Wrangler ›', 'Copy'], 'menu', 4, 'hiw'));
-  b.push(menu(mx + 204, my + 76, ['Web ready', 'Shopify product', 'Just compress', '-', 'Open in Wrangler…'], 'sub', 1, 'his'));
-  css.push(`@keyframes ptr{0%{transform:translate(260px,110px)}5%,10%{transform:translate(352px,70px)}12%{transform:translate(400px,194px)}18%{transform:translate(430px,196px)}22%,100%{transform:translate(560px,204px)}}.ptr{animation:ptr ${T}s ease-in-out infinite}`);
+  b.push(menu(mx + 204, my + 76, ['Web ready', 'Email safe', 'Just compress', '-', 'Open in Wrangler…'], 'sub', 0, 'his'));
+  // the pointer: right-click on the selection, along to Wrangler, across to Web ready, click
+  css.push(`@keyframes ptr{0%{transform:translate(300px,120px)}5%{transform:translate(340px,150px)}10%,14%{transform:translate(${mx + 70}px,${my + 104}px)}20%{transform:translate(${mx + 240}px,${my + 104}px)}24%,100%{transform:translate(${mx + 240}px,${my + 91}px)}}.ptr{animation:ptr ${T}s ease-in-out infinite}`);
   b.push('<g class="ptr"><path d="M0 0L0 17L4.5 13L7.5 20L10 19L7 12L13 12Z" fill="#111" stroke="#fff" stroke-width="1.2"/></g>');
-  // the quick window
+  // the quick window, showing the same real run
   const qx = 760, qy = 66, qw = 340, qh = 292;
   css.push(window_('qa', 3, T, T));
   const q = [`<g class="qa final"><g transform="translate(${qx} ${qy})">${kase(qw, qh, 18)}${label(18, 32, 'WRANGLER · QUICK', 11, '#18191b')}${hatScreen(qw - 58, 16, 40, 26)}</g>`];
-  const inner = ['<text x="14" y="26" class="dm" font-size="12" fill="' + C.screen2 + '">SHOPIFY PRODUCT</text>'];
+  const inner = ['<text x="14" y="26" class="dm" font-size="12" fill="' + C.screen2 + '">WEB READY</text>'];
   for (let i = 0; i < 24; i++) {
     const pa = ((3 + (i + 1) * 0.09) / T) * 100;
     css.push(`@keyframes qs${i}{0%,${pa.toFixed(2)}%{fill:#1b1b1b}${(pa + 0.01).toFixed(2)}%,100%{fill:${C.output}}}.qs${i}{animation:qs${i} ${T}s step-end infinite}`);
     inner.push(`<rect class="qs${i}" x="${14 + i * 11.5}" y="44" width="9.5" height="11" rx="1" fill="${C.output}"/>`);
   }
+  const steps = [0, Math.round(N / 3), Math.round((2 * N) / 3), N];
+  steps.forEach((k, j) => {
+    const t0 = 3 + j * 0.7, t1 = j === steps.length - 1 ? T : 3 + (j + 1) * 0.7;
+    css.push(window_(`qr${j}`, t0, t1, T));
+    inner.push(`<g class="qr${j}${j === steps.length - 1 ? ' final' : ''}"><text x="290" y="26" class="dm" font-size="12" fill="${C.screen1}" text-anchor="end">${k}/${N}</text><text x="14" y="126" class="do" font-size="62" fill="${C.output}" filter="url(#bloom)">${pct(after(k))}</text><text x="14" y="154" class="dm" font-size="12" fill="${C.screen2}">${size(totalIn)} → ${size(after(k))}</text></g>`);
+  });
   inner.push(`<text x="14" y="176" class="dm" font-size="12" fill="${C.screen2}">into Wrangled/</text>`);
-  [[3, '0/9'], [3.6, '3/9'], [4.4, '6/9'], [5.2, '9/9']].forEach(([t0, txt], k, all) => {
-    css.push(window_(`qc${k}`, t0, all[k + 1]?.[0] ?? T, T));
-    inner.push(`<text class="qc${k}${k === 3 ? ' final' : ''} dm" x="290" y="26" font-size="12" fill="${C.screen1}" text-anchor="end">${txt}</text>`);
-  });
-  [[3, '−0%'], [3.6, '−24%'], [4.4, '−48%'], [5.2, '−67%']].forEach(([t0, pct], k, all) => {
-    css.push(window_(`qr${k}`, t0, all[k + 1]?.[0] ?? T, T));
-    inner.push(`<text class="qr${k}${k === 3 ? ' final' : ''} do" x="14" y="126" font-size="62" fill="${C.output}" filter="url(#bloom)">${pct}</text>`);
-  });
-  inner.push(`<text x="14" y="154" class="dm" font-size="12" fill="${C.screen2}">1.8 MB → 599 KB</text>`);
   q.push(screen(qx + 18, qy + 52, 304, 192, inner.join('')));
   [['UNDO', false], ['SHOW', false], ['OPEN', true]].forEach(([l, dark], k) => {
     q.push(`<g transform="translate(${qx + 18 + k * 104} ${qy + 256})"><rect y="2.5" width="96" height="26" rx="7" fill="${dark ? '#141518' : '#a9aaad'}"/><rect width="96" height="26" rx="7" fill="${dark ? '#2f3034' : 'url(#keycap)'}"/><text x="48" y="17" class="hg" font-size="10.5" font-weight="600" letter-spacing=".8" fill="${dark ? '#ececea' : C.ink1}" text-anchor="middle">${l}</text></g>`);
@@ -200,7 +201,7 @@ function rightClick() {
   q.push('</g>');
   b.push(q.join(''));
   css.push('@media (prefers-reduced-motion: reduce){.final{opacity:1!important}.ptr,.menu,.sub{display:none}}');
-  return svg(W, H, 'Nine product photos selected in a file manager. Right-click, Wrangler, Shopify product. A small Wrangler window runs the recipe: 1.8 MB to 599 KB, 67 percent smaller, with Undo, Show and Open.', css.join(''), b.join(''));
+  return svg(W, H, `${N} photos selected in a file manager. Right-click, Wrangler, Web ready. A small Wrangler window runs the recipe: ${size(totalIn)} to ${size(totalOut)}, ${Math.round((1 - totalOut / totalIn) * 100)} percent smaller, with Undo, Show and Open.`, css.join(''), b.join(''));
 }
 
 // ---------------------------------------------------------------- social preview (upload it in the repo's Settings)
@@ -209,10 +210,10 @@ function social() {
   const b = [kase(W, H, 0)];
   b.push(hatScreen(96, 96, 120, 80));
   b.push(`<text x="88" y="330" class="hg" font-size="150" font-weight="700" letter-spacing="-7" fill="#18191b">wrangler</text>`);
-  b.push(`<text x="96" y="446" class="hg" font-size="32" font-weight="500" fill="#3c3e43">Resize, square up, compress, convert and rename</text>`);
-  b.push(`<text x="96" y="488" class="hg" font-size="32" font-weight="500" fill="#3c3e43">a whole shoot. See every file first.</text>`);
+  b.push(`<text x="96" y="446" class="hg" font-size="32" font-weight="500" fill="#3c3e43">Resize, reshape, compress, convert and rename</text>`);
+  b.push(`<text x="96" y="488" class="hg" font-size="32" font-weight="500" fill="#3c3e43">folders of images. See every file first.</text>`);
   b.push(`<text x="96" y="566" class="dm" font-size="22" fill="${C.ink2}">macOS · Windows · Linux · free and open source</text>`);
-  return svg(W, H, 'Wrangler: resize, square up, compress, convert and rename a whole shoot.', '', b.join(''));
+  return svg(W, H, 'Wrangler: resize, reshape, compress, convert and rename folders of images.', '', b.join(''));
 }
 
 for (const [name, make] of [['hero.svg', hero], ['right-click.svg', rightClick], ['social.svg', social]]) {
@@ -238,17 +239,6 @@ if (process.argv.includes('--shots')) {
     fs.rmSync(path.join(OUT, 'social.svg'));
     fs.copyFileSync(path.join(wrangle([path.join(TMP, 'social.png')], ['--format', 'jpg', '--look', 'high'], path.join(TMP, 'social')), 'social.jpg'), path.join(OUT, 'social.jpg'));
 
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
-    await page.goto(`${base}/?demo`);
-    await page.waitForSelector('.tile');
-    await page.click('.recipe__name');
-    await page.click('dialog[open] .pick:has-text("Shopify product")');
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: path.join(TMP, 'app.png') });
-    await page.close();
-    fs.copyFileSync(path.join(wrangle([path.join(TMP, 'app.png')], ['--format', 'webp', '--look', 'high'], path.join(TMP, 'app')), 'app.webp'), path.join(OUT, 'app.webp'));
-
     // the demo: empty unit, add a shoot, pick a recipe, size it, run it
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, recordVideo: { dir: TMP, size: { width: 1440, height: 900 } } });
     const p = await ctx.newPage();
@@ -258,7 +248,7 @@ if (process.argv.includes('--shots')) {
     await p.waitForSelector('.tile');
     await p.waitForTimeout(1400);
     await p.keyboard.press('Control+k');
-    await p.keyboard.type('shopify', { delay: 70 });
+    await p.keyboard.type('email', { delay: 70 });
     await p.waitForTimeout(400);
     await p.keyboard.press('Enter');
     await p.waitForTimeout(1600);
@@ -274,7 +264,7 @@ if (process.argv.includes('--shots')) {
     const video = await p.video().path();
     await ctx.close();
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-vf', 'fps=14,scale=1080:-1:flags=lanczos', '-c:v', 'libwebp_anim', '-quality', '72', '-loop', '0', path.join(OUT, 'demo.webp')]);
-    for (const f of ['social.jpg', 'app.webp', 'demo.webp']) console.log(`${f}  ${Math.round(fs.statSync(path.join(OUT, f)).size / 1024)} KB`);
+    for (const f of ['social.jpg', 'demo.webp']) console.log(`${f}  ${Math.round(fs.statSync(path.join(OUT, f)).size / 1024)} KB`);
   } finally {
     await browser.close();
     await server.close();

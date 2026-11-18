@@ -15,3 +15,4 @@ The first alpha: a complete rewrite in Rust, for trying out and finding what bre
 - The command line tool, `img-wrangler`.
 - The desktop app for macOS, Windows and Linux.
 - Right-click actions for Finder, Explorer, Dolphin, Files, Nemo and Thunar, with a quick window and undo.
+- Downloads for macOS (`.dmg`), Windows (setup `.exe`) and Linux (`.deb`, `.rpm`, AppImage, and a `PKGBUILD` for Arch and CachyOS), plus one-line install scripts. The Linux builds run on any system from Ubuntu 22.04 and Debian 12 on.

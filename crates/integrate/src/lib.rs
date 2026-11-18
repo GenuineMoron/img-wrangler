@@ -89,11 +89,12 @@ pub fn targets() -> Vec<Target> {
 /// Where the Wrangler app is usually installed, if it is.
 pub fn default_program() -> Option<PathBuf> {
     let candidates: Vec<PathBuf> = if cfg!(target_os = "macos") {
-        vec!["/Applications/Wrangler.app/Contents/MacOS/wrangler".into(), home().join("Applications/Wrangler.app/Contents/MacOS/wrangler")]
+        vec!["/Applications/Wrangler.app/Contents/MacOS/img-wrangler-app".into(), home().join("Applications/Wrangler.app/Contents/MacOS/img-wrangler-app")]
     } else if cfg!(windows) {
-        vec![dirs::data_local_dir().unwrap_or_default().join("Wrangler/wrangler.exe"), dirs::data_local_dir().unwrap_or_default().join("Programs/Wrangler/wrangler.exe")]
+        let local = dirs::data_local_dir().unwrap_or_default();
+        vec![local.join("Wrangler/img-wrangler-app.exe"), local.join("Programs/Wrangler/img-wrangler-app.exe")]
     } else {
-        vec!["/usr/bin/wrangler".into(), "/usr/local/bin/wrangler".into(), home().join(".local/bin/wrangler")]
+        vec!["/usr/bin/img-wrangler-app".into(), "/usr/local/bin/img-wrangler-app".into(), home().join(".local/bin/img-wrangler-app")]
     };
     candidates.into_iter().find(|p| p.is_file())
 }
