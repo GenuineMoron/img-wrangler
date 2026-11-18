@@ -23,13 +23,13 @@ jobs:
           - { os: windows-2025, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev rpm
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -41,7 +41,7 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: ilammy/setup-nasm@v1
       - uses: Swatinem/rust-cache@v2
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -65,7 +65,7 @@ jobs:
           - { os: windows-2025, target: x86_64-pc-windows-msvc, archive: zip }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -85,7 +85,7 @@ jobs:
             cp target/${{ matrix.target }}/release/img-wrangler "$name/"
             tar czf "$name.tar.gz" "$name"
           fi
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           draft: true
           tag_name: ${{ github.ref_name }}
