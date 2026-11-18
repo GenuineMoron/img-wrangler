@@ -1,17 +1,43 @@
-# Builds installers and CLI archives for a version tag (v0.1.0 …) into a draft release.
+# A version tag (v0.1.0, v0.1.0-alpha.1 …) builds the app and the command line tool for every
+# platform into one draft release, and publishes it only if every build succeeds. Tags with a
+# hyphen are marked as pre-releases. Notes come from CHANGELOG.md plus release-notes.md.
 name: Release
 
 on:
   push:
     tags: ['v*']
-  workflow_dispatch:
 
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
+  draft:
+    name: Draft the release
+    runs-on: ubuntu-24.04
+    outputs:
+      id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notes from the changelog
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" 'index($0, "## " v) == 1 { on = 1; next } on && /^## / { exit } on { print }' CHANGELOG.md > notes.md
+          cat .github/release-notes.md >> notes.md
+      - id: release
+        name: Create the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pre=""; [[ "$GITHUB_REF_NAME" == *-* ]] && pre="--prerelease"
+          gh release create "$GITHUB_REF_NAME" --draft $pre --verify-tag --title "Wrangler ${GITHUB_REF_NAME#v}" --notes-file notes.md
+          echo "id=$(gh release view "$GITHUB_REF_NAME" --json databaseId --jq .databaseId)" >> "$GITHUB_OUTPUT"
+
   app:
     name: App (${{ matrix.target }})
+    needs: draft
     strategy:
       fail-fast: false
       matrix:
@@ -41,28 +67,30 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: ilammy/setup-nasm@v1
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.target }}
       - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          # linuxdeploy's own strip can't read newer binaries; AppImages work fine unstripped
+          NO_STRIP: 'true'
         with:
           projectPath: apps/desktop
           args: --target ${{ matrix.target }}
-          tagName: ${{ github.ref_name }}
-          releaseName: Wrangler ${{ github.ref_name }}
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.draft.outputs.id }}
 
   cli:
     name: CLI (${{ matrix.target }})
+    needs: draft
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: macos-15, target: aarch64-apple-darwin, archive: tar.gz }
-          - { os: macos-15, target: x86_64-apple-darwin, archive: tar.gz }
-          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu, archive: tar.gz }
-          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, archive: tar.gz }
-          - { os: windows-2025, target: x86_64-pc-windows-msvc, archive: zip }
+          - { os: macos-15, target: aarch64-apple-darwin }
+          - { os: macos-15, target: x86_64-apple-darwin }
+          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+          - { os: windows-2025, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -71,22 +99,33 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: ilammy/setup-nasm@v1
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-cli-${{ matrix.target }}
       - run: cargo build --release -p img-wrangler --target ${{ matrix.target }}
-      - name: Package
+      - name: Package and upload
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          name=img-wrangler-${{ github.ref_name }}-${{ matrix.target }}
+          name="img-wrangler-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir "$name"
           cp LICENSE NOTICE README.md "$name/"
-          if [ "${{ runner.os }}" = Windows ]; then
-            cp target/${{ matrix.target }}/release/img-wrangler.exe "$name/"
-            7z a "$name.zip" "$name"
+          if [ "$RUNNER_OS" = Windows ]; then
+            cp "target/${{ matrix.target }}/release/img-wrangler.exe" "$name/"
+            7z a "$name.zip" "$name" > /dev/null
+            file="$name.zip"
           else
-            cp target/${{ matrix.target }}/release/img-wrangler "$name/"
+            cp "target/${{ matrix.target }}/release/img-wrangler" "$name/"
             tar czf "$name.tar.gz" "$name"
+            file="$name.tar.gz"
           fi
-      - uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          tag_name: ${{ github.ref_name }}
-          files: img-wrangler-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive }}
+          gh release upload "$GITHUB_REF_NAME" "$file" --clobber
+
+  publish:
+    name: Publish
+    needs: [app, cli]
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false

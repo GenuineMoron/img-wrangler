@@ -2,12 +2,14 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import pkg from './package.json' with { type: 'json' };
 
 const design = fileURLToPath(new URL('../../design/system', import.meta.url));
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
   plugins: [svelte()],
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   resolve: { alias: { '@design': design, $lib: fileURLToPath(new URL('./src/lib', import.meta.url)) } },
   clearScreen: false,
   server: {

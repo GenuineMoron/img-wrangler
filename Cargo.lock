@@ -2421,7 +2421,7 @@ dependencies = [
 
 [[package]]
 name = "img-wrangler"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -6743,7 +6743,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
 name = "wrangler-desktop"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "parking_lot",
  "percent-encoding",
@@ -6762,7 +6762,7 @@ dependencies = [
 
 [[package]]
 name = "wrangler-engine"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "avif-decode",
  "avif-parse",
@@ -6805,7 +6805,7 @@ dependencies = [
 
 [[package]]
 name = "wrangler-integrate"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "dirs 6.0.0",
  "serde",

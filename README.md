@@ -8,8 +8,7 @@
 <p align="center">
   <a href="#see-every-file-before-anything-is-written">Demo</a> ·
   <a href="#what-it-does">What it does</a> ·
-  <a href="#right-click-and-its-done">Right-click</a> ·
-  <a href="#from-the-command-line">Command line</a> ·
+  <a href="#three-ways-in">Three ways in</a> ·
   <a href="#get-it">Get it</a> ·
   <a href="#licence">Licence</a>
 </p>
@@ -19,6 +18,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-ff5a1f?style=flat-square" alt="Licence: AGPL 3.0 or later" /></a>
   <img src="https://img.shields.io/badge/macOS%20·%20Windows%20·%20Linux-1f2023?style=flat-square" alt="Runs on macOS, Windows and Linux" />
   <img src="https://img.shields.io/badge/engine-Rust-3d5cff?style=flat-square" alt="Engine written in Rust" />
+  <a href="https://github.com/GenuineMoron/img-wrangler/releases"><img src="https://img.shields.io/github/v/release/GenuineMoron/img-wrangler?include_prereleases&style=flat-square&color=18c06a&label=release" alt="Latest release" /></a>
 </p>
 
 A product shoot comes back as a few hundred files called DSC_something, each one heavier than any website will forgive, all of them a slightly different shape. The shop wants 2048 px squares on a clean backdrop, under 400 KB, named after the product.
@@ -33,41 +33,46 @@ It all happens on your computer. No accounts, no uploads, no telemetry.
 
 <sub>Recorded from the browser preview of the app, which plays a sample shoot with simulated sizes. The figures in the banner above are from a real run.</sub>
 
-Drop files or folders anywhere on the window. The four screens along the bottom are the everyday controls, and each screen is the control itself. Drag the corner of the size frame, drag the red line to set a size limit, pick the format from the list. The panel on the right lists every step in the order it runs, and anything more detailed is one press away there.
-
 ## What it does
 
-### Size, shape and padding are one control
+| | |
+|---|---|
+| Resize and reshape | A long side like 2048, or full size. Keep each photo's shape, or make them all 1:1, 4:5, 3:2, 16:9 or exact pixels, by cropping, padding onto a backdrop or fitting inside. Empty background can be trimmed first. |
+| Compress | Choose a look (small, balanced, high or pristine) instead of an encoder number. Each aims at a measured visual score ([SSIMULACRA 2](https://github.com/cloudinary/ssimulacra2)), and Wrangler finds the setting that reaches it for every image. Add a size limit if a platform has one. |
+| Convert | Reads 14 formats, HEIC, AVIF and JPEG XL included. Writes JPEG (MozJPEG), PNG (oxipng), WebP, AVIF, GIF, TIFF, BMP, ICO, QOI, TGA and PNM. Or keeps each file's own format, or picks WebP or PNG per image. |
+| Rename | Patterns with numbers, sizes and dates (`spring-24-{n:000}`), find and replace, or old and new names pasted from a spreadsheet. Clashes get numbered rather than overwritten. |
+| Watermark | A logo in the same place on every image, sized to each one so portraits and landscapes match. |
+| Rotate and sharpen | Quarter turns and flips, and sharpening to bring back crispness after shrinking. |
+| Metadata | Strip it all, keep the camera and copyright details without the location, or keep everything. |
+| Save | Beside the originals, into a subfolder, into another folder, or over the originals. Every write goes to a temporary file first, and replaced originals sit in an undo store for 30 days. |
 
-<img src=".github/assets/size.svg" width="1200" alt="One 3:2 photo meeting a square frame three ways, each made by Wrangler. Crop fills the frame and cuts the edges. Pad keeps the whole photo on its own backdrop. Inside keeps the whole photo and treats the frame as a limit." />
+## Three ways in
 
-Pick how big (a long side like 2048, or full size), what shape (the photo's own, 1:1, 4:5, 3:2, 16:9, or exact pixels like 1200×628), and how the picture meets that shape. It can trim empty background first, so a product shot on a white sweep comes out centred and filling, say, 85% of the square. The backdrop is the photo's own colour by default, or white, transparent, or anything you pick.
+### The window
 
-### Compression you can read
+Drop files or folders anywhere on it. The four screens along the bottom are the everyday controls, and each screen is the control itself: drag the corner of the size frame, drag the red line to set a size limit, pick the format from the list. The panel on the right lists every step in the order it runs, with the rest of the settings one press away.
 
-Instead of an encoder number, choose a look: small, balanced, high or pristine. Each aims at a measured visual score ([SSIMULACRA 2](https://github.com/cloudinary/ssimulacra2) of 65, 75, 83 and 90), and Wrangler finds the setting that reaches it for every image. Add a size limit if a platform has one. And if re-saving a file in the same format and size wouldn't make it any smaller, Wrangler keeps the original.
-
-### Names that mean something
-
-Build names from a pattern (`spring-24-{n:000}`, `{name|slug}-{w}x{h}`), find and replace (plain or regex), or paste two columns from a spreadsheet, old name and new, and let it match them up. Clashes get numbered rather than overwritten.
-
-### And the rest
-
-- **Formats.** Reads JPEG, PNG, WebP, AVIF, HEIC, JPEG XL, GIF, TIFF, BMP, ICO, QOI, TGA, PNM and SVG. Writes JPEG (MozJPEG), PNG (oxipng), WebP, AVIF, GIF, TIFF, BMP, ICO and QOI.
-- **Watermark.** Your logo in the same place on every image, sized to each one's shorter side so portraits and landscapes match.
-- **Metadata.** Strip it all, keep the camera and copyright details without the location, or keep everything.
-- **Rotate and sharpen**, for the photos that need it.
-- **Safe by habit.** Every write goes to a temporary file first. Replaced originals sit in an undo store for 30 days.
-
-## Right-click and it's done
+### Right-click
 
 <img src=".github/assets/right-click.svg" width="1200" alt="Nine product photos selected in a file manager. Right-click, Wrangler, Shopify product. A small Wrangler window runs the recipe: 1.8 MB to 599 KB, with Undo, Show and Open." />
 
-Pin your favourite recipes to the right-click menu in Finder, Explorer, Dolphin, Files (Nautilus), Nemo or Thunar. Pick one and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Set it up from Settings, or with `img-wrangler integrate install`.
+Pin recipes to the right-click menu in Finder, Explorer, Dolphin, Files (Nautilus), Nemo or Thunar. Pick one and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Set it up from Settings, or with `img-wrangler integrate install`.
+
+### The command line
+
+```sh
+img-wrangler plan ~/Shoot -r shopify-product          # what would happen, nothing written
+img-wrangler run ~/Shoot -r shopify-product            # do it
+img-wrangler run ~/Shoot --size 2048 --format webp --look balanced --to replace
+img-wrangler run ~/Shoot --names skus.csv --watermark logo.png
+img-wrangler undo                                      # put the last run back
+```
+
+`--json` turns the progress into JSON lines for scripts.
 
 ## Recipes
 
-A recipe is every setting in one plain TOML file. The app, the command line and the right-click menu all read the same files, so a recipe you tune in the window runs exactly the same from a script. These come built in:
+A recipe is every setting in one plain TOML file. `img-wrangler recipes show web-ready` prints one to start your own from. The app, the command line and the right-click menu all read the same files, so a recipe you tune in the window runs exactly the same from a script. These come built in:
 
 | Recipe | What it makes |
 |---|---|
@@ -79,22 +84,11 @@ A recipe is every setting in one plain TOML file. The app, the command line and 
 | Social card | 1200 × 628 link previews, cropped from the centre, JPEG. |
 | Square thumbnails | 800 px squares cropped from the centre, WebP. |
 
-## From the command line
-
-```sh
-img-wrangler plan ~/Shoot -r shopify-product          # what would happen, nothing written
-img-wrangler run ~/Shoot -r shopify-product            # do it
-img-wrangler run ~/Shoot --size 2048 --format webp --look balanced --to replace
-img-wrangler run ~/Shoot --names skus.csv --watermark logo.png
-img-wrangler undo                                      # put the last run back
-img-wrangler recipes show web-ready                    # print a recipe to start your own from
-```
-
-`--json` turns the progress into JSON lines for scripts.
-
 ## Get it
 
-There's no release yet. Version 0.1 will come with installers for all three systems. Until then, build it:
+The first alpha is out. Download it from [Releases](https://github.com/GenuineMoron/img-wrangler/releases): a `.dmg` for macOS, a setup `.exe` for Windows, and an `.AppImage`, `.deb` or `.rpm` for Linux, plus the command line tool on its own. The builds aren't signed yet, so the release notes explain how to get past macOS and Windows being suspicious. It's an alpha: try it on copies first, and [say what breaks](https://github.com/GenuineMoron/img-wrangler/issues).
+
+### Or build it
 
 ```sh
 git clone https://github.com/GenuineMoron/img-wrangler && cd img-wrangler

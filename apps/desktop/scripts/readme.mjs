@@ -138,45 +138,6 @@ function hero() {
   return svg(W, H, 'Wrangler, a batch image unit. A run plays on its screen: nine product photos are trimmed, squared up on their own backdrop and compressed, from 1.8 MB to 599 KB, 67 percent smaller.', css.join(''), b.join(''));
 }
 
-// ---------------------------------------------------------------- size: crop, pad, inside
-function sizeCard() {
-  const W = 1200, H = 360, T = 9;
-  const bottle = path.join(wrangle([path.join(SAMPLES, 'p3.jpg')], ['--shape', '3:2', '--fit', 'crop', '--size', '420', '--format', 'jpg', '--look', 'pristine'], path.join(TMP, 'bottle')), 'p3.jpg');
-  const fits = Object.fromEntries(['crop', 'pad', 'inside'].map(m => [m, path.join(wrangle([bottle], ['--shape', '1:1', '--fit', m, '--fill', '85', '--backdrop', 'auto', '--size', '300', '--upscale', '--format', 'jpg', '--look', 'pristine'], path.join(TMP, m)), 'p3.jpg')]));
-  const css = [], b = [kase(W, H)];
-  b.push(label(56, 58, `<tspan fill="${C.size}">■</tspan>  SIZE  ·  ONE 3:2 PHOTO, ONE SQUARE FRAME`));
-  const modes = [['crop', 'fills the frame and cuts the edges', '1:1, cut'], ['pad', 'the whole photo on its own backdrop', '1:1, padded'], ['inside', 'the whole photo, frame as a limit', '3:2, fits']];
-  const sw = 340, sh = 200, F = 150, fx = 40, fy = 25;
-  modes.forEach(([mode, caption, out], k) => {
-    const x0 = 56 + k * (sw + 34), inner = [];
-    const img = dataUri(fits[mode]);
-    if (mode === 'crop') {
-      const pw = F * 1.5, px = fx - (pw - F) / 2;
-      inner.push(`<image x="${px}" y="${fy}" width="${pw}" height="${F}" href="${dataUri(bottle)}" opacity=".22"/><rect x="${px + 0.5}" y="${fy + 0.5}" width="${pw - 1}" height="${F - 1}" fill="none" stroke="${C.screen3}" stroke-dasharray="3 3"/><image x="${fx}" y="${fy}" width="${F}" height="${F}" href="${img}"/>`);
-    } else if (mode === 'pad') {
-      inner.push(`<image x="${fx}" y="${fy}" width="${F}" height="${F}" href="${img}"/>`);
-    } else {
-      inner.push(`<rect x="${fx + 0.5}" y="${fy + 0.5}" width="${F - 1}" height="${F - 1}" fill="none" stroke="${C.screen3}" stroke-dasharray="3 3"/><image x="${fx}" y="${fy + (F - F / 1.5) / 2}" width="${F}" height="${(F / 1.5).toFixed(1)}" href="${img}"/>`);
-    }
-    const fr = mode === 'inside' ? `<rect x="${fx}" y="${fy + (F - F / 1.5) / 2}" width="${F}" height="${(F / 1.5).toFixed(1)}"/>` : `<rect x="${fx}" y="${fy}" width="${F}" height="${F}"/>`;
-    inner.push(`<g class="lit${k}" fill="none" stroke="${C.sizeText}" stroke-width="2" filter="url(#bloom)">${fr}</g>`);
-    const a = k * 3, e = a + 3;
-    css.push(`@keyframes lit${k}{0%,${((a / T) * 100).toFixed(2)}%{opacity:.35}${((a / T) * 100 + 0.5).toFixed(2)}%,${((e / T) * 100 - 0.5).toFixed(2)}%{opacity:1}${((e / T) * 100).toFixed(2)}%,100%{opacity:.35}}.lit${k}{animation:lit${k} ${T}s ease-in-out infinite}`);
-    inner.push(`<text x="212" y="64" class="dm" font-size="12" fill="${C.screen2}">3:2 photo</text><text x="212" y="82" class="dm" font-size="12" fill="${C.sizeText}">→ ${out}</text>`);
-    let cx = 212;
-    for (const m of ['crop', 'pad', 'inside']) {
-      const w = m.length * 7.3 + 10;
-      if (m === mode) inner.push(`<rect x="${cx}" y="150" width="${w}" height="17" rx="2" fill="${C.size}"/>`);
-      inner.push(`<text x="${cx + 5}" y="163" class="dm" font-size="12" fill="${m === mode ? '#fff' : C.screen3}">${m}</text>`);
-      cx += w + 2;
-    }
-    b.push(screen(x0, 92, sw, sh, inner.join('')));
-    b.push(`<text x="${x0}" y="${92 + sh + 34}" class="hg" font-size="17" font-weight="600" fill="#18191b">${mode[0].toUpperCase() + mode.slice(1)}<tspan dx="10" font-weight="500" fill="${C.ink2}">${caption}</tspan></text>`);
-  });
-  css.push('@media (prefers-reduced-motion: reduce){.lit0,.lit1,.lit2{opacity:1!important}}');
-  return svg(W, H, 'One 3:2 photo meeting a square frame three ways, each made by Wrangler. Crop fills the frame and cuts the edges. Pad keeps the whole photo on its own backdrop. Inside keeps the whole photo and treats the frame as a limit.', css.join(''), b.join(''));
-}
-
 // ---------------------------------------------------------------- right-click, then the quick window
 function rightClick() {
   const W = 1200, H = 380, T = 10;
@@ -254,7 +215,7 @@ function social() {
   return svg(W, H, 'Wrangler: resize, square up, compress, convert and rename a whole shoot.', '', b.join(''));
 }
 
-for (const [name, make] of [['hero.svg', hero], ['size.svg', sizeCard], ['right-click.svg', rightClick], ['social.svg', social]]) {
+for (const [name, make] of [['hero.svg', hero], ['right-click.svg', rightClick], ['social.svg', social]]) {
   fs.writeFileSync(path.join(OUT, name), make());
   console.log(`${name}  ${Math.round(fs.statSync(path.join(OUT, name)).size / 1024)} KB`);
 }

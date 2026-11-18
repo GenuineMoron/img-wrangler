@@ -70,7 +70,7 @@
 
   <section class="sec">
     <h3 class="legend">About</h3>
-    <p class="note">Wrangler 0.1 · free software under the GNU AGPL 3.0 or later · undo history is kept for 30 days.</p>
+    <p class="note">Wrangler {__APP_VERSION__} · free software under the GNU AGPL 3.0 or later · undo history is kept for 30 days.</p>
   </section>
 
   {#snippet actions()}

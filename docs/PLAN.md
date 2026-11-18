@@ -43,7 +43,9 @@ Milestones in build order. Each one ends working and tested, so the project is u
 ## M6 · Ship
 - [x] Licence (AGPL-3.0-or-later), NOTICE, CLA, CONTRIBUTING, TRADEMARK, THIRD_PARTY
 - [x] CI workflows: test on macOS, Linux, Windows. Release builds (DMG, AppImage/deb/rpm, MSI/NSIS). CLI archives
-- [ ] First green CI run and a signed, notarised macOS build
+- [x] First green CI run
+- [x] First alpha release (0.1.0-alpha.1)
+- [ ] Signed, notarised macOS build and a signed Windows installer
 - [ ] Homebrew tap, AUR package
 - [ ] README with screenshots
 
