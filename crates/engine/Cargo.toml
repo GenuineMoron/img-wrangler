@@ -45,12 +45,12 @@ globset = "0.4"
 regex = "1"
 deunicode = "1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
-dirs = "6"
-toml = "0.9"
+dirs = "7"
+toml = "1.2"
 uuid = { version = "1", features = ["v4", "serde"] }
-parking_lot = "0.12"
+parking_lot = "0.13"
 ts-rs = { version = "12", optional = true, features = ["serde-compat"] }
-libheif-rs = { version = "2", optional = true }
+libheif-rs = { version = "3", optional = true }
 
 [dev-dependencies]
 tempfile = "3"
