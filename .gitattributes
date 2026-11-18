@@ -1,0 +1,6 @@
+# Generated from the Rust engine by ts-rs; don't edit by hand.
+apps/desktop/src/lib/types/engine/** linguist-generated=true
+# Sample photos for the browser mock.
+apps/desktop/dev/** linguist-vendored=true
+Cargo.lock linguist-generated=true
+pnpm-lock.yaml linguist-generated=true

@@ -630,7 +630,7 @@ mod tests {
     fn finder_quick_actions() {
         let files = finder_files(&setup());
         assert_eq!(files.len(), 4, "Info.plist and document.wflow for each of two actions");
-        let find = |suffix: &str| files.iter().find(|(p, _)| p.to_string_lossy().ends_with(suffix)).map(|f| f.1.clone()).unwrap_or_else(|| panic!("missing {suffix}"));
+        let find = |suffix: &str| files.iter().find(|(p, _)| p.to_string_lossy().replace('\\', "/").ends_with(suffix)).map(|f| f.1.clone()).unwrap_or_else(|| panic!("missing {suffix}"));
         let info = find("Wrangler - Shopify product.workflow/Contents/Info.plist");
         assert!(info.contains("<string>Wrangler: Shopify product</string>"));
         assert!(info.contains("<string>public.image</string>"));

@@ -7,9 +7,10 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+# Desktop only, so a plain Rust library: a shared library (what mobile builds need) can't link
+# the AV1 decoder's x86 assembly.
 [lib]
 name = "wrangler_desktop"
-crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
 name = "wrangler"

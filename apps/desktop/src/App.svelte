@@ -12,3 +12,7 @@
 </script>
 
 {#if quick}<QuickWindow />{:else}<MainWindow />{/if}
+
+{#if import.meta.env.DEV && new URLSearchParams(location.search).has('tune')}
+  {#await import('./views/dev/Tune.svelte') then { default: Tune }}<Tune />{/await}
+{/if}

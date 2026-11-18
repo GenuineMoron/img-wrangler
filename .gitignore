@@ -5,13 +5,4 @@ dist/
 *.log
 .DS_Store
 .taste-skill/
-/design/assets/chassis.jpg
-/design/assets/grain.png
-/design/mock-assets/sheet.png
-/design/wrangler-mockup*.html
-/design/assets/tex/*-s.*
-/design/assets/tex/grain.png
-/design/assets/tex/scratch.png
-/design/assets/tex/dust.jpg
-/design/assets/alu.jpg
 .impeccable/questions/
