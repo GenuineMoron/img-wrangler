@@ -143,7 +143,7 @@ pub fn undo(runs: &Path, id: &str) -> Result<UndoReport> {
             },
             Entry::Stored { original, stored } => {
                 if original.exists() {
-                    report.skipped.push((original, "a newer file is there now; the original stays in the undo store".into()));
+                    report.skipped.push((original, "a newer file is there now, so the original stays in the undo store".into()));
                 } else if fs::rename(&stored, &original).is_ok() || (fs::copy(&stored, &original).is_ok() && fs::remove_file(&stored).is_ok()) {
                     report.restored += 1;
                 } else {

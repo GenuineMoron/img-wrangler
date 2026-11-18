@@ -131,7 +131,7 @@
       class="handle"
       role="slider"
       tabindex="0"
-      aria-label="Output size, drag the corner or use arrow keys; Enter to type"
+      aria-label="Output size. Drag the corner or use the arrow keys, Enter to type"
       aria-valuemin="16"
       aria-valuemax={maxSrc}
       aria-valuenow={Math.max(l.canvas.w, l.canvas.h)}
@@ -147,11 +147,11 @@
   <div class="vals">
     {#if typing}
       <input bind:this={input} class="value-input" type="number" min="16" max="30000" step="10" value={size.long_side ?? ''} placeholder="full"
-        aria-label="Long side in pixels; empty for full size. Enter to apply"
+        aria-label="Long side in pixels, empty for full size. Enter to apply"
         onkeydown={e => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); }} onblur={() => finish(true)} />
     {:else}
       <button type="button" class="value-btn glow" class:small={shape.kind === 'exact'} onclick={startTyping} disabled={shape.kind === 'exact'}
-        aria-label={shape.kind === 'exact' ? `Exact size ${bigText}` : `Long side ${bigText}; press to type a size`}>{bigText}</button>
+        aria-label={shape.kind === 'exact' ? `Exact size ${bigText}` : `Long side ${bigText}. Press to type a size`}>{bigText}</button>
     {/if}
     <span class="sub" title="This image comes out at {l.canvas.w} × {l.canvas.h} pixels">{approx}{l.canvas.w}×{l.canvas.h}</span>
     {#if shape.kind !== 'original'}

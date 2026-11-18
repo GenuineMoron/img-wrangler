@@ -12,4 +12,10 @@ pattern: string, case: Case,
 /**
  * Applied to the original name in `replace` mode, and before the pattern in `pattern` mode.
  */
-replace: Array<Replacement>, start: number, step: number, };
+replace: Array<Replacement>, start: number, step: number, 
+/**
+ * For `list` mode: lines of `old name, new name` (comma or tab, as pasted from a
+ * spreadsheet), or one new name per line applied in batch order. New names may use the
+ * pattern tokens, e.g. `{name}-front`.
+ */
+list: string, };

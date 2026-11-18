@@ -24,6 +24,7 @@ export type { OnConflict } from './engine/OnConflict';
 export type { AddOn } from './engine/AddOn';
 export type { Rotate } from './engine/Rotate';
 export type { Sharpen } from './engine/Sharpen';
+export type { Watermark } from './engine/Watermark';
 export type { Select } from './engine/Select';
 export type { SourceFile } from './engine/SourceFile';
 export type { Plan } from './engine/Plan';

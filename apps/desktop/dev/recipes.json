@@ -41,7 +41,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"
@@ -96,7 +97,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"
@@ -151,7 +153,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"
@@ -209,7 +212,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"
@@ -267,7 +271,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"
@@ -322,7 +327,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"
@@ -377,7 +383,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"
@@ -432,7 +439,8 @@
    "case": "keep",
    "replace": [],
    "start": 1,
-   "step": 1
+   "step": 1,
+   "list": ""
   },
   "metadata": {
    "keep": "none"

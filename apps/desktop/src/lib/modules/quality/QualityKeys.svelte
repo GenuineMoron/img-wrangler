@@ -17,6 +17,6 @@
 </script>
 
 <div class="keys" style:--n="2" style:--accent="var(--accent-quality)" style:--on-accent="var(--on-quality)">
-  <Key label="Max size" pressed={q.max_kb != null} onclick={limit} title="Cap every file at a size; drag the red line to set it" />
+  <Key label="Max size" pressed={q.max_kb != null} onclick={limit} title="Cap every file at a size, then drag the red line to set it" />
   <Key label="Lossless" pressed={q.look === 'lossless'} onclick={lossless} title="No quality loss, where the format allows" />
 </div>

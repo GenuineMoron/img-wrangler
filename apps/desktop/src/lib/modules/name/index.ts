@@ -20,12 +20,18 @@ const name: CoreModule = {
   kind: 'core',
   id: 'name',
   label: 'Name',
-  blurb: 'Rename with patterns and numbers, find and replace, change case.',
+  blurb: 'Rename with patterns and numbers, find and replace, or a list from a spreadsheet.',
   icon: 'name',
   accent: 'name',
-  order: 90,
+  order: 130,
   active: r => r.rename.mode !== 'keep' || r.rename.case !== 'keep',
-  summary: r => (r.rename.mode === 'keep' ? (r.rename.case === 'keep' ? 'unchanged' : r.rename.case) : r.rename.mode === 'pattern' ? r.rename.pattern : `${r.rename.replace.filter(x => x.find).length} replace`),
+  summary: r => {
+    const n = r.rename;
+    if (n.mode === 'keep') return n.case === 'keep' ? 'unchanged' : n.case;
+    if (n.mode === 'pattern') return n.pattern;
+    if (n.mode === 'list') return 'from a list';
+    return `${n.replace.filter(x => x.find).length} replace`;
+  },
   Details,
   channel: { slot: 4, glyph: '◆', Screen, Keys },
 };

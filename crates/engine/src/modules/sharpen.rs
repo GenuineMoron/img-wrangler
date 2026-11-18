@@ -15,11 +15,11 @@ use crate::ops::sharpen::unsharp;
 #[serde(default)]
 pub struct Sharpen {
     pub enabled: bool,
-    /// Strength in percent, 0–200.
+    /// Strength in percent, 0-200.
     pub amount: u16,
     /// Radius in pixels.
     pub radius: f32,
-    /// Ignore differences smaller than this (0–255) so flat areas stay clean.
+    /// Ignore differences smaller than this (0-255) so flat areas stay clean.
     pub threshold: u8,
 }
 

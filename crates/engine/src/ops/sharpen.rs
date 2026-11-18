@@ -5,7 +5,7 @@
 
 use image::{imageops, RgbaImage};
 
-/// `amount` 0–2 (1 = 100%), `radius` in pixels, `threshold` 0–255 ignores small differences.
+/// `amount` 0-2 (1 = 100%), `radius` in pixels, `threshold` 0-255 ignores small differences.
 pub fn unsharp(px: &RgbaImage, amount: f32, radius: f32, threshold: u8) -> RgbaImage {
     if amount <= 0.0 || radius <= 0.0 {
         return px.clone();

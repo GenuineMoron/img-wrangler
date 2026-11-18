@@ -13,7 +13,7 @@ const save: CoreModule = {
   blurb: 'Where the results go: beside, a subfolder, a folder, or replacing originals.',
   icon: 'save',
   accent: 'tool',
-  order: 100,
+  order: 140,
   active: () => true,
   summary: r => {
     const d = r.destination;

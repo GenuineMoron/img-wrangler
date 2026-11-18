@@ -1,6 +1,6 @@
 # Third-party components
 
-Wrangler builds on these projects. Licences are as published by each project; check them before
+Wrangler builds on these projects. Licences are as published by each project. Check them before
 redistributing a modified build.
 
 | Component | Used for | Licence |
@@ -19,7 +19,7 @@ redistributing a modified build.
 | ssimulacra2 | Perceptual quality scoring | BSD-2-Clause |
 | kamadak-exif, img-parts | Metadata | BSD-2-Clause, MIT / Apache-2.0 |
 | Host Grotesk, Doto, Unbounded | Interface type | SIL Open Font License 1.1 |
-| Departure Mono | Screen type | SIL Open Font License 1.1 (per its site; MIT per some listings) |
+| Departure Mono | Screen type | SIL Open Font License 1.1 (per its site, MIT per some listings) |
 | ambientCG Metal050C, SurfaceImperfections015 | Case texture source | CC0 |
 
 **Note for commercial builds.** A closed-source or app-store build cannot include libimagequant

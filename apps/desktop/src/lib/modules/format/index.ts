@@ -13,7 +13,7 @@ const format: CoreModule = {
   blurb: 'Keep each file’s format, convert to one, or choose per image.',
   icon: 'format',
   accent: 'format',
-  order: 60,
+  order: 100,
   active: r => r.format.id !== 'same' || r.format.auto,
   summary: r => (r.format.auto ? 'auto per image' : r.format.id === 'same' ? 'unchanged' : (catalog.info(r.format.id)?.label ?? r.format.id)),
   channel: { slot: 2, glyph: '●', Screen, Keys },

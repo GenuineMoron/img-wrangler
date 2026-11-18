@@ -55,7 +55,7 @@
     role={view === 'split' ? 'slider' : 'button'}
     aria-pressed={view === 'split' ? undefined : zoom}
     tabindex="0"
-    aria-label={view === 'split' ? 'Before and after; arrow keys move the split, Enter zooms' : `${view === 'result' ? 'Result' : 'Original'} preview; press for actual pixels`}
+    aria-label={view === 'split' ? 'Before and after. Arrow keys move the split, Enter zooms' : `${view === 'result' ? 'Result' : 'Original'} preview. Press for actual pixels`}
     aria-valuemin={view === 'split' ? 0 : undefined}
     aria-valuemax={view === 'split' ? 100 : undefined}
     aria-valuenow={view === 'split' ? ui.split : undefined}
@@ -94,7 +94,7 @@
       <dt>WEIGHT</dt><dd><span class="from">{kb(item.probe?.bytes ?? 0)} →</span>
         <span class="weight">{p ? kb(p.after_bytes) : '…'}</span>
         {#if p}{p.kept_original ? ' · already smaller, kept' : ` · ${change(p.before_bytes, p.after_bytes)}`}{p.over_limit ? ' · over limit' : ''}{p.downscaled ? ' · shrunk to fit' : ''}{/if}</dd>
-      <dt>LOOK</dt><dd><span class="fmt">{fmt?.label ?? '—'}</span> · {recipe.value ? lookText(recipe.value) : ''}{p?.score ? `, scored ${Math.round(p.score)}` : ''}{p?.quality ? ` (q${p.quality})` : ''}</dd>
+      <dt>LOOK</dt><dd><span class="fmt">{fmt?.label ?? '--'}</span> · {recipe.value ? lookText(recipe.value) : ''}{p?.score ? `, scored ${Math.round(p.score)}` : ''}{p?.quality ? ` (q${p.quality})` : ''}</dd>
     </dl>
   {/if}
 </div>

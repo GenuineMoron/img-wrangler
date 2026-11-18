@@ -2,10 +2,10 @@
 
 Every feature is a module. A module has an engine half (Rust) and an app half (Svelte), and each half is registered in one list. Nothing else changes: the recipe panel, the processing-order display, the CLI and quick actions pick it up from the registries.
 
-## Add-on module (example: watermark)
+## Add-on module (the watermark is a worked example)
 
 **Engine**
-1. `crates/engine/src/modules/watermark.rs`: a settings struct (`serde`, `Default`, `ts-rs` export) and an `impl Stage` with `id`, `order` (pick a free slot from the table in ARCHITECTURE.md), `plan` (usually returns the dimensions unchanged) and `apply`.
+1. `crates/engine/src/modules/<name>.rs`: a settings struct (`serde`, `Default`, `ts-rs` export) and an `impl Stage` with `id`, `order` (pick a free slot from the table in ARCHITECTURE.md), `plan` (usually returns the dimensions unchanged) and `apply`. `modules/watermark.rs` is a complete, short example.
 2. Put pixel work in `crates/engine/src/ops/` as pure functions if it is reusable.
 3. Add the variant to `AddOn` in `crates/engine/src/modules/mod.rs`:
    ```rust
@@ -40,13 +40,13 @@ Every feature is a module. A module has an engine half (Rust) and an app half (S
 3. Round-trip test. The app shows it under Format › More with no UI change.
 
 ## Core modules
-Core modules are always in a recipe: Files, Size, Format, Quality, Metadata, Name and Save. A core module may have a channel (`channel: { slot, glyph, Screen, Keys }`) for the everyday controls and `Details` for the rest; Size, Format, Quality and Name have channels, in slots 1–4 (also their number keys). A channel screen is the control itself: draw it with `ScreenChoice`, drag handles and typed values rather than a picture beside separate inputs.
+Core modules are always in a recipe: Files, Size, Format, Quality, Metadata, Name and Save. A core module may have a channel (`channel: { slot, glyph, Screen, Keys }`) for the everyday controls and `Details` for the rest. Size, Format, Quality and Name have channels, in slots 1 to 4 (also their number keys). A channel screen is the control itself: draw it with `ScreenChoice`, drag handles and typed values rather than a picture beside separate inputs.
 
 The four channels have fixed places in the strip. Change their settings structs and components freely, but keep the recipe backward compatible: new fields need defaults, and removing a field means bumping `RECIPE_VERSION` with a migration in `recipe.rs`.
 
 ## Rules every module follows
-- The UI reads and writes the recipe directly (`recipe.value.<section>`); no copies, no events.
-- Settings have defaults; a module with default settings changes nothing.
+- The UI reads and writes the recipe directly (`recipe.value.<section>`). No copies, no events.
+- Settings have defaults. A module with default settings changes nothing.
 - `plan` never decodes pixels.
 - `apply` never does IO.
 - One accent colour per module, from the tokens, and a glyph so colour is never the only cue.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Sean Hawkey
 
-//! Small cached previews for the batch sheet. JPEGs decode at 1/2–1/8 scale, which is many
+//! Small cached previews for the batch sheet. JPEGs decode at 1/2 to 1/8 scale, which is many
 //! times faster than a full decode.
 
 use std::fs;

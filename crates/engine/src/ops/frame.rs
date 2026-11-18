@@ -90,7 +90,7 @@ pub struct FrameSpec {
     pub fit: Fit,
     /// Where the image sits (pad) or what is kept (crop): 0 = start, 1 = end, per axis.
     pub anchor: (f32, f32),
-    /// Share of the frame the content fills when padding, 0–1.
+    /// Share of the frame the content fills when padding, 0-1.
     pub fill: f32,
     pub upscale: bool,
 }

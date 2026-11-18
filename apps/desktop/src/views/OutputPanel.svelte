@@ -52,8 +52,8 @@
 
 <section class="output panel" aria-label="Output">
   <Screen class="meter" role="status" aria-label={saving != null ? `${bytes(t.bytesIn)} in, about ${bytes(t.bytesOut ?? 0)} out` : 'No estimate yet'}>
-    <div class="row"><span>IN</span><Ladder lit={n ? 24 : 0} kind="in" /><span>{n ? bytes(t.bytesIn) : '—'}</span></div>
-    <div class="row"><span>OUT</span><Ladder lit={batch.running ? Math.round(24 * progress) : lit} kind="out" /><span>{t.bytesOut != null ? `${t.measured ? '' : '≈'}${bytes(t.bytesOut)}` : '—'}</span></div>
+    <div class="row"><span>IN</span><Ladder lit={n ? 24 : 0} kind="in" /><span>{n ? bytes(t.bytesIn) : '--'}</span></div>
+    <div class="row"><span>OUT</span><Ladder lit={batch.running ? Math.round(24 * progress) : lit} kind="out" /><span>{t.bytesOut != null ? `${t.measured ? '' : '≈'}${bytes(t.bytesOut)}` : '--'}</span></div>
     <div class="readout">
       {#if batch.running}
         <span class="led-readout">{Math.round(progress * 100)}%</span><small>{count(batch.progress.done)} of {count(batch.progress.total)}</small>

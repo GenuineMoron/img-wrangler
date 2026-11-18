@@ -5,6 +5,7 @@
 //! modules compose them.
 
 pub mod frame;
+pub mod overlay;
 pub mod pad;
 pub mod resize;
 pub mod rotate;

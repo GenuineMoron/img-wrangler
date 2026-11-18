@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Sean Hawkey
 
-//! Output names: patterns with tokens, find and replace, case, and names that are safe on
-//! every operating system.
+//! Output names: patterns with tokens, find and replace, names from a list, case, and names
+//! that are safe on every operating system.
 
-use regex::RegexBuilder;
+use std::collections::HashMap;
+
+use regex::{Regex, RegexBuilder};
 
 use crate::img::Dims;
-use crate::recipe::{Case, Rename, RenameMode, Replacement};
+use crate::recipe::{Case, Rename, RenameMode};
 
 /// What a pattern can refer to for one file.
 #[derive(Debug, Clone)]
@@ -27,25 +29,135 @@ pub struct NameCx<'a> {
     pub ext: &'a str,
 }
 
-/// The output name without extension.
-pub fn render(r: &Rename, cx: &NameCx) -> String {
-    let base = apply_replacements(cx.stem, &r.replace);
-    let name = match r.mode {
-        RenameMode::Keep => cx.stem.to_string(),
-        RenameMode::Replace => base,
-        RenameMode::Pattern => expand(&r.pattern, &base, r, cx),
-    };
-    sanitise(&apply_case(&name, r.case))
+/// Names for a batch. Built once per plan so find-and-replace rules compile and lists parse
+/// once, not once per file.
+pub struct Namer<'a> {
+    rename: &'a Rename,
+    rules: Vec<(Regex, String)>,
+    list: NameList,
 }
 
-fn apply_replacements(stem: &str, list: &[Replacement]) -> String {
-    list.iter().filter(|x| !x.find.is_empty()).fold(stem.to_string(), |acc, x| {
-        let pattern = if x.regex { x.find.clone() } else { regex::escape(&x.find) };
-        match RegexBuilder::new(&pattern).case_insensitive(x.ignore_case).build() {
-            Ok(re) => re.replace_all(&acc, x.with.as_str()).into_owned(),
-            Err(_) => acc,
+impl<'a> Namer<'a> {
+    pub fn new(rename: &'a Rename) -> Self {
+        let rules = rename
+            .replace
+            .iter()
+            .filter(|x| !x.find.is_empty())
+            .filter_map(|x| {
+                let pattern = if x.regex { x.find.clone() } else { regex::escape(&x.find) };
+                RegexBuilder::new(&pattern).case_insensitive(x.ignore_case).build().ok().map(|re| (re, x.with.clone()))
+            })
+            .collect();
+        let list = if rename.mode == RenameMode::List { NameList::parse(&rename.list) } else { NameList::default() };
+        Self { rename, rules, list }
+    }
+
+    /// The output name without extension.
+    pub fn render(&self, cx: &NameCx) -> String {
+        let r = self.rename;
+        let base = self.rules.iter().fold(cx.stem.to_string(), |acc, (re, with)| re.replace_all(&acc, with.as_str()).into_owned());
+        let name = match r.mode {
+            RenameMode::Keep => cx.stem.to_string(),
+            RenameMode::Replace => base,
+            RenameMode::Pattern => expand(&r.pattern, &base, r, cx),
+            RenameMode::List => match self.list.lookup(cx.stem, cx.index) {
+                Some(new) => expand(new, &base, r, cx),
+                None => cx.stem.to_string(),
+            },
+        };
+        sanitise(&apply_case(&name, r.case))
+    }
+
+    /// Whether `list` mode has a name for this file.
+    pub fn listed(&self, stem: &str, index: u32) -> bool {
+        self.list.lookup(stem, index).is_some()
+    }
+}
+
+/// The output name without extension, for one-off use. Prefer [`Namer`] for a batch.
+pub fn render(r: &Rename, cx: &NameCx) -> String {
+    Namer::new(r).render(cx)
+}
+
+/// A pasted list of names: `old, new` pairs matched by original name, or one name per line in
+/// batch order.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct NameList {
+    /// Original name (lowercase, no extension) to new name.
+    pub pairs: HashMap<String, String>,
+    /// New names in batch order, for a single-column list.
+    pub ordered: Vec<String>,
+}
+
+const HEADERS: &[&str] = &["old", "old name", "from", "file", "filename", "file name", "original", "current", "name", "new", "new name", "to", "sku"];
+
+fn strip_ext(name: &str) -> &str {
+    match name.rsplit_once('.') {
+        Some((stem, ext)) if !stem.is_empty() && (1..=5).contains(&ext.len()) && ext.chars().all(|c| c.is_ascii_alphanumeric()) => stem,
+        _ => name,
+    }
+}
+
+/// One spreadsheet row: tab-separated, or comma-separated with optional double quotes.
+fn cells(line: &str) -> Vec<String> {
+    if line.contains('\t') {
+        return line.split('\t').map(|c| c.trim().to_string()).collect();
+    }
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut quoted = false;
+    let mut chars = line.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' if quoted && chars.peek() == Some(&'"') => {
+                cur.push('"');
+                chars.next();
+            }
+            '"' => quoted = !quoted,
+            ',' if !quoted => out.push(std::mem::take(&mut cur).trim().to_string()),
+            c => cur.push(c),
         }
-    })
+    }
+    out.push(cur.trim().to_string());
+    out
+}
+
+impl NameList {
+    pub fn parse(text: &str) -> Self {
+        let rows: Vec<Vec<String>> = text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).map(cells).collect();
+        let is_header = |row: &[String]| row.iter().any(|c| HEADERS.contains(&c.to_lowercase().as_str()));
+        let rows = match rows.first() {
+            Some(first) if is_header(first) => &rows[1..],
+            _ => &rows[..],
+        };
+        let paired = rows.iter().filter(|r| r.len() >= 2 && !r[1].is_empty()).count();
+        if paired * 2 > rows.len() {
+            let pairs = rows
+                .iter()
+                .filter(|r| r.len() >= 2 && !r[0].is_empty() && !r[1].is_empty())
+                .map(|r| (strip_ext(&r[0]).to_lowercase(), strip_ext(&r[1]).to_string()))
+                .collect();
+            Self { pairs, ordered: Vec::new() }
+        } else {
+            Self { pairs: HashMap::new(), ordered: rows.iter().filter_map(|r| r.first()).filter(|c| !c.is_empty()).map(|c| strip_ext(c).to_string()).collect() }
+        }
+    }
+
+    pub fn lookup(&self, stem: &str, index: u32) -> Option<&str> {
+        if self.pairs.is_empty() {
+            self.ordered.get(index as usize).map(String::as_str)
+        } else {
+            self.pairs.get(&stem.to_lowercase()).map(String::as_str)
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.pairs.len().max(self.ordered.len())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 fn expand(pattern: &str, base: &str, r: &Rename, cx: &NameCx) -> String {
@@ -151,6 +263,7 @@ pub fn sanitise(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::recipe::Replacement;
 
     fn cx(stem: &str, index: u32) -> NameCx<'_> {
         NameCx { stem, index, dims: Dims::new(2048, 1365), folder: "spring-catalogue", date: "2026-11-17", taken: Some("2026-10-02"), ext: "webp" }
@@ -193,6 +306,26 @@ mod tests {
     fn case_and_slug() {
         assert_eq!(render(&Rename { case: Case::Slug, ..pattern("{name}") }, &cx("Café Crème_01", 0)), "cafe-creme-01");
         assert_eq!(title("blue mug-large"), "Blue Mug-Large");
+    }
+
+    #[test]
+    fn names_from_a_spreadsheet() {
+        let r = Rename { mode: RenameMode::List, list: "Old name,New name\nDSC_4471.JPG,blue-mug-front\n\"DSC_4472\",\"blue mug, back\"\nDSC_9\t{name}-spare".into(), ..Rename::default() };
+        let n = Namer::new(&r);
+        assert_eq!(n.render(&cx("DSC_4471", 5)), "blue-mug-front");
+        assert_eq!(n.render(&cx("dsc_4472", 0)), "blue mug, back", "matched without case or extension");
+        assert_eq!(n.render(&cx("DSC_9", 0)), "DSC_9-spare", "tokens work in list names");
+        assert_eq!(n.render(&cx("IMG_1", 0)), "IMG_1", "unlisted files keep their name");
+        assert!(!n.listed("IMG_1", 0));
+    }
+
+    #[test]
+    fn names_from_a_plain_list_go_in_order() {
+        let r = Rename { mode: RenameMode::List, list: "sku-001\nsku-002.jpg\n\nsku-003".into(), case: Case::Upper, ..Rename::default() };
+        let n = Namer::new(&r);
+        assert_eq!(n.render(&cx("anything", 1)), "SKU-002");
+        assert_eq!(n.render(&cx("x", 2)), "SKU-003");
+        assert_eq!(n.render(&cx("leftover", 3)), "LEFTOVER");
     }
 
     #[test]

@@ -78,6 +78,9 @@ impl Recipe {
         if self.rename.mode == RenameMode::Pattern && self.rename.pattern.trim().is_empty() {
             return bad("the name pattern is empty".into());
         }
+        if self.rename.mode == RenameMode::List && self.rename.list.trim().is_empty() {
+            return bad("the list of names is empty".into());
+        }
         if self.destination.mode == DestinationMode::Folder && self.destination.folder.as_deref().is_none_or(|f| f.trim().is_empty()) {
             return bad("choose a folder to save into".into());
         }
@@ -189,7 +192,7 @@ pub enum Look {
     #[default]
     Balanced,
     Small,
-    /// A raw encoder quality, 1–100.
+    /// A raw encoder quality, 1-100.
     Exact(u8),
 }
 
@@ -291,6 +294,9 @@ pub enum RenameMode {
     Keep,
     Pattern,
     Replace,
+    /// New names from a pasted list or spreadsheet: `old, new` pairs, or one name per line in
+    /// batch order.
+    List,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -329,11 +335,15 @@ pub struct Rename {
     pub replace: Vec<Replacement>,
     pub start: u32,
     pub step: u32,
+    /// For `list` mode: lines of `old name, new name` (comma or tab, as pasted from a
+    /// spreadsheet), or one new name per line applied in batch order. New names may use the
+    /// pattern tokens, e.g. `{name}-front`.
+    pub list: String,
 }
 
 impl Default for Rename {
     fn default() -> Self {
-        Self { mode: RenameMode::Keep, pattern: "{name}".into(), case: Case::Keep, replace: Vec::new(), start: 1, step: 1 }
+        Self { mode: RenameMode::Keep, pattern: "{name}".into(), case: Case::Keep, replace: Vec::new(), start: 1, step: 1, list: String::new() }
     }
 }
 

@@ -16,7 +16,8 @@ interface Base {
   blurb: string;
   icon: IconName;
   accent: Accent;
-  /** Place in the run; matches the engine's stage order so the panel reads top to bottom. */
+  /** Place in the run, so the panel reads top to bottom. Pixel steps use the engine's stage
+   *  order (20 to 99); encoding and saving steps come after, from 100. */
   order: number;
   /** Whether these settings change anything. */
   active(r: Recipe): boolean;
@@ -28,7 +29,7 @@ export interface CoreModule extends Base {
   kind: 'core';
   /** Settings beyond the channel, shown when its row in the Recipe panel opens. */
   Details?: Component;
-  /** A channel in the strip under the display. `slot` 1–4 is also its number key. */
+  /** A channel in the strip under the display. `slot` 1-4 is also its number key. */
   channel?: { slot: number; glyph: string; Screen: Component; Keys: Component };
 }
 

@@ -9,7 +9,7 @@ Thanks for helping. A few things make reviews quick:
   `apps/desktop`.
 - **Keep files' licence headers.** New source files start with
   `// SPDX-License-Identifier: AGPL-3.0-or-later` and `// Copyright (C) 2026 Sean Hawkey`.
-- **Plain words in the interface.** Labels say what things do; errors say what went wrong and how
+- **Plain words in the interface.** Labels say what things do. Errors say what went wrong and how
   to fix it.
 
 ## Contributor Licence Agreement

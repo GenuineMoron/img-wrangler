@@ -7,7 +7,7 @@ Milestones in build order. Each one ends working and tested, so the project is u
 - [x] Image model, decode (all formats incl. AVIF, JPEG XL, SVG, HEIC via OS), orientation, sRGB conversion
 - [x] Format registry and encoders: JPEG (MozJPEG), PNG (oxipng, optional palette), WebP, AVIF, GIF, TIFF, BMP, ICO, QOI
 - [x] Ops: resize, trim detection, frame layout, pad, crop, rotate, sharpen
-- [x] Modules: size (core), rotate, sharpen (add-ons); stage pipeline
+- [x] Modules: size (core), rotate, sharpen (add-ons). Stage pipeline
 - [x] Quality: look targeting (SSIMULACRA 2), size limit, never bigger
 - [x] Naming: patterns, replace, case, collisions
 - [x] Recipe TOML with defaults, validation, built-in presets
@@ -20,7 +20,7 @@ Milestones in build order. Each one ends working and tested, so the project is u
 
 ## M3 · Command line
 - [x] `img-wrangler run | plan | recipes | undo | history | info | integrate | quick | open`
-- [x] Flags for common settings layered on a recipe; JSON output for scripts
+- [x] Flags for common settings layered on a recipe. JSON output for scripts
 
 ## M4 · Desktop app
 - [x] Tauri host: commands, events, `thumb://` and `preview://`, single instance, window state
@@ -33,15 +33,19 @@ Milestones in build order. Each one ends working and tested, so the project is u
 ## M5 · Lives where the files are
 - [x] Finder Quick Actions, Windows Explorer verbs, Dolphin / Nautilus / Nemo / Thunar actions
 - [x] Install, update and remove from Settings and from the CLI
-- [ ] Open With and drag onto the Dock / taskbar icon (declared; macOS Open With and Dock drops handled, to try on a Mac)
+- [ ] Open With and drag onto the Dock / taskbar icon (declared. MacOS Open With and Dock drops handled, to try on a Mac)
 - [ ] Try each integration on a real machine: macOS Finder, Windows 11 Explorer, KDE Dolphin, GNOME Files, Cinnamon Nemo, Xfce Thunar
+
+## M5½ · More of the everyday
+- [x] Watermark add-on: a logo placed by anchor, sized to each image's shorter side, with opacity and margin
+- [x] Rename from a list: `old, new` pairs pasted from a spreadsheet or loaded from CSV, or names in batch order
 
 ## M6 · Ship
 - [x] Licence (AGPL-3.0-or-later), NOTICE, CLA, CONTRIBUTING, TRADEMARK, THIRD_PARTY
-- [x] CI workflows: test on macOS, Linux, Windows; release builds (DMG, AppImage/deb/rpm, MSI/NSIS); CLI archives
+- [x] CI workflows: test on macOS, Linux, Windows. Release builds (DMG, AppImage/deb/rpm, MSI/NSIS). CLI archives
 - [ ] First green CI run and a signed, notarised macOS build
 - [ ] Homebrew tap, AUR package
 - [ ] README with screenshots
 
 ## Later
-Watch folders, clipboard optimise, responsive image sets and `<picture>` snippets, ThumbHash placeholders, CSV rename mapping, watermark, borders, colour adjust, local background removal (commercially licensed model only), JPEG XL encode, animated GIF/WebP processing.
+Watch folders, clipboard optimise, responsive image sets and `<picture>` snippets, ThumbHash placeholders, borders, colour adjust, local background removal (commercially licensed model only), JPEG XL encode, animated GIF/WebP processing.

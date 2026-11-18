@@ -12,7 +12,7 @@
 
 <div class="details" style:--accent="var(--accent-quality)" style:--on-accent="var(--on-quality)">
   <Row label="Size limit" note={q.max_kb ? 'Quality drops until each file fits.' : undefined}>
-    <Field label="Size limit in kilobytes; empty for none" type="number" min="10" placeholder="none" unit="KB" value={q.max_kb ?? ''}
+    <Field label="Size limit in kilobytes, empty for none" type="number" min="10" placeholder="none" unit="KB" value={q.max_kb ?? ''}
       oninput={e => { const v = Number(e.currentTarget.value); q.max_kb = e.currentTarget.value === '' || !v ? null : Math.max(10, Math.round(v)); }} />
     <Key label="Shrink to fit" pressed={q.allow_downscale} disabled={!q.max_kb} onclick={() => (q.allow_downscale = !q.allow_downscale)}
       title="If the limit can’t be met, make the image smaller too" />
@@ -30,6 +30,6 @@
     </Row>
   {/if}
   <Row label="JPG loading">
-    <Key label="Progressive" pressed={q.progressive} onclick={() => (q.progressive = !q.progressive)} title="Loads blurry-to-sharp; usually a little smaller" />
+    <Key label="Progressive" pressed={q.progressive} onclick={() => (q.progressive = !q.progressive)} title="Loads blurry to sharp, and is usually a little smaller" />
   </Row>
 </div>

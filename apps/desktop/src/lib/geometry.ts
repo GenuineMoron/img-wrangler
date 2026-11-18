@@ -55,7 +55,7 @@ export interface FrameSpec {
   shape: Shape;
   fit: Fit;
   anchor: [number, number];
-  /** 0.05–1 */
+  /** 0.05-1 */
   fill: number;
   upscale: boolean;
 }

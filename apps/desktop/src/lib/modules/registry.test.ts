@@ -16,7 +16,7 @@ describe('module registry', () => {
     expect([...orders].sort((a, b) => a - b)).toEqual(orders);
   });
 
-  it('puts the four everyday channels in slots 1–4', () => {
+  it('puts the four everyday channels in slots 1-4', () => {
     expect(CHANNELS.map(c => [c.id, c.channel.slot])).toEqual([['size', 1], ['format', 2], ['quality', 3], ['name', 4]]);
   });
 
@@ -31,7 +31,7 @@ describe('module registry', () => {
   it('lists a recipe’s steps with its add-ons in run order', () => {
     const r: Recipe = { ...shopify, addons: [ADDONS.find(m => m.id === 'sharpen')!.create()] };
     expect(steps(r).map(s => s.module.id)).toEqual(['files', 'size', 'sharpen', 'format', 'quality', 'metadata', 'name', 'save']);
-    expect(addable(r).map(m => m.id)).toEqual(['rotate']);
+    expect(addable(r).map(m => m.id)).toEqual(['rotate', 'watermark']);
   });
 
   it('summarises every built-in recipe without throwing', () => {

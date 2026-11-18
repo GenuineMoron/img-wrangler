@@ -5,6 +5,7 @@
   import { batch } from '$lib/state/batch.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
   import { fileName } from '$lib/text';
+  import { ui } from '$lib/state/ui.svelte';
 
   const r = $derived(recipe.value!.rename);
   const item = $derived(batch.current);
@@ -18,6 +19,7 @@
     queueMicrotask(() => { field?.focus(); field?.setSelectionRange(a + token.length, a + token.length); });
   }
 
+  const lines = $derived(r.list.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length);
   const first = $derived(items[0] ? fileName(items[0].output) : '');
   const last = $derived(items.length > 1 ? fileName(items[items.length - 1].output) : '');
 </script>
@@ -31,6 +33,8 @@
       <span aria-hidden="true">→</span>
       <input bind:value={r.replace[0].with} aria-label="Replace with" placeholder="with" spellcheck="false" autocomplete="off" />
     </div>
+  {:else if r.mode === 'list'}
+    <div class="pat"><button type="button" class="paste" onclick={() => ui.reveal('name')}>{lines && batch.plan ? `${batch.items.length - batch.plan.unlisted} of ${batch.items.length} from your list ›` : 'paste a list or spreadsheet ›'}</button></div>
   {:else}
     <div class="pat"><span class="scr-label">names stay as they are</span></div>
   {/if}
@@ -51,7 +55,7 @@
         <button type="button" onclick={() => insert('{date}')} aria-label="Insert the date">+date</button>
       </span>
     {:else}<span></span>{/if}
-    <span class:alarm={!!batch.plan?.clashes}>{batch.plan?.clashes ? `${batch.plan.clashes} taken → -2` : r.mode === 'pattern' ? '' : 'ext follows format'}</span>
+    <span class:alarm={!!batch.plan?.clashes || (r.mode === 'list' && !!batch.plan?.unlisted)}>{batch.plan?.clashes ? `${batch.plan.clashes} taken → -2` : r.mode === 'list' && batch.plan ? (batch.plan.unlisted ? `${batch.plan.unlisted} not on the list` : 'every file matched') : r.mode === 'pattern' ? '' : 'ext follows format'}</span>
   </div>
 </div>
 
@@ -62,6 +66,8 @@
   .pat input::placeholder { color: var(--screen-3); }
   .pat input:focus-visible { box-shadow: 0 1px 0 var(--accent-name); }
   .pat.two span { color: var(--screen-3); }
+  .paste { all: unset; cursor: pointer; font: 12px/1.4 var(--font-data); color: var(--accent-name); border-radius: 2px; }
+  .paste:focus-visible { outline: var(--focus-on-screen); }
   .preview { display: grid; gap: 2px; align-content: center; min-width: 0; }
   .src { color: var(--screen-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .out { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--accent-name); }

@@ -85,6 +85,6 @@
       onkeydown={e => e.key === 'Enter' && applyShape()} onblur={applyShape} />
   </Row>
   <Row label="Small images">
-    <Key label="Enlarge to size" pressed={size.upscale} onclick={() => (size.upscale = !size.upscale)} title="Images smaller than the size are enlarged; otherwise they stay as they are" />
+    <Key label="Enlarge to size" pressed={size.upscale} onclick={() => (size.upscale = !size.upscale)} title="Images smaller than the size are enlarged. Otherwise they stay as they are" />
   </Row>
 </div>

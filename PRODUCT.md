@@ -34,7 +34,7 @@ Every other tool does one slice: ImageOptim and Caesium compress, PowerToys resi
 
 ## Operating Context
 
-- Inputs: folders of JPEG, PNG, WebP, HEIC, AVIF, TIFF, GIF and other formats straight from photographers, phones, suppliers and design tools, often with inconsistent names, sizes and backgrounds. Batches range from one image to several thousand; single images can be 50 MP.
+- Inputs: folders of JPEG, PNG, WebP, HEIC, AVIF, TIFF, GIF and other formats straight from photographers, phones, suppliers and design tools, often with inconsistent names, sizes and backgrounds. Batches range from one image to several thousand. Single images can be 50 MP.
 - Typical jobs: "make these web-ready", "square white 2048 px canvas with even margins for the shop", "rename these to SKU-01, SKU-02", "convert everything to WebP under 200 KB", "process this folder in place".
 - Work happens on laptops and desktops, often with Finder or a Linux file manager open alongside. Repeated jobs are saved as recipes and reused weekly.
 - Developers also want the same recipes from a command line and in scripts.
@@ -62,17 +62,17 @@ Later (designed for, not in v1): watch folders, clipboard optimise, responsive s
 
 ## Evidence on Hand
 
-- The previous Python/PyQt tool in `../ImageWrangler/` (feature reference only; its look is discarded).
+- The previous Python/PyQt tool in `../ImageWrangler/` (feature reference only. Its look is discarded).
 - Research reports gathered Nov 2026 (frameworks, codecs, compression, competitors, e-commerce specs, licensing, distribution, performance), summarised in `docs/research.md`.
 - No testimonials, user counts, benchmarks or press exist yet. Do not invent any.
 
 ## Product Principles
 
-1. **See it before it happens.** Every batch is a visible plan first; writing files is the last, deliberate step.
+1. **See it before it happens.** Every batch is a visible plan first. Writing files is the last, deliberate step.
 2. **Safe by default.** Originals are recoverable, files never get bigger by accident, and collisions are caught before they happen.
 3. **One recipe, everywhere.** The same recipe runs from the window, the command line and (later) a watched folder.
-4. **Fast enough to feel instant.** Thumbnails stream in as soon as a folder lands; previews update while a slider moves.
-5. **Plain words over codec jargon.** "Small, Balanced, High, Lossless" and "under 200 KB" first; encoder numbers are there for experts who want them.
+4. **Fast enough to feel instant.** Thumbnails stream in as soon as a folder lands. Previews update while a slider moves.
+5. **Plain words over codec jargon.** "Small, Balanced, High, Lossless" and "under 200 KB" first. Encoder numbers are there for experts who want them.
 
 ## Accessibility & Inclusion
 

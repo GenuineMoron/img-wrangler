@@ -33,6 +33,8 @@ export const ICONS = {
   flipH: '<path d="M8 1.5v13"/><path d="M5.5 4 2 11.5h3.5ZM10.5 4l3.5 7.5h-3.5Z"/>',
   flipV: '<path d="M1.5 8h13"/><path d="M4 5.5 11.5 2v3.5ZM4 10.5l7.5 3.5v-3.5Z"/>',
   drop: '<path d="M8 1.5v8M4.5 6 8 9.5 11.5 6"/><path d="M2 10.5v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2"/>',
+  stamp: '<path d="M5.5 9.5V8a2.5 2.5 0 1 1 5 0v1.5"/><path d="M6.5 6.5 6 3.5a2 2 0 0 1 4 0l-.5 3"/><rect x="2.5" y="9.5" width="11" height="3" rx="1"/><path d="M3.5 14.5h9"/>',
+  list: '<path d="M6 4h8M6 8h8M6 12h8"/><path d="M2.5 4h.01M2.5 8h.01M2.5 12h.01"/>',
   split: '<rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M8 1v14"/>',
 } as const;
 

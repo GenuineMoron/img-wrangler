@@ -70,6 +70,10 @@ export const tauri: Backend = {
     const r = await open({ directory: true, multiple: false, title: 'Save into' });
     return typeof r === 'string' ? r : null;
   },
+  async pickImage() {
+    const r = await open({ multiple: false, title: 'Choose a logo', filters: [{ name: 'Images', extensions: IMAGE_EXTENSIONS }] });
+    return typeof r === 'string' ? r : null;
+  },
   reveal: path => revealItemInDir(path),
   thumbUrl: path => convertFileSrc(path, 'thumb'),
 

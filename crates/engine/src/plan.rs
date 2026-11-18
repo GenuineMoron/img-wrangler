@@ -12,7 +12,7 @@ use serde::Serialize;
 use crate::codec::{probe, Format, Probe};
 use crate::img::Dims;
 use crate::modules::{self, Planned};
-use crate::naming::{render, NameCx};
+use crate::naming::{NameCx, Namer};
 use crate::process::output_format;
 use crate::recipe::{DestinationMode, OnConflict, Recipe};
 use crate::scan::SourceFile;
@@ -50,6 +50,8 @@ pub struct Plan {
     pub items: Vec<PlanItem>,
     pub clashes: u32,
     pub bytes_in: u64,
+    /// In `list` naming: files the list has no name for (they keep theirs).
+    pub unlisted: u32,
 }
 
 /// Things a plan needs from the world, passed in so tests are repeatable.
@@ -89,7 +91,9 @@ fn with_suffix(path: &Path, n: u32) -> PathBuf {
 
 pub fn build(sources: &[SourceFile], recipe: &Recipe, cx: &PlanCx) -> Plan {
     let stages = modules::stages(&recipe.size, &recipe.addons);
-    let wants_taken = recipe.rename.pattern.contains("{taken");
+    let namer = Namer::new(&recipe.rename);
+    let mut unlisted = 0;
+    let wants_taken = recipe.rename.pattern.contains("{taken") || recipe.rename.list.contains("{taken");
     let sources_set: HashSet<&Path> = sources.iter().map(|s| s.path.as_path()).collect();
     let mut taken_paths: HashMap<PathBuf, u32> = HashMap::new();
     let mut items = Vec::with_capacity(sources.len());
@@ -112,7 +116,10 @@ pub fn build(sources: &[SourceFile], recipe: &Recipe, cx: &PlanCx) -> Plan {
         let taken = if wants_taken { taken_date(&src.path) } else { None };
         let stem = src.path.file_stem().and_then(|s| s.to_str()).unwrap_or("image");
         let folder = src.path.parent().and_then(|p| p.file_name()).and_then(|s| s.to_str()).unwrap_or("");
-        let name = render(&recipe.rename, &NameCx { stem, index, dims: planned.map_or(Dims::new(0, 0), |p| p.dims), folder, date: &date, taken: taken.as_deref(), ext: format.extension() });
+        if recipe.rename.mode == crate::recipe::RenameMode::List && !namer.listed(stem, index) {
+            unlisted += 1;
+        }
+        let name = namer.render(&NameCx { stem, index, dims: planned.map_or(Dims::new(0, 0), |p| p.dims), folder, date: &date, taken: taken.as_deref(), ext: format.extension() });
         index += 1;
         let file_name = format!("{name}.{}", format.extension());
         let dir = src.path.parent().unwrap_or(Path::new("."));
@@ -159,7 +166,7 @@ pub fn build(sources: &[SourceFile], recipe: &Recipe, cx: &PlanCx) -> Plan {
         };
         items.push(PlanItem { id, source: src.path.clone(), probe: Some(probe), output, format, planned, action, renamed_for_clash, in_place });
     }
-    Plan { items, clashes, bytes_in }
+    Plan { items, clashes, bytes_in, unlisted }
 }
 
 #[cfg(test)]

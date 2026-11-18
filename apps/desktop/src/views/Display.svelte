@@ -38,7 +38,7 @@
       {:else if batch.scanning}
         <span>reading folders…</span>
       {:else if !batch.empty}
-        <span><kbd>←→</kbd>select</span><span><kbd>space</kbd>original</span><span><kbd>1–4</kbd>channels</span><span><kbd>{mod}↵</kbd>run</span><span><kbd>{mod}K</kbd>commands</span>
+        <span><kbd>←→</kbd>select</span><span><kbd>space</kbd>original</span><span><kbd>1-4</kbd>channels</span><span><kbd>{mod}↵</kbd>run</span><span><kbd>{mod}K</kbd>commands</span>
         <span class="live">{batch.estimating ? 'measuring…' : batch.estimate ? `sizes from ${batch.estimate.sampled} samples` : ''}</span>
       {/if}
     </div>

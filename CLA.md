@@ -1,7 +1,7 @@
 # Contributor Licence Agreement
 
 Thank you for contributing to Wrangler. This agreement is short and plain on purpose. It is not
-legal advice; if you contribute on behalf of an employer, check with them first.
+legal advice. If you contribute on behalf of an employer, check with them first.
 
 By submitting a contribution (code, documentation, design or other material) to this project, you
 agree to the following.
@@ -18,6 +18,6 @@ agree to the following.
 4. **It's yours to give.** Your contribution is your original work, or you have the right to
    submit it, and it doesn't knowingly include anyone else's material without saying so.
 5. **The open-source promise.** Every version of Wrangler released under the AGPL stays available
-   under the AGPL. This agreement adds a commercial option; it never takes the open one away.
+   under the AGPL. This agreement adds a commercial option. It never takes the open one away.
 
 You agree by opening a pull request and confirming the CLA check on it.

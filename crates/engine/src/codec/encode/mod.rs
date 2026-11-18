@@ -19,7 +19,7 @@ use crate::error::{Error, Result};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EncodeQuality {
     Lossless,
-    /// 1–100, higher is better.
+    /// 1-100, higher is better.
     Lossy(u8),
 }
 

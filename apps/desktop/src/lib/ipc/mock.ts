@@ -71,12 +71,22 @@ function slug(s: string) {
   return s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+/** A simple stand-in for the engine's list parsing: `old, new` pairs, or names in order. */
+function listName(text: string, stem: string, index: number): string | null {
+  const rows = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#')).map(l => l.split(/\t|,/).map(c => c.trim().replace(/^"|"$/g, '')));
+  const strip = (n: string) => n.replace(/\.[a-z0-9]{1,5}$/i, '');
+  const pairs = rows.filter(r => r.length >= 2 && r[1]);
+  if (pairs.length * 2 > rows.length) return strip(pairs.find(r => strip(r[0]).toLowerCase() === stem.toLowerCase())?.[1] ?? '') || null;
+  return rows[index]?.[0] ? strip(rows[index][0]) : null;
+}
+
 function renderName(r: Recipe, s: Sample, index: number, dims: Dims, fmt: Format): string {
   const stem = s.name.replace(/\.[^.]+$/, '');
   let base = stem;
   for (const x of r.rename.replace) if (x.find) base = base.split(x.find).join(x.with);
-  let name = r.rename.mode === 'keep' ? stem : r.rename.mode === 'replace' ? base
-    : r.rename.pattern.replace(/\{(\w+)(?::(0+))?(?:\|(\w+))?\}/g, (m, tok: string, pad?: string, filter?: string) => {
+  const listed = r.rename.mode === 'list' ? listName(r.rename.list, stem, index) : null;
+  let name = r.rename.mode === 'keep' ? stem : r.rename.mode === 'replace' ? base : r.rename.mode === 'list' && listed == null ? stem
+    : (listed ?? r.rename.pattern).replace(/\{(\w+)(?::(0+))?(?:\|(\w+))?\}/g, (m, tok: string, pad?: string, filter?: string) => {
       const n = r.rename.start + index * Math.max(1, r.rename.step);
       const v = { name: base, n: pad ? String(n).padStart(pad.length, '0') : String(n), w: String(dims.w), h: String(dims.h), date: '2026-11-17', taken: '2026-10-02', folder: 'spring-catalogue', ext: ext(fmt) }[tok];
       if (v == null) return m;
@@ -108,7 +118,8 @@ function plan(r: Recipe): Plan {
       planned: { dims, exact: r.size.trim == null }, action: { kind: 'process' }, renamed_for_clash: clash, in_place: d.mode === 'replace' && output === src.path,
     };
   });
-  return { items, clashes: items.filter(i => i.renamed_for_clash).length, bytes_in: items.reduce((a, i) => a + (i.probe?.bytes ?? 0), 0) };
+  const unlisted = r.rename.mode === 'list' ? batch.filter((b, i) => listName(r.rename.list, sampleFor(b.path).name.replace(/\.[^.]+$/, ''), i) == null).length : 0;
+  return { items, clashes: items.filter(i => i.renamed_for_clash).length, bytes_in: items.reduce((a, i) => a + (i.probe?.bytes ?? 0), 0), unlisted };
 }
 
 function guess(r: Recipe, item: PlanItem): number {
@@ -158,6 +169,19 @@ async function render(s: Sample, r: Recipe | null): Promise<{ url: string; dims:
   if (bd !== 'transparent') oc.fillRect(0, 0, out.width, out.height);
   const c = l.crop ?? { x: 0, y: 0, w: sw, h: sh };
   oc.drawImage(src, c.x, c.y, c.w, c.h, l.offset[0], l.offset[1], l.scaled.w, l.scaled.h);
+  const wm = r.addons.find(a => a.kind === 'watermark');
+  if (wm && wm.kind === 'watermark' && wm.enabled && wm.image) {
+    // A stand-in mark: the engine draws the real logo file.
+    const short = Math.min(out.width, out.height), long = short * wm.size / 100, h = long / 3.2, m = short * wm.margin / 100;
+    const [fx, fy] = { center: [0.5, 0.5], top: [0.5, 0], bottom: [0.5, 1], left: [0, 0.5], right: [1, 0.5], top_left: [0, 0], top_right: [1, 0], bottom_left: [0, 1], bottom_right: [1, 1] }[wm.anchor];
+    const x = m + (out.width - long - 2 * m) * fx, y = m + (out.height - h - 2 * m) * fy;
+    oc.globalAlpha = wm.opacity / 100;
+    oc.fillStyle = '#18191b';
+    oc.beginPath(); oc.roundRect(x, y, long, h, h * 0.22); oc.fill();
+    oc.fillStyle = '#ffffff'; oc.font = `700 ${h * 0.5}px "Host Grotesk", sans-serif`; oc.textAlign = 'center'; oc.textBaseline = 'middle';
+    oc.fillText('acme', x + long / 2, y + h / 2 + 1);
+    oc.globalAlpha = 1;
+  }
   const dims = layout(full, specOf(r.size)).canvas;
   return { url: out.toDataURL('image/png'), dims };
 }
@@ -248,6 +272,7 @@ export const mock: Backend = {
   },
   pick: async () => [HOME],
   pickFolder: async () => '/Users/sean/Desktop/Wrangled',
+  pickImage: async () => '/Users/sean/Brand/acme-logo.png',
   reveal: async path => console.info('reveal', path),
   thumbUrl: path => photoUrl(sampleFor(path)?.photo ?? 1),
 

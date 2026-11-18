@@ -19,10 +19,10 @@ Direction chosen by the user (Nov 2026, over several rounds): perfect vintage ha
 
 THESIS: A batch image tool as a piece of hardware you'd want on your desk. Every screen is an instrument you act on directly: drag the frame's corner, drag the size limit, pick the format from the list on the screen.
 
-OWN-WORLD: bead-blasted aluminium case with soft-light grain, scratches and dust from real scans; light keycaps with a 2.75 px wall; black OLED screens with a faint pixel grid, glass and bloom; photographs are never drawn over. Host Grotesk printed on the case, Unbounded thin numerals and Departure Mono data on screens, Doto dot-matrix for the meter. One accent per channel with a glyph (■ size blue, ● format green, ▲ quality yellow, ◆ name pink); trim teal and canvas violet inside Size; orange only for output (Run, meter); red only for alarms.
+OWN-WORLD: bead-blasted aluminium case with soft-light grain, scratches and dust from real scans. Light keycaps with a 2.75 px wall. Black OLED screens with a faint pixel grid, glass and bloom. Photographs are never drawn over. Host Grotesk printed on the case, Unbounded thin numerals and Departure Mono data on screens, Doto dot-matrix for the meter. One accent per channel with a glyph (■ size blue, ● format green, ▲ quality yellow, ◆ name pink). Trim teal and canvas violet inside Size. Orange only for output (Run, meter). Red only for alarms.
 
-FIRST VIEWPORT: header (grille = Add, wordmark, recipe selector, utility keys); the big display (path and tabs, virtualised sheet, monitor with result/original/split and facts, status line); the Recipe panel listing every step in run order; the four channels; the Output panel (meter, Save to, Undo, Run).
+FIRST VIEWPORT: header (grille = Add, wordmark, recipe selector, utility keys). The big display (path and tabs, virtualised sheet, monitor with result/original/split and facts, status line). The Recipe panel listing every step in run order. The four channels. The Output panel (meter, Save to, Undo, Run).
 
 Memorable moment: the meter's LED readout counting the saving while a run fills the OUT ladder, and the quick window doing the same from a right-click.
 
-FINISH: tokens tuned by the user in the Tune drawer (design/prototype) are the source of truth in design/system/tokens.css; DESIGN.md documents the system.
+FINISH: tokens tuned by the user in the Tune drawer (design/prototype) are the source of truth in design/system/tokens.css. DESIGN.md documents the system.

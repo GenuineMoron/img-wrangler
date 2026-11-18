@@ -8,7 +8,7 @@ anything is written, and keeps your originals so any run can be undone.
 It runs entirely on your computer: macOS, Linux and Windows. No accounts, no uploads, no telemetry.
 
 > **Status:** early development, heading for 0.1. The engine, command line tool, desktop app and
-> file-manager actions are built; installers and packaging come next. See [docs/PLAN.md](docs/PLAN.md).
+> file-manager actions are built. Installers and packaging come next. See [docs/PLAN.md](docs/PLAN.md).
 
 ## What it does
 
@@ -17,7 +17,7 @@ It runs entirely on your computer: macOS, Linux and Windows. No accounts, no upl
   empty background first and centre the product so it fills, say, 85% of the frame, on its own
   backdrop colour, white, transparent or any colour.
 - **Compression that looks the same everywhere.** Choose a look (small, balanced, high, pristine)
-  instead of an encoder number; Wrangler measures the result and picks the setting per image. Add a
+  instead of an encoder number. Wrangler measures the result and picks the setting per image. Add a
   maximum file size if you have a budget. Files never get bigger than they were.
 - **Formats.** Reads JPEG, PNG, WebP, AVIF, HEIC, JPEG XL, GIF, TIFF, BMP, ICO, QOI, TGA, PNM and SVG.
   Writes JPEG (MozJPEG), PNG (oxipng, optional palette reduction), WebP, AVIF, GIF, TIFF, BMP, ICO, QOI.
@@ -51,7 +51,7 @@ img-wrangler recipes                                   # built-in and saved reci
 img-wrangler integrate install --pin web-ready         # add right-click actions
 ```
 
-Recipes are plain TOML; `img-wrangler recipes show web-ready` prints one to start from.
+Recipes are plain TOML`img-wrangler recipes show web-ready` prints one to start from.
 
 ## Building
 
@@ -81,12 +81,12 @@ If you change an engine type the app uses, regenerate the TypeScript types with
 
 A Rust engine (`crates/engine`) with three front doors: the CLI (`crates/cli`), a Tauri desktop app
 (`apps/desktop`) and file-manager integrations (`crates/integrate`). Every feature is a module.
-Start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); adding a feature is described in
+Start with [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Adding a feature is described in
 [docs/MODULES.md](docs/MODULES.md).
 
 ## Licence
 
 Wrangler is free software under the [GNU AGPL v3 or later](LICENSE). Commercial licences are
 available from the author ([NOTICE](NOTICE)). Contributions are welcome under the
-[CLA](CLA.md); see [CONTRIBUTING.md](CONTRIBUTING.md). The name and logo are covered by the
+[CLA](CLA.md). See [CONTRIBUTING.md](CONTRIBUTING.md). The name and logo are covered by the
 [trademark policy](TRADEMARK.md).

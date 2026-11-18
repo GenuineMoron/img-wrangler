@@ -8,13 +8,14 @@ import files from './files';
 import rotate from './rotate';
 import size from './size';
 import sharpen from './sharpen';
+import watermark from './watermark';
 import format from './format';
 import quality from './quality';
 import metadata from './metadata';
 import name from './name';
 import save from './save';
 
-export const MODULES: UiModule[] = [files, rotate, size, sharpen, format, quality, metadata, name, save].sort((a, b) => a.order - b.order);
+export const MODULES: UiModule[] = [files, rotate, size, sharpen, watermark, format, quality, metadata, name, save].sort((a, b) => a.order - b.order);
 
 export const CHANNELS = MODULES.filter((m): m is CoreModule & { channel: NonNullable<CoreModule['channel']> } => m.kind === 'core' && !!m.channel)
   .sort((a, b) => a.channel.slot - b.channel.slot);

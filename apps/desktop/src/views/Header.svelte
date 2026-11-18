@@ -31,7 +31,7 @@
     <Screen class="recipe__screen">
       <button type="button" class="recipe__name" onclick={() => (ui.dialog = 'recipes')} aria-label="Recipe: {recipe.value?.name}{recipe.edited ? ', edited' : ''}. Press to choose or manage recipes">
         <span class="num">{String(recipe.index + 1).padStart(2, '0')}</span>
-        <span class="label">{recipe.value?.name.toUpperCase() ?? '—'}</span>
+        <span class="label">{recipe.value?.name.toUpperCase() ?? '--'}</span>
         {#if recipe.edited}<span class="edited">● edited</span>{/if}
       </button>
     </Screen>
@@ -40,7 +40,7 @@
   </div>
 
   <div class="right">
-    <Key dark icon="plus" label="Add" onclick={() => add('files')} title="Add images ({mod}O); folders with {mod}⇧O" />
+    <Key dark icon="plus" label="Add" onclick={() => add('files')} title="Add images ({mod}O), or folders ({mod}⇧O)" />
     <Key dark icon="history" aria-label="Past runs" title="Past runs and undo" onclick={() => (ui.dialog = 'history')} />
     <Key dark icon="settings" aria-label="Settings" title="Settings and right-click menus" onclick={() => (ui.dialog = 'settings')} />
     <Key dark icon="command" aria-label="Commands" title="Commands ({mod}K)" onclick={() => (ui.dialog = 'palette')} />

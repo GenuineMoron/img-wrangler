@@ -16,7 +16,7 @@
     over: { text: '! OVER', alarm: true, say: 'over the size limit' },
     failed: { text: '! FAILED', alarm: true, say: 'failed' },
     kept: { text: '= KEPT', alarm: false, say: 'original kept, already smaller' },
-    skipped: { text: '– SKIP', alarm: false, say: 'skipped' },
+    skipped: { text: '- SKIP', alarm: false, say: 'skipped' },
     done: { text: '✓ DONE', alarm: false, say: 'done' },
   };
   const flag = $derived(FLAGS[status]);

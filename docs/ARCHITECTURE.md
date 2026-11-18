@@ -1,6 +1,6 @@
 # Architecture
 
-Wrangler is one Rust image engine with three front doors: a desktop app, a command line tool, and file-manager quick actions. Everything a user can do is described by a **recipe**, and every feature in a recipe is a **module**. This document is the map; [MODULES.md](MODULES.md) is the how-to for adding features.
+Wrangler is one Rust image engine with three front doors: a desktop app, a command line tool, and file-manager quick actions. Everything a user can do is described by a **recipe**, and every feature in a recipe is a **module**. This document is the map, [MODULES.md](MODULES.md) is the how-to for adding features.
 
 ```
                 ┌──────────────────────────── apps/desktop ────────────────────────────┐
@@ -27,15 +27,15 @@ Wrangler is one Rust image engine with three front doors: a desktop app, a comma
 | `crates/engine` (`wrangler-engine`) | The image engine. No UI, no OS integration, no global state. Everything is testable without a window. |
 | `crates/integrate` (`wrangler-integrate`) | Generates and installs file-manager actions: Finder Quick Actions, Windows Explorer verbs, Dolphin service menus, Nautilus/Nemo/Thunar actions. Pure text generation plus small installers. |
 | `crates/cli` (`img-wrangler`) | The command line tool. Thin: parses arguments into a recipe and calls the engine. |
-| `apps/desktop` | The desktop app. `src-tauri/` is the Rust host; `src/` is the Svelte front end. |
+| `apps/desktop` | The desktop app. `src-tauri/` is the Rust host, `src/` is the Svelte front end. |
 | `design/` | The design system (`system/`: tokens, component CSS, fonts, textures), the brand icon, and the first interactive prototype. |
 | `docs/` | This file, the plan, the module guide, research notes. |
 
-Dependencies point one way: `cli → engine, integrate`; `desktop → engine, integrate`. The engine depends on nothing of ours.
+Dependencies point one way: `cli → engine, integrate``desktop → engine, integrate`. The engine depends on nothing of ours.
 
 ## Recipes
 
-A recipe is plain TOML. The app, the CLI and quick actions all read the same file, so a recipe tuned in the app runs identically from a script. Every field has a default; a recipe only states what it changes.
+A recipe is plain TOML. The app, the CLI and quick actions all read the same file, so a recipe tuned in the app runs identically from a script. Every field has a default. A recipe only states what it changes.
 
 ```toml
 version = 1
@@ -52,7 +52,7 @@ pad = { backdrop = "auto", fill = 85 }
 id = "webp"                 # same | jpg | png | webp | avif | gif | tiff | bmp | ico | qoi
 
 [quality]                   # core module
-look = "balanced"           # small | balanced | high | pristine | lossless | 1–100
+look = "balanced"           # small | balanced | high | pristine | lossless | 1 to 100
 max_kb = 400
 never_bigger = true
 
@@ -74,7 +74,7 @@ mode = "replace"            # beside | subfolder | folder | replace
 ## Engine
 
 ### Image model
-`Img` is an 8-bit RGBA buffer plus what the pipeline must carry: the source format, whether alpha is meaningful, the EXIF block (orientation already applied), and the sampled backdrop colour once known. Colour profiles are converted to sRGB on decode (`moxcms`); output is always sRGB.
+`Img` is an 8-bit RGBA buffer plus what the pipeline must carry: the source format, whether alpha is meaningful, the EXIF block (orientation already applied), and the sampled backdrop colour once known. Colour profiles are converted to sRGB on decode (`moxcms`). Output is always sRGB.
 
 ### Modules and stages
 A **module** is one user-facing feature. In the engine, a module that touches pixels implements `Stage`:
@@ -96,13 +96,14 @@ Order is fixed, not user-sorted, so recipes can't be built in a broken order:
 | 20 | rotate | add-on |
 | 30 | size (trim → fit → crop/pad) | core |
 | 50 | sharpen | add-on |
-| 60+ | future pixel add-ons (watermark, border, adjust) | add-on |
-| — | encode (format + quality + metadata) | core, not a stage |
-| — | name | core, not a stage |
+| 60 | watermark | add-on |
+| 70 to 99 | future pixel add-ons (border, adjust) | add-on |
+| after | encode (format, quality, metadata) | core, not a stage |
+| after | name and save | core, not a stage |
 
 `Pipeline::from_recipe` turns a recipe into a sorted `Vec<Box<dyn Stage>>`. Add-ons live in the `AddOn` enum (serde-tagged by `kind`), one file each in `modules/`.
 
-Pixel work lives in `ops/` as pure functions (`resize`, `trim::detect`, `frame::layout`, `pad::composite`, `rotate`, `sharpen`). Modules compose ops; ops know nothing about recipes. Geometry (`frame::layout`) is pure maths and unit-tested exhaustively.
+Pixel work lives in `ops/` as pure functions (`resize`, `trim::detect`, `frame::layout`, `pad::composite`, `rotate`, `sharpen`, `overlay`). Modules compose ops. Ops know nothing about recipes. Geometry (`frame::layout`) is pure maths and unit-tested exhaustively.
 
 ### Codecs
 `codec/` has a format registry: one `FormatInfo` per format (id, label, extensions, MIME, can decode/encode, alpha, animation, lossy/lossless, browser support). The UI asks the engine for this list at start-up, so a new codec appears in the app without UI changes. Each encoder implements:
@@ -130,7 +131,7 @@ Decoders: `image` (JPEG, PNG, GIF, WebP, TIFF, BMP, ICO, QOI, TGA, PNM), `avif-d
 ## Desktop app
 
 ### Host (`apps/desktop/src-tauri`)
-- **Commands** (`commands.rs`) are thin wrappers over the engine; anything slow runs on a blocking thread: `formats`, `recipes`, `load_recipe`, `save_recipe`, `delete_recipe`, `scan`, `forget`, `plan`, `estimate` (a newer one cancels an older one), `preview` (one image processed exactly as the run would, nothing written), `run` (progress streamed over a Tauri `Channel`), `quick_run`, `cancel`, `undo`, `history`, `take_launch`, `open_main`, `integrations`, `set_integrations`.
+- **Commands** (`commands.rs`) are thin wrappers over the engine. Anything slow runs on a blocking thread: `formats`, `recipes`, `load_recipe`, `save_recipe`, `delete_recipe`, `scan`, `forget`, `plan`, `estimate` (a newer one cancels an older one), `preview` (one image processed exactly as the run would, nothing written), `run` (progress streamed over a Tauri `Channel`), `quick_run`, `cancel`, `undo`, `history`, `take_launch`, `open_main`, `integrations`, `set_integrations`.
 - **Protocols** serve images without base64: `thumb://localhost/<path>` (a cached WebP thumbnail, only for files in the batch) and `preview://localhost/<token>` (the last few previews, kept in memory).
 - **Launch modes** (`launch.rs`): plain, `open <paths…>` and `quick --recipe <id> <paths…>`, which the right-click actions run. A single-instance guard sends later launches to the running app, and pending launches merge, so the one-process-per-file launches Explorer makes fold into one batch.
 - **Windows**: `main`, and `quick`, the small unit a right-click action opens. Quick runs use their own file list (`quick_run`), so they never disturb the main window's batch. When the quick window closes and the main window was never shown, the app exits.
@@ -153,9 +154,9 @@ src/
 ```
 
 - **Design system.** `design/system` (tokens, component CSS, fonts, textures) is imported directly through the `@design` alias, so there is one copy of every token.
-- **Types.** `cargo test -p wrangler-engine --features ts export_bindings` regenerates `lib/types/engine`; the recipe the UI edits is the engine's own type, so the two can't drift.
-- **State flow.** Controls write straight into `recipe.value` (a deep `$state`). The controller watches it: the plan refreshes within 40 ms, the sampled estimate after 450 ms, and the preview of the selected image after 220 ms; stale replies are dropped by sequence number. `recipe.edited` compares against the last loaded or saved copy.
-- **Mock backend.** In `pnpm dev` outside Tauri, `lib/ipc/mock.ts` plays a product shoot from `dev/samples`, draws previews on a canvas with the same frame layout as the engine, and simulates runs. `?demo` starts with files; `#quick` opens the quick window. Production builds leave it out.
+- **Types.** `cargo test -p wrangler-engine --features ts export_bindings` regenerates `lib/types/engine`. The recipe the UI edits is the engine's own type, so the two can't drift.
+- **State flow.** Controls write straight into `recipe.value` (a deep `$state`). The controller watches it: the plan refreshes within 40 ms, the sampled estimate after 450 ms, and the preview of the selected image after 220 ms. Stale replies are dropped by sequence number. `recipe.edited` compares against the last loaded or saved copy.
+- **Mock backend.** In `pnpm dev` outside Tauri, `lib/ipc/mock.ts` plays a product shoot from `dev/samples`, draws previews on a canvas with the same frame layout as the engine, and simulates runs. `?demo` starts with files`#quick` opens the quick window. Production builds leave it out.
 - **Sheet.** The contact sheet draws only the rows in view, so thousands of files scroll as lightly as a dozen (WebKitGTK on Linux is the slowest webview we ship on).
 
 ### The unit's layout
@@ -163,7 +164,7 @@ src/
 |---|---|
 | Header | grille (Add, drop target), recipe selector, Save, Add/History/Settings/Commands keys |
 | Display | where the batch is, tabs (All, Ready, Done, Kept, Clash, Over, Skipped, Failed), the virtualised sheet, the monitor (result, original, split, 1:1 zoom) and the status line |
-| Recipe panel | every step in run order; open one (accordion) for its Details; add-on keys switch on and off; Add step |
+| Recipe panel | every step in run order, open one (accordion) for its Details, add-on keys switch on and off, Add step |
 | Channel strip | the core modules that have channels: Size, Format, Quality, Name. Each screen is itself the control |
 | Output panel | the meter, Save to, Undo and Run |
 

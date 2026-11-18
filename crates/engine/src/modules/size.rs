@@ -247,7 +247,7 @@ mod tests {
         assert_eq!(out.dims(), Dims::new(500, 500));
         // The product (100×120) fills 80% of the height: 400 px tall.
         assert_eq!(out.px.get_pixel(250, 250).0, [30, 30, 30, 255]);
-        assert_eq!(out.px.get_pixel(250, 55).0, [30, 30, 30, 255]); // product spans y 50–450
+        assert_eq!(out.px.get_pixel(250, 55).0, [30, 30, 30, 255]); // product spans y 50-450
         assert_eq!(out.px.get_pixel(250, 20).0, [240, 230, 220, 255]);
         assert_eq!(out.px.get_pixel(5, 5).0, [240, 230, 220, 255]);
     }

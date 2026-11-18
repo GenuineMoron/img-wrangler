@@ -2,7 +2,7 @@
 
 export type Sharpen = { enabled: boolean, 
 /**
- * Strength in percent, 0–200.
+ * Strength in percent, 0-200.
  */
 amount: number, 
 /**
@@ -10,6 +10,6 @@ amount: number,
  */
 radius: number, 
 /**
- * Ignore differences smaller than this (0–255) so flat areas stay clean.
+ * Ignore differences smaller than this (0-255) so flat areas stay clean.
  */
 threshold: number, };

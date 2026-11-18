@@ -7,6 +7,7 @@
 pub mod rotate;
 pub mod sharpen;
 pub mod size;
+pub mod watermark;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -15,6 +16,7 @@ use serde::{Deserialize, Serialize};
 pub use rotate::Rotate;
 pub use sharpen::Sharpen;
 pub use size::{Anchor, Backdrop, Pad, Size, Trim};
+pub use watermark::Watermark;
 
 use crate::error::{Error, Result};
 use crate::img::{Dims, Img};
@@ -60,6 +62,7 @@ pub trait Stage: Send + Sync {
 pub enum AddOn {
     Rotate(Rotate),
     Sharpen(Sharpen),
+    Watermark(Watermark),
 }
 
 impl AddOn {
@@ -67,6 +70,7 @@ impl AddOn {
         match self {
             AddOn::Rotate(m) => m,
             AddOn::Sharpen(m) => m,
+            AddOn::Watermark(m) => m,
         }
     }
 }

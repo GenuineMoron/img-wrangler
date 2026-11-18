@@ -27,7 +27,7 @@ const quality: CoreModule = {
   blurb: 'How hard to compress, a size limit, and never making files bigger.',
   icon: 'quality',
   accent: 'quality',
-  order: 70,
+  order: 110,
   active: r => r.quality.look !== 'untouched',
   summary: r => `${lookText(r)}${r.quality.max_kb ? ` · ≤${r.quality.max_kb} KB` : ''}`,
   Details,

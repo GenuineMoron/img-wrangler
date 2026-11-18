@@ -27,7 +27,7 @@
   --ink-on-dark: #ececea;
   --screen-1: #ecebe7;              /* screen primary, 17:1 */
   --screen-2: #a3a39e;              /* screen secondary, 8.4:1 */
-  --screen-3: #7c7c77;              /* screen tertiary, 4.8:1 — lowest allowed for text */
+  --screen-3: #7c7c77;              /* screen tertiary, 4.8:1, the lowest allowed for text */
   --screen-line: #242424;           /* rules and frames on screens */
   --screen-dim: #2e2e2b;            /* inactive graphics (bars, ladder segments) */
 

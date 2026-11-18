@@ -54,7 +54,7 @@
 
 <div class="w-qual">
   <div class="qtop">
-    <span class="here">{lossless ? q.look : here ? `≈${Math.round(here / 1000)} KB here` : typeof q.look === 'number' ? `quality ${q.look}` : '—'}</span>
+    <span class="here">{lossless ? q.look : here ? `≈${Math.round(here / 1000)} KB here` : typeof q.look === 'number' ? `quality ${q.look}` : '--'}</span>
     <button type="button" class="nb" aria-pressed={q.never_bigger} onclick={() => (q.never_bigger = !q.never_bigger)} title="Keep the original when the new file wouldn't be smaller">{q.never_bigger ? '✓ ' : ''}never bigger</button>
   </div>
   <div class="chart" bind:this={chart} role="radiogroup" aria-label="Look">
@@ -71,7 +71,7 @@
       </button>
     {/each}
     {#if q.max_kb != null && !lossless}
-      <span class="limit" role="slider" tabindex="0" aria-orientation="vertical" aria-label="Size limit; drag or use arrow keys"
+      <span class="limit" role="slider" tabindex="0" aria-orientation="vertical" aria-label="Size limit. Drag it or use the arrow keys"
         aria-valuemin="10" aria-valuemax="20000" aria-valuenow={q.max_kb} aria-valuetext="{q.max_kb} KB"
         style:bottom="calc(16px + {h(q.max_kb)}px)" onpointerdown={drag} onkeydown={limitKey}><span>max {q.max_kb} KB</span></span>
     {/if}

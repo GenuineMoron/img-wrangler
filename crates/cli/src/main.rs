@@ -14,7 +14,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use wrangler_engine::codec::metadata::KeepMeta;
 use wrangler_engine::codec::{formats, probe};
 use wrangler_engine::journal::{history, undo};
-use wrangler_engine::modules::{AddOn, Backdrop, Rotate, Sharpen, Trim};
+use wrangler_engine::modules::{AddOn, Backdrop, Rotate, Sharpen, Trim, Watermark};
 use wrangler_engine::ops::frame::{Fit, Shape};
 use wrangler_engine::paths::AppDirs;
 use wrangler_engine::plan::{build, Action, PlanCx};
@@ -129,7 +129,7 @@ struct RunArgs {
     /// same, jpg, png, webp, avif, gif, tiff, bmp, ico or qoi.
     #[arg(short, long)]
     format: Option<String>,
-    /// small, balanced, high, pristine, lossless or a number 1–100.
+    /// small, balanced, high, pristine, lossless or a number 1-100.
     #[arg(short, long)]
     look: Option<String>,
     /// Maximum file size in KB.
@@ -147,6 +147,12 @@ struct RunArgs {
     /// Rotate clockwise by 90, 180 or 270 degrees.
     #[arg(long)]
     rotate: Option<u32>,
+    /// Put this logo in the bottom-right corner of every image.
+    #[arg(long, value_name = "LOGO")]
+    watermark: Option<PathBuf>,
+    /// New names from a file: `old, new` pairs (CSV or tab-separated) or one name per line.
+    #[arg(long, value_name = "FILE")]
+    names: Option<PathBuf>,
     /// replace, beside, subfolder, or a folder path.
     #[arg(long)]
     to: Option<String>,
@@ -212,6 +218,13 @@ fn recipe_from(args: &RunArgs, dirs: &AppDirs) -> Result<Recipe> {
     }
     if let Some(t) = args.rotate {
         r.addons.push(AddOn::Rotate(Rotate { turn: t, ..Rotate::default() }));
+    }
+    if let Some(logo) = &args.watermark {
+        r.addons.push(AddOn::Watermark(Watermark { image: Some(logo.clone()), ..Watermark::default() }));
+    }
+    if let Some(file) = &args.names {
+        let list = std::fs::read_to_string(file).with_context(|| file.display().to_string())?;
+        r.rename = Rename { mode: RenameMode::List, list, ..r.rename };
     }
     if let Some(to) = &args.to {
         match to.as_str() {
@@ -330,7 +343,7 @@ fn cmd_quick(recipe: &str, paths: &[PathBuf], dirs: &AppDirs) -> Result<ExitCode
 }
 
 fn cmd_open(paths: &[PathBuf]) -> Result<ExitCode> {
-    let app = wrangler_integrate::default_program().context("the Wrangler app isn't installed; use `img-wrangler run` or `img-wrangler quick` instead")?;
+    let app = wrangler_integrate::default_program().context("the Wrangler app isn't installed. Use `img-wrangler run` or `img-wrangler quick` instead")?;
     if cfg!(target_os = "macos") {
         // Through Launch Services, so a running app receives the files instead of a second copy starting.
         let bundle = app.ancestors().nth(3).map(PathBuf::from).unwrap_or(app.clone());

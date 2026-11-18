@@ -43,6 +43,8 @@ export interface Backend {
   onDrop(drop: (paths: string[]) => void, hover: (over: boolean) => void): Promise<() => void>;
   pick(kind: 'files' | 'folder'): Promise<string[]>;
   pickFolder(): Promise<string | null>;
+  /** One image file, for a logo. */
+  pickImage(): Promise<string | null>;
   reveal(path: string): Promise<void>;
   thumbUrl(path: string): string;
 
