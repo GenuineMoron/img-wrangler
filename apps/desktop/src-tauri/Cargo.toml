@@ -32,13 +32,13 @@ tauri-plugin-single-instance = "2"
 tauri-plugin-window-state = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-autostart = "2"
-parking_lot = "0.12"
+parking_lot = "0.13"
 percent-encoding = "2"
 uuid = { version = "1", features = ["v4"] }
 
 # The tray needs the AppIndicator library, loaded at run time, so look before asking for it.
 [target.'cfg(target_os = "linux")'.dependencies]
-libloading = "0.7"
+libloading = "0.9"
 
 # Images dropped on the menu bar icon.
 [target.'cfg(target_os = "macos")'.dependencies]
