@@ -102,6 +102,8 @@ export interface SelfTest {
   fx?: string[];
   /** Full or light effects for this test, instead of the automatic choice. */
   effects?: 'full' | 'light' | null;
+  /** Look for a newer version, or also install it (the app restarts into it). */
+  update?: 'check' | 'install' | null;
 }
 
 /** How the app itself behaves (settings.json), and what this system allows. */

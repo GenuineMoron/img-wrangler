@@ -408,6 +408,9 @@ pub struct SelfTestRun {
     pub fx: Vec<String>,
     /// Full or light effects for this test (`--effects light`), instead of the automatic choice.
     pub effects: Option<String>,
+    /// `--update check` looks for a newer version. `--update install` also installs it, which
+    /// restarts the app into the new version (and that runs the test again).
+    pub update: Option<String>,
 }
 
 fn host_info() -> Vec<(String, String)> {
@@ -429,19 +432,21 @@ impl SelfTestRun {
         if rest.first().map(|a| a.as_str()) != Some("selftest") {
             return None;
         }
-        let (mut paths, mut fx, mut effects) = (Vec::new(), Vec::new(), None);
+        let (mut paths, mut fx, mut effects, mut update) = (Vec::new(), Vec::new(), None, None);
         let mut it = rest.iter().skip(1);
         while let Some(a) = it.next() {
             if *a == "--fx" {
                 fx = it.next().map(|v| v.split(',').map(String::from).collect()).unwrap_or_default();
             } else if *a == "--effects" {
                 effects = it.next().map(|v| v.to_string());
+            } else if *a == "--update" {
+                update = it.next().map(|v| v.to_string());
             } else if !a.starts_with("--") {
                 paths.push(PathBuf::from(a));
             }
         }
         let (report, images) = paths.split_last()?;
-        Some(Self { images: images.to_vec(), report: report.clone(), measure: !args.iter().any(|a| a == "--no-measure"), run: !args.iter().any(|a| a == "--no-run"), layout: !args.iter().any(|a| a == "--no-layout"), host: host_info(), fx, effects })
+        Some(Self { images: images.to_vec(), report: report.clone(), measure: !args.iter().any(|a| a == "--no-measure"), run: !args.iter().any(|a| a == "--no-run"), layout: !args.iter().any(|a| a == "--no-layout"), host: host_info(), fx, effects, update })
     }
 }
 
@@ -470,12 +475,13 @@ mod tests {
     #[test]
     fn selftest_arguments() {
         assert!(SelfTestRun::from_args(&args(&["open", "/a.jpg"])).is_none());
-        let t = SelfTestRun::from_args(&args(&["selftest", "/photos", "/more", "/out/report.json", "--no-run", "--fx", "tex,glow", "--effects", "light"])).unwrap();
+        let t = SelfTestRun::from_args(&args(&["selftest", "/photos", "/more", "/out/report.json", "--no-run", "--fx", "tex,glow", "--effects", "light", "--update", "check"])).unwrap();
         assert_eq!(t.images, vec![PathBuf::from("/photos"), PathBuf::from("/more")]);
         assert_eq!(t.report, PathBuf::from("/out/report.json"));
         assert!(t.measure && !t.run && t.layout);
         assert_eq!(t.fx, vec!["tex", "glow"]);
         assert_eq!(t.effects.as_deref(), Some("light"));
+        assert_eq!(t.update.as_deref(), Some("check"));
         assert!(SelfTestRun::from_args(&args(&["selftest"])).is_none(), "needs at least a report path");
     }
 }

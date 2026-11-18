@@ -209,6 +209,18 @@ async function runAndUndo(out: Result[]) {
   out.push({ name: 'Undo the run', ms: round(performance.now() - t1) });
 }
 
+async function update(mode: 'check' | 'install', out: Result[]) {
+  const t0 = performance.now();
+  try {
+    const u = await backend.updateCheck();
+    out.push({ name: 'Check for updates', ms: round(performance.now() - t0), note: u ? `${u.current} → ${u.version}, ${u.notes.length} characters of notes${u.manual ? `, by command: ${u.manual}` : ''}` : `nothing newer than ${__APP_VERSION__}` });
+    // Installing restarts the app into the new version, which runs this test again.
+    if (mode === 'install' && u && !u.manual) await backend.updateInstall(() => {});
+  } catch (e) {
+    out.push({ name: 'Check for updates', note: `failed: ${e}` });
+  }
+}
+
 // ---------- layout ----------
 
 async function settle() {
@@ -278,6 +290,7 @@ export async function run(cfg: SelfTest, bootMs: number): Promise<Report> {
     // run only: the person's own setting stays as it is).
     if (cfg.effects) fx.mode = cfg.effects;
     await until(() => fx.slow !== null, performance.now(), 30000);
+    if (cfg.update) await update(cfg.update, out);
     report.effects = `${fx.light ? 'light' : 'full'} (${fx.mode}, drawing ${fx.slow ? 'slow' : 'fast'}: ${JSON.parse(localStorage.getItem('wrangler.fx-probe') ?? '{}').ms ?? '?'} ms a repaint)`;
     await add(cfg.images, out);
     report.files = batch.items.length;

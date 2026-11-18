@@ -111,13 +111,14 @@ async function runApp() {
   const extra = rest.filter(a => ['--no-measure', '--no-run', '--no-layout'].includes(a));
   if (flag('fx')) extra.push('--fx', flag('fx'));
   if (flag('effects')) extra.push('--effects', flag('effects'));
+  if (flag('update')) extra.push('--update', flag('update'));
   console.log(`running ${bin}\non ${fs.readdirSync(dir).length} photos in ${dir}`);
   // On a Mac, start it through Launch Services so it opens in the desktop session even when
   // this script runs over SSH.
   const bundle = process.platform === 'darwin' && bin.match(/^(.*\.app)\/Contents\/MacOS\//)?.[1];
   const [cmd, args] = bundle ? ['open', ['-n', '-W', bundle, '--args', 'selftest', dir, report, ...extra]] : [bin, ['selftest', dir, report, ...extra]];
-  // A Mac stops drawing a window nobody can see, so keep the display awake for the test.
-  const awake = process.platform === 'darwin' ? spawn('caffeinate', ['-d', '-i'], { stdio: 'ignore' }) : null;
+  // A Mac stops drawing a window nobody can see, so wake the display (-u) and keep it awake.
+  const awake = process.platform === 'darwin' ? spawn('caffeinate', ['-d', '-i', '-u'], { stdio: 'ignore' }) : null;
   await new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: 'inherit' });
     const timer = setTimeout(() => { child.kill(); reject(new Error('the self-test took over 15 minutes')); }, 15 * 60 * 1000);
