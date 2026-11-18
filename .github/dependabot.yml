@@ -9,6 +9,10 @@ updates:
     directory: /apps/desktop
     schedule: { interval: weekly }
     groups: { app: { patterns: ['*'] } }
+    ignore:
+      # svelte-check doesn't support TypeScript 7 yet. Lift this when it does.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
