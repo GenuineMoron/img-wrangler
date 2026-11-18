@@ -657,7 +657,7 @@ mod tests {
     fn luciole_scripts_pass_selection() {
         let files = luciole_files(&setup());
         assert_eq!(files.len(), 2);
-        assert!(files[0].0.to_string_lossy().ends_with("luciole/scripts/Open in Wrangler…"));
+        assert!(files[0].0.to_string_lossy().replace('\\', "/").ends_with("luciole/scripts/Open in Wrangler…"));
         assert!(files[1].0.ends_with("Wrangler: Shopify product"));
         assert!(files[1].1.starts_with("#!/bin/sh\n"));
         assert!(files[1].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
