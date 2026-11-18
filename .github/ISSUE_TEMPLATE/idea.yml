@@ -1,0 +1,15 @@
+name: An idea
+description: A feature, a recipe, or a better way to do something.
+labels: [idea]
+body:
+  - type: textarea
+    id: job
+    attributes:
+      label: The job you're doing
+      description: What are you trying to get done, and where does Wrangler get in the way? A real example beats a feature list.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help

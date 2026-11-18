@@ -1,5 +1,5 @@
 name = "Just compress"
-description = "Same format and size, smaller files. Replaces originals; undo for 30 days."
+description = "Same format and size, smaller files. Replaces the originals, with undo for 30 days."
 [quality]
 look = "high"
 never_bigger = true

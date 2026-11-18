@@ -31,7 +31,7 @@ No screw heads, no faux bevels beyond the key walls, no glassmorphism.
 | Big numerals on screens | Unbounded, weight 270 *tuned* | `--font-value`, 30 px |
 | The meter | Doto, roundness 45 *tuned* | `--font-led`, 40 px, glow 14 px |
 
-All four are SIL OFL, bundled in `design/system/fonts`.
+Host Grotesk, Unbounded and Doto are SIL OFL 1.1 and Departure Mono is MIT, all bundled in `design/system/fonts`.
 
 ## Colour
 | Job | Token | Value |

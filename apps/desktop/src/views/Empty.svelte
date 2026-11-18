@@ -2,6 +2,7 @@
   Before anything is added: what to do, the two ways to start, and the last few runs. -->
 <script lang="ts">
   import { onMount } from 'svelte';
+  import HatScreen from '$lib/components/HatScreen.svelte';
   import { backend } from '$lib/ipc';
   import { batch } from '$lib/state/batch.svelte';
   import { ui } from '$lib/state/ui.svelte';
@@ -22,7 +23,7 @@
 </script>
 
 <div class="empty" class:hot={ui.dropping}>
-  <p class="big led-readout" aria-hidden="true">DROP</p>
+  <HatScreen size={96} width={150} />
   <h2 class="title">Drop images or folders anywhere on the unit</h2>
   <p class="sub">The recipe on the right decides what happens. Nothing is written until you press Run.</p>
   <div class="start">
@@ -42,8 +43,8 @@
 
 <style>
   .empty { grid-row: 1 / 3; display: grid; align-content: center; justify-items: center; gap: var(--sp-6); text-align: center; padding: var(--sp-9); position: relative; z-index: 4; }
-  .big { font-size: 120px; line-height: .8; color: var(--screen-dim); text-shadow: none; transition: color var(--dur-screen); }
-  .hot .big { color: var(--output); text-shadow: 0 0 1px currentColor, 0 0 var(--led-glow) color-mix(in srgb, currentColor 50%, transparent); }
+  .empty :global(.hat-screen) { box-shadow: none; background: none; margin-bottom: var(--sp-2); transition: color var(--dur-screen); }
+  .hot :global(.hat-screen) { color: var(--output); }
   .title { font: 400 15px/1.3 var(--font-data); color: var(--screen-1); }
   .sub { color: var(--screen-2); max-width: 52ch; }
   .start { display: flex; gap: var(--sp-5); margin-top: var(--sp-3); }

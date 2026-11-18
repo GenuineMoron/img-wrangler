@@ -1,0 +1,29 @@
+name: Something's wrong
+description: Wrangler crashed, made a bad file, or did something it shouldn't.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: recipe
+    attributes:
+      label: The recipe
+      description: "Paste it if you can. In the app: Commands, then Save recipe as. On the command line: img-wrangler recipes show <name>."
+      render: toml
+  - type: input
+    id: version
+    attributes:
+      label: Version and system
+      placeholder: Wrangler 0.1.0 on macOS 15.4, Apple silicon
+    validations:
+      required: true
+  - type: textarea
+    id: file
+    attributes:
+      label: A file that shows it
+      description: Drag one in if it's not private. Odd formats and odd sizes are the most useful.

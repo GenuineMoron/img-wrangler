@@ -10,12 +10,15 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "readme": "node scripts/readme.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tauri-apps/cli": "^2.12.5",
     "@types/node": "^26.6.6",
+    "playwright-core": "^1.65.1",
+    "subset-font": "^2.9.0",
     "svelte": "^5.57.3",
     "svelte-check": "^4.7.8",
     "typescript": "^5.9.3",

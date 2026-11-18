@@ -19,8 +19,11 @@ redistributing a modified build.
 | ssimulacra2 | Perceptual quality scoring | BSD-2-Clause |
 | kamadak-exif, img-parts | Metadata | BSD-2-Clause, MIT / Apache-2.0 |
 | Host Grotesk, Doto, Unbounded | Interface type | SIL Open Font License 1.1 |
-| Departure Mono | Screen type | SIL Open Font License 1.1 (per its site, MIT per some listings) |
+| Departure Mono | Screen type | MIT (licence text in design/system/fonts) |
 | ambientCG Metal050C, SurfaceImperfections015 | Case texture source | CC0 |
+| Phosphor Icons, cowboy-hat (light) | Wrangler's hat | MIT |
+| Tauri | Desktop app shell | MIT / Apache-2.0 |
+| Svelte | Interface | MIT |
 
 **Note for commercial builds.** A closed-source or app-store build cannot include libimagequant
 under the GPL. Either buy its commercial licence (pngquant.org) or build without palette PNG

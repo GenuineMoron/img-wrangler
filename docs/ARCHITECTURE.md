@@ -144,7 +144,7 @@ src/
                              RecipePanel, ChannelStrip, OutputPanel, dialogs, QuickWindow
   lib/components/            generic parts that know nothing about images: Key, KeyGroup,
                              ScreenChoice, Slider, Field, Screen, Ladder, Led, Tabs, Dialog,
-                             ColourKey, AnchorPad, Row, Icon (+ icons.ts)
+                             ColourKey, AnchorPad, Row, HatScreen, Icon (+ icons.ts)
   lib/modules/               one folder per module, plus registry.ts and types.ts
   lib/state/                 Svelte 5 rune stores: recipe, batch, catalog, ui, and the
                              controller that keeps plan, estimate and preview current
@@ -168,10 +168,30 @@ src/
 | Channel strip | the core modules that have channels: Size, Format, Quality, Name. Each screen is itself the control |
 | Output panel | the meter, Save to, Undo and Run |
 
+## Why this stack
+
+Everything heavy (decoding, resizing, trimming, quality search, encoding, writing) is Rust, in the
+engine, and would be the same whatever drew the window. The interface is a thin layer of about
+4,000 lines in the system webview. We looked at drawing it natively in Rust instead (checked again
+in November 2026):
+
+- Iced and egui still can't take files dragged in from the file manager on Linux Wayland. The fix
+  is in winit 0.31, which is still a beta.
+- Slint added drag and drop in 1.17 and 1.18, but drops from Finder, Explorer or Dolphin aren't
+  confirmed, and it has no blend modes or shader effects for the case material and the glowing
+  screens.
+- GPUI has had no official standalone release since October 2025.
+
+A native interface would save memory and some start-up time, not processing time. The costs we
+watch instead are WebKitGTK's performance on Linux (the sheet is virtualised and thumbnails come
+from Rust) and the webview's memory. Tauri 3's Chromium runtime, in alpha, is the way out if
+WebKitGTK ever becomes the bottleneck. Revisit when winit 0.31 ships.
+
 ## Testing
 - Engine: unit tests per op and module (geometry, naming, trim detection, quality search bounds), golden-image tests on small fixtures, round-trip tests per codec, journal/undo tests on temp folders.
 - CLI: end-to-end tests that run recipes on fixture folders.
 - Integrations: generated files compared against expected text for every OS (runs on any OS).
+- README graphics: `pnpm readme --shots` in `apps/desktop` rebuilds every banner, screenshot and the demo from the app, with photos made by the CLI.
 - Front end: `svelte-check` for types, Vitest for logic (the geometry mirror runs the engine's own frame tests), and screenshot checks of the main views in mock mode.
 
 ## Safety rules

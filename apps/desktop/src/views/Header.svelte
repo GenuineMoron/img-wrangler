@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
-  The top of the unit: the speaker grille is the Add button (and a drop target), the recipe
+  The top of the unit: the hat on its little screen is the Add button, the recipe
   selector, and the utility keys. The empty parts drag the window. -->
 <script lang="ts">
   import Key from '$lib/components/Key.svelte';
+  import HatScreen from '$lib/components/HatScreen.svelte';
   import Screen from '$lib/components/Screen.svelte';
   import { backend } from '$lib/ipc';
   import { batch } from '$lib/state/batch.svelte';
@@ -23,7 +24,9 @@
 </script>
 
 <header class="head" data-tauri-drag-region>
-  <button type="button" class="grille" class:hot={ui.dropping} aria-label="Add images: drop them anywhere, or press to choose" title="Add images ({mod}O)" onclick={() => add('files')}></button>
+  <button type="button" class="pal" aria-label="Add images. Drop them anywhere, or press to choose" title="Add images ({mod}O)" onclick={() => add('files')}>
+    <HatScreen />
+  </button>
   <div class="word" data-tauri-drag-region>wrangler <span class="legend legend--quiet">batch image unit</span></div>
 
   <div class="recipe">
@@ -49,12 +52,8 @@
 
 <style>
   .head { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--sp-8); }
-  .grille { width: 72px; height: 34px; border-radius: var(--r-key); flex: none; border: 0; cursor: copy;
-    background: radial-gradient(circle, #121315 1.55px, transparent 1.9px) 2px 2px / 7px 7px, #cfd0d3; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .2), 0 1px 0 var(--seam-light);
-    transition: box-shadow var(--dur-latch) var(--ease-out); }
-  .grille:hover { background-color: #c7c8cb; }
-  .grille.hot { box-shadow: inset 0 1px 2px rgba(0, 0, 0, .2), 0 0 0 2px var(--output); }
-  .grille:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }
+  .pal { all: unset; cursor: copy; border-radius: var(--r-key); display: grid; }
+  .pal:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }
   .word { font: 700 22px/1 var(--font-ui); letter-spacing: -0.04em; color: #18191b; display: flex; align-items: baseline; gap: var(--sp-4); white-space: nowrap; }
   .recipe { display: flex; align-items: center; gap: var(--sp-3); margin-left: var(--sp-8); }
   .recipe :global(.recipe__screen) { width: 290px; height: var(--key-h); }

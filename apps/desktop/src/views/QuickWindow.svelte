@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import Key from '$lib/components/Key.svelte';
   import Ladder from '$lib/components/Ladder.svelte';
-  import Led from '$lib/components/Led.svelte';
+  import HatScreen from '$lib/components/HatScreen.svelte';
   import Screen from '$lib/components/Screen.svelte';
   import { backend } from '$lib/ipc';
   import { bytes, change, count } from '$lib/text';
@@ -78,7 +78,7 @@
 <main class="qa mat-case" data-tauri-drag-region>
   <div class="top" data-tauri-drag-region>
     <span class="legend">wrangler · quick</span>
-    <Led on color={error ? 'var(--status-alarm)' : running ? 'var(--output)' : 'var(--accent-format)'} />
+    <HatScreen size={26} />
   </div>
   <Screen class="qs">
     <div class="row"><span>{name.toUpperCase()}</span><b>{count(done)}/{count(total || done)}</b></div>
