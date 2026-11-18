@@ -1,0 +1,50 @@
+# Publishes the download page and the short install command to genuinemoron.github.io/img-wrangler.
+# The page reads files and sizes from the newest release itself, so this only runs when the page,
+# the design system or the install scripts change.
+name: Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - design/system/**
+      - install.sh
+      - install.ps1
+      - .github/assets/demo.webp
+      - .github/assets/social.jpg
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Put the site together
+        run: |
+          mkdir -p out/system
+          cp -R site/. out/
+          cp -R design/system/tokens.css design/system/components.css design/system/fonts.css design/system/fonts design/system/tex out/system/
+          cp .github/assets/demo.webp .github/assets/social.jpg out/
+          # the short command: curl -fsSL https://genuinemoron.github.io/img-wrangler/install | sh
+          cp install.sh out/install
+          cp install.sh install.ps1 out/
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: out
+      - id: deploy
+        uses: actions/deploy-pages@v5

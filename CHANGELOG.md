@@ -2,6 +2,15 @@
 
 Notable changes, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 0.1.0-alpha.2, 18 November 2026
+
+Easier to install. Nothing in the app itself has changed.
+
+- One Mac download that runs on Apple silicon and Intel alike, instead of one per chip.
+- A [download page](https://genuinemoron.github.io/img-wrangler/) that works out which computer you're on and offers the right file, with every other system one tap away.
+- A shorter install command for macOS and Linux: `curl -fsSL https://genuinemoron.github.io/img-wrangler/install | sh`
+- Release notes open with a table of which file you need, and the duplicate Mac archives are gone from the list.
+
 ## 0.1.0-alpha.1, 18 November 2026
 
 The first alpha: a complete rewrite in Rust, for trying out and finding what breaks. Builds aren't signed yet, and the app hasn't been tried on Windows or macOS yet.

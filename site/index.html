@@ -1,0 +1,397 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later
+     The download page at genuinemoron.github.io/img-wrangler. It works out which computer is
+     visiting and offers that download first. Files and sizes come live from the newest release, so
+     the page never needs editing for a new version. Built and published by .github/workflows/pages.yml,
+     which copies in design/system so the page wears the app's own tokens, fonts and keys. -->
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wrangler: batch image processing for macOS, Windows and Linux</title>
+  <meta name="description" content="Resize, reshape, compress, convert, rename and watermark images in batches. Free and open source, for macOS, Windows and Linux." />
+  <meta property="og:title" content="Wrangler" />
+  <meta property="og:description" content="Batch image processing for people with a few thousand photos and a deadline. Free for macOS, Windows and Linux." />
+  <meta property="og:image" content="https://genuinemoron.github.io/img-wrangler/social.jpg" />
+  <meta property="og:url" content="https://genuinemoron.github.io/img-wrangler/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#e9e8e4" />
+  <link rel="icon" href="hat.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="system/fonts.css" />
+  <link rel="stylesheet" href="system/tokens.css" />
+  <link rel="stylesheet" href="system/components.css" />
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { background: var(--surface-case); }
+    body { margin: 0; min-height: 100vh; color: var(--ink-1); font: 400 16px/1.55 var(--font-ui); }
+    a { color: inherit; text-underline-offset: 3px; }
+    a:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); border-radius: 2px; }
+    code { font: 14px/1.4 var(--font-data); }
+    .page { max-width: 1120px; margin: 0 auto; padding: 32px 28px 56px; }
+
+    /* brand row */
+    .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9px; color: var(--screen-1); }
+    .mark svg { width: 30px; height: 30px; fill: currentColor; }
+    .brand b { font: 700 19px/1 var(--font-ui); letter-spacing: -0.01em; }
+    .bar nav { display: flex; gap: 20px; font-weight: 500; }
+
+    /* first screen: the pitch beside the unit */
+    .first { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 480px); gap: 56px; align-items: center; padding: 56px 0 64px; }
+    h1 { margin: 0 0 20px; font: 700 clamp(38px, 5.4vw, 60px)/1.02 var(--font-ui); letter-spacing: -0.03em; }
+    .lede { margin: 0 0 16px; font-size: 20px; line-height: 1.5; max-width: 30em; }
+    .lede + p { margin: 0; color: var(--ink-2); max-width: 32em; }
+    .verbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
+    .verbs li { padding: 6px 10px; border-radius: var(--r-key); font: 600 var(--fs-key)/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; box-shadow: var(--elev-panel); }
+
+    /* the unit: a small device on the case */
+    .unit { display: grid; gap: 16px; padding: 18px; border-radius: var(--r-case);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 0 rgba(0,0,0,.1), 0 26px 50px -14px rgba(0,0,0,.32), 0 6px 14px rgba(0,0,0,.1); }
+    .unit .screen { padding: 14px 16px 16px; font-size: 13px; }
+    .scr-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -4px -6px 18px; }
+    .here { display: flex; align-items: center; gap: 7px; color: var(--screen-2); font: 11.5px/1 var(--font-data); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+    .here .led { --led: var(--output); }
+    .sys { margin: 0 0 8px; font: var(--value-weight) 34px/1 var(--font-value); }
+    .sys-line { margin: 0 0 18px; color: var(--screen-2); max-width: 34em; }
+    .meta { margin: 0; color: var(--screen-3); }
+    .meta b { font-weight: 400; color: var(--accent-format); }
+
+    .run { text-decoration: none; font-size: 17px; }
+    .label { margin: 0 0 8px; }
+    .cmd { display: flex; align-items: stretch; gap: 8px; padding: 6px 6px 6px 14px; border-radius: var(--r-key);
+      background: var(--surface-screen); box-shadow: inset 0 1px 3px rgba(0,0,0,.6), 0 1px 0 var(--seam-light); }
+    /* the command breaks only at its slashes and spaces, never inside a word */
+    .cmd code { flex: 1; min-width: 0; align-self: center; padding: 5px 0; color: var(--screen-1); user-select: all; font-size: 13px; line-height: 1.5; }
+    .cmd .key { flex: none; align-self: start; }
+    .nowrap { white-space: nowrap; }
+    /* on Linux the one line is the main way in, so its Copy key takes the output orange */
+    .unit[data-sys="linux"] .cmd .key { color: #fff; background-color: var(--output);
+      background-image: url(system/tex/fine.png), linear-gradient(180deg, var(--output-hi), var(--output) 50%, var(--output-lo));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 var(--key-depth) 0 var(--output-wall), 0 4px var(--key-soft) rgba(0,0,0,.14); }
+    .note { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+    .note a { color: var(--ink-1); }
+
+    /* Linux packages, one row each */
+    .pkgs { display: grid; gap: 0; }
+    .pkgs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+    .pkgs-head .keys { --n: 2; width: 150px; }
+    .row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--seam-dark); box-shadow: inset 0 1px 0 var(--seam-light); }
+    .row:first-of-type { border-top: 0; box-shadow: none; }
+    .row span { font-weight: 600; font-size: 14.5px; line-height: 1.3; }
+    .row small { display: block; font: 12px/1.4 var(--font-data); color: var(--ink-2); font-weight: 400; }
+    .row .size { font: 12px/1 var(--font-data); color: var(--ink-2); white-space: nowrap; }
+    .row .key { text-decoration: none; }
+
+    /* the real run */
+    figure { margin: 0 0 72px; }
+    figure img { display: block; width: 100%; height: auto; border-radius: var(--r-panel); }
+    figcaption { margin-top: 12px; color: var(--ink-2); font-size: 14px; }
+
+    /* command line tool */
+    .cli { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 560px); gap: 56px; padding-top: 40px; border-top: 1px solid var(--seam-dark); box-shadow: inset 0 1px 0 var(--seam-light); }
+    h2 { margin: 0 0 12px; font: 700 28px/1.15 var(--font-ui); letter-spacing: -0.02em; }
+    .cli p { margin: 0 0 12px; color: var(--ink-2); max-width: 30em; }
+    .cli pre { margin: 16px 0 0; padding: 12px 14px; border-radius: var(--r-key); background: var(--surface-screen); color: var(--screen-1); overflow-x: auto; }
+    .cli pre code { font-size: 13px; }
+
+    footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--seam-dark); box-shadow: inset 0 1px 0 var(--seam-light);
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; font-size: 14px; color: var(--ink-2); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
+    footer a { color: var(--ink-1); }
+
+    @media (max-width: 900px) {
+      .first, .cli { grid-template-columns: 1fr; gap: 36px; }
+      .first { padding: 36px 0 48px; }
+    }
+    @media (max-width: 520px) {
+      .page { padding: 20px 16px 40px; }
+      .bar nav a:not(:last-child) { display: none; }
+      .unit { padding: 12px; }
+      .row { grid-template-columns: minmax(0, 1fr) auto; }
+      .row .size { display: none; }
+      .lede { font-size: 18px; }
+    }
+  </style>
+</head>
+<body class="mat-case">
+  <div class="page">
+    <header class="bar">
+      <a class="brand" href="./" aria-label="Wrangler, home">
+        <span class="mark screen screen--fx" aria-hidden="true"><svg class="glow" viewBox="0 0 256 256"><path d="M216,122a6,6,0,0,0-5.09,2.82,176.66,176.66,0,0,1-16.69,22.65l-17.87-94a14,14,0,0,0-22.5-8.35l-.1.08L129.22,65.59a2,2,0,0,1-2.44,0L102.25,45.16l-.1-.08a14,14,0,0,0-22.5,8.34L61.77,147.49a178.33,178.33,0,0,1-16.68-22.67A6,6,0,0,0,40,122a38,38,0,0,0,0,76H216a38,38,0,0,0,0-76ZM91.44,55.65a2,2,0,0,1,3.18-1.22l24.54,20.43.09.08a13.93,13.93,0,0,0,17.5,0l.09-.08,24.54-20.43a2,2,0,0,1,3.18,1.23L178.69,130H77.31ZM40,186a26,26,0,0,1-3.17-51.81C54.5,161.44,73.53,177.05,89.62,186Zm88,0c-.34,0-26.71-.41-56-27.91L75,142H181L184,158.05a115.79,115.79,0,0,1-28.89,20.19C139.38,185.81,128.08,186,128,186Zm88,0H166.38c16.09-8.95,35.12-24.56,52.79-51.81A26,26,0,0,1,216,186Z" /></svg></span>
+        <b>Wrangler</b>
+      </a>
+      <nav>
+        <a href="#command-line">Command line</a>
+        <a href="https://github.com/GenuineMoron/img-wrangler">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="first">
+        <div>
+          <h1>Get Wrangler</h1>
+          <p class="lede">Batch image processing for people with a few thousand photos and a deadline.</p>
+          <p>Wrangler shows every file as it will come out before it writes a thing, and Undo puts the originals back. Free and open source. It all happens on your computer: no accounts, no uploads, no telemetry.</p>
+          <ul class="verbs" aria-label="What it does">
+            <li>Resize</li><li>Reshape</li><li>Compress</li><li>Convert</li><li>Rename</li><li>Watermark</li>
+          </ul>
+        </div>
+
+        <div class="unit mat-case" id="unit" data-sys="mac">
+          <div class="screen screen--fx">
+            <div class="scr-top">
+              <div class="tabs" role="tablist" aria-label="Your computer">
+                <button class="tab" role="tab" id="tab-mac" data-sys="mac" aria-selected="true">macOS</button>
+                <button class="tab" role="tab" id="tab-win" data-sys="win" aria-selected="false" tabindex="-1">Windows</button>
+                <button class="tab" role="tab" id="tab-linux" data-sys="linux" aria-selected="false" tabindex="-1">Linux</button>
+              </div>
+              <span class="here" id="here" hidden><i class="led led--on" aria-hidden="true"></i>This computer</span>
+            </div>
+            <div role="tabpanel" aria-labelledby="tab-mac" id="panel">
+              <p class="sys glow" id="sys">macOS</p>
+              <p class="sys-line" id="sys-line">One app for every Mac, Apple silicon and Intel. macOS 11 or later.</p>
+              <p class="meta" id="meta">Newest release on GitHub</p>
+            </div>
+          </div>
+
+          <a class="run" id="get" href="https://github.com/GenuineMoron/img-wrangler/releases">Download for macOS</a>
+
+          <div>
+            <p class="legend legend--quiet label" id="cmd-label">Or with one line in Terminal</p>
+            <div class="cmd">
+              <code id="cmd">curl -fsSL https://genuinemoron.github.io/<wbr>img-wrangler/<wbr>install | sh</code>
+              <button class="key" id="copy" type="button">Copy</button>
+              <span class="sr-only" id="copied" aria-live="polite"></span>
+            </div>
+          </div>
+
+          <div class="pkgs" id="pkgs" hidden>
+            <div class="pkgs-head">
+              <p class="legend legend--quiet">Or download a package</p>
+              <div class="keys keys--neutral" role="radiogroup" aria-label="Processor">
+                <button class="key" role="radio" data-arch="x86" aria-checked="true">x86-64</button>
+                <button class="key" role="radio" data-arch="arm" aria-checked="false" tabindex="-1">ARM</button>
+              </div>
+            </div>
+            <div id="pkg-rows"></div>
+          </div>
+
+          <p class="note" id="note">Wrangler isn't notarised by Apple yet, so the first time you open a download, macOS refuses. Open System Settings, then Privacy &amp; Security, and choose Open Anyway. The one line skips that step.</p>
+          <p class="note">It's an alpha. Undo keeps replaced originals for 30 days, but try it on copies first and <a href="https://github.com/GenuineMoron/img-wrangler/issues">say what breaks</a>.</p>
+        </div>
+      </section>
+
+      <figure>
+        <img src="demo.webp" width="1080" height="675" loading="lazy" alt="The Wrangler window: photos are added, the Email safe recipe is chosen, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
+        <figcaption>Add photos, pick a recipe, drag the size frame, press Run. Every file shows its new name, size and weight before anything is written. Recorded from the app's browser preview with sample photos.</figcaption>
+      </figure>
+
+      <section class="cli" id="command-line">
+        <div>
+          <h2>Just the command line</h2>
+          <p><code>img-wrangler</code> on its own, for scripts and servers. It reads the same recipes as the app. Unpack the archive and put it somewhere on your PATH.</p>
+          <p>The Arch package installs it alongside the app.</p>
+          <pre><code>img-wrangler plan ~/Pictures/to-sort -r web-ready
+img-wrangler run ~/Pictures/to-sort -r web-ready
+img-wrangler undo</code></pre>
+        </div>
+        <div id="cli-rows">
+          <p class="note">Every archive is on the <a href="https://github.com/GenuineMoron/img-wrangler/releases">releases page</a>.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Wrangler is free software under the <a href="https://github.com/GenuineMoron/img-wrangler/blob/main/LICENSE">GNU AGPL 3.0 or later</a>.</p>
+      <nav>
+        <a href="https://github.com/GenuineMoron/img-wrangler">Source</a>
+        <a href="https://github.com/GenuineMoron/img-wrangler/releases" id="notes">Release notes</a>
+        <a href="https://github.com/GenuineMoron/img-wrangler/blob/main/install.sh">Read the install script</a>
+        <a href="https://github.com/GenuineMoron/img-wrangler/issues">Report a problem</a>
+      </nav>
+    </footer>
+  </div>
+
+  <script type="module">
+    const REPO = 'GenuineMoron/img-wrangler';
+    const RELEASES = `https://github.com/${REPO}/releases`;
+    const SH = 'curl -fsSL https://genuinemoron.github.io/img-wrangler/install | sh';
+    const PS = `irm https://raw.githubusercontent.com/${REPO}/main/install.ps1 | iex`;
+
+    // what each system offers. `file` picks the main download from the release's assets.
+    const SYSTEMS = {
+      mac: {
+        name: 'macOS', line: 'One app for every Mac, Apple silicon and Intel. macOS 11 or later.',
+        // releases before 0.1.0-alpha.2 had one .dmg per chip. Safari on Apple silicon still says
+        // "Intel Mac", so unless the browser says otherwise, assume a current Mac.
+        file: (a, arch) => find(a, /_universal\.dmg$/) || find(a, arch === 'x86' ? /_x64\.dmg$/ : /_aarch64\.dmg$/),
+        cmd: SH, cmdLabel: 'Or with one line in Terminal',
+        note: "Wrangler isn't notarised by Apple yet, so the first time you open a download, macOS refuses. Open System Settings, then Privacy & Security, and choose Open Anyway. The one line skips that step.",
+      },
+      win: {
+        name: 'Windows', line: 'Windows 10 and 11, 64-bit. The installer sets up the Start menu and the right-click menu.',
+        file: (a) => find(a, /_x64-setup\.exe$/),
+        cmd: PS, cmdLabel: 'Or with one line in PowerShell',
+        note: "Wrangler isn't signed by Microsoft yet, so SmartScreen may stop the installer. Choose More info, then Run anyway.",
+      },
+      linux: {
+        name: 'Linux', line: 'x86-64 and ARM, on any distro from Ubuntu 22.04 and Debian 12 on.',
+        file: () => null,
+        cmd: SH, cmdLabel: 'Install with one line in a terminal',
+        note: 'The one line installs a native package with your own package manager: makepkg on Arch and CachyOS, apt on Debian and Ubuntu, dnf on Fedora, zypper on openSUSE, or the AppImage anywhere else.',
+      },
+    };
+    const PACKAGES = [
+      { who: 'Arch, CachyOS, EndeavourOS, Manjaro', how: 'PKGBUILD, then makepkg -si beside it', x86: /^PKGBUILD$/, arm: /^PKGBUILD$/ },
+      { who: 'Debian, Ubuntu, Mint, Pop!_OS', how: '.deb', x86: /_amd64\.deb$/, arm: /_arm64\.deb$/ },
+      { who: 'Fedora, openSUSE', how: '.rpm', x86: /\.x86_64\.rpm$/, arm: /\.aarch64\.rpm$/ },
+      { who: 'Anything else', how: 'AppImage, needs FUSE 2', x86: /_amd64\.AppImage$/, arm: /_aarch64\.AppImage$/ },
+    ];
+    const CLI = [
+      ['aarch64-apple-darwin', 'macOS', 'Apple silicon'],
+      ['x86_64-apple-darwin', 'macOS', 'Intel'],
+      ['x86_64-pc-windows-msvc', 'Windows', '64-bit'],
+      ['x86_64-unknown-linux-gnu', 'Linux', 'x86-64'],
+      ['aarch64-unknown-linux-gnu', 'Linux', 'ARM'],
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const find = (assets, re) => assets.find((a) => re.test(a.name)) || null;
+    const size = (n) => n < 1e6 ? `${Math.max(1, Math.round(n / 1e3))} KB` : `${(n / 1e6).toFixed(1)} MB`;
+    const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+    // which computer is this? Phones and tablets get no guess.
+    function detect() {
+      const ua = navigator.userAgent;
+      const p = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+      if (navigator.userAgentData?.mobile || /android|iphone|ipad|ipod|cros/i.test(ua)) return null;
+      if (p.startsWith('mac') || /mac os x/i.test(ua)) return navigator.maxTouchPoints > 1 ? null : 'mac';
+      if (p.startsWith('win') || /windows/i.test(ua)) return 'win';
+      if (/linux|x11|bsd/i.test(p + ua)) return 'linux';
+      return null;
+    }
+    // the processor, when the browser tells us. Null means unknown.
+    async function processor() {
+      try {
+        const { architecture } = await navigator.userAgentData.getHighEntropyValues(['architecture']);
+        if (architecture) return architecture === 'arm' ? 'arm' : 'x86';
+      } catch {}
+      return /aarch64|arm64/i.test(navigator.userAgent) ? 'arm' : null;
+    }
+    // the newest release, alphas included, kept for ten minutes to go easy on GitHub's rate limit
+    async function newest() {
+      const hit = JSON.parse(sessionStorage.getItem('wrangler-release') || 'null');
+      if (hit && Date.now() - hit.at < 600_000) return hit.release;
+      const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=1`);
+      if (!res.ok) throw new Error(res.status);
+      const [release] = await res.json();
+      sessionStorage.setItem('wrangler-release', JSON.stringify({ at: Date.now(), release }));
+      return release;
+    }
+
+    const state = { sys: 'mac', here: detect(), chip: null, release: null };
+
+    function render() {
+      const s = SYSTEMS[state.sys];
+      const assets = state.release?.assets || [];
+      const arch = state.chip || (state.sys === 'mac' ? 'arm' : 'x86');
+      const main = s.file(assets, arch);
+      $('unit').dataset.sys = state.sys;
+      for (const t of document.querySelectorAll('[role=tab]')) {
+        const on = t.dataset.sys === state.sys;
+        t.setAttribute('aria-selected', on);
+        t.tabIndex = on ? 0 : -1;
+      }
+      $('panel').setAttribute('aria-labelledby', `tab-${state.sys}`);
+      $('here').hidden = state.here !== state.sys;
+      $('sys').textContent = s.name;
+      $('sys-line').textContent = state.here ? s.line : `Wrangler is a desktop app. Pick the computer you'll use it on. ${s.line}`;
+      const r = state.release;
+      const when = r && new Date(r.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      $('meta').innerHTML = r
+        ? `<b>${esc(r.tag_name.replace(/^v/, ''))}</b> · ${when}${main ? ` · ${size(main.size)}` : ''}`
+        : 'Newest release on GitHub';
+
+      const get = $('get');
+      get.hidden = state.sys === 'linux';
+      get.textContent = `Download for ${s.name}`;
+      get.href = main ? main.browser_download_url : RELEASES;
+
+      // a long line may wrap after any slash of the address, but the file name and the pipe stay together
+      const cut = s.cmd.lastIndexOf('/') + 1;
+      $('cmd').innerHTML = esc(s.cmd.slice(0, cut)).replace(/(?<!:\/?)\/(?!\/)/g, '/<wbr>')
+        + `<span class="nowrap">${esc(s.cmd.slice(cut))}</span>`;
+      $('cmd-label').textContent = s.cmdLabel;
+      $('note').textContent = s.note;
+
+      $('pkgs').hidden = state.sys !== 'linux';
+      for (const k of document.querySelectorAll('[data-arch]')) {
+        const on = k.dataset.arch === arch;
+        k.setAttribute('aria-checked', on);
+        k.tabIndex = on ? 0 : -1;
+      }
+      $('pkg-rows').innerHTML = PACKAGES.map((p) => {
+        const a = find(assets, p[arch]);
+        return `<div class="row"><span>${esc(p.who)}<small>${esc(p.how)}</small></span>
+          <span class="size">${a ? size(a.size) : ''}</span>
+          <a class="key" href="${a ? a.browser_download_url : RELEASES}">Get</a></div>`;
+      }).join('');
+    }
+
+    function renderCli() {
+      const assets = state.release?.assets || [];
+      const rows = CLI.map(([target, os, chip]) => {
+        const a = assets.find((x) => x.name.startsWith('img-wrangler-') && x.name.includes(target));
+        return a && `<div class="row"><span>${os}<small>${chip}</small></span>
+          <span class="size">${size(a.size)}</span>
+          <a class="key" href="${a.browser_download_url}">Get</a></div>`;
+      }).filter(Boolean);
+      if (rows.length) $('cli-rows').innerHTML = rows.join('');
+    }
+
+    // tabs and the processor keys move with the arrow keys, as radio groups do
+    function arrows(selector, pick) {
+      document.addEventListener('keydown', (e) => {
+        const items = [...document.querySelectorAll(selector)];
+        const at = items.indexOf(document.activeElement);
+        if (at < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+        e.preventDefault();
+        const to = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (at + (e.key === 'ArrowRight' ? 1 : -1) + items.length) % items.length;
+        pick(items[to]);
+        items[to].focus();
+      });
+    }
+    for (const t of document.querySelectorAll('[role=tab]')) t.addEventListener('click', () => { state.sys = t.dataset.sys; render(); });
+    for (const k of document.querySelectorAll('[data-arch]')) k.addEventListener('click', () => { state.chip = k.dataset.arch; render(); });
+    arrows('[role=tab]', (t) => { state.sys = t.dataset.sys; render(); });
+    arrows('[data-arch]', (k) => { state.chip = k.dataset.arch; render(); });
+
+    $('copy').addEventListener('click', async () => {
+      const b = $('copy');
+      try {
+        await navigator.clipboard.writeText(SYSTEMS[state.sys].cmd);
+        b.textContent = $('copied').textContent = 'Copied';
+      } catch {
+        // no clipboard access: select the line so the usual copy shortcut takes it
+        getSelection().selectAllChildren($('cmd'));
+        b.textContent = $('copied').textContent = 'Selected';
+      }
+      setTimeout(() => { b.textContent = 'Copy'; $('copied').textContent = ''; }, 1600);
+    });
+
+    state.sys = state.here || 'mac';
+    state.chip = await processor();
+    render();
+    try {
+      state.release = await newest();
+      $('notes').href = state.release.html_url;
+      render();
+      renderCli();
+    } catch {
+      $('meta').textContent = "Couldn't reach GitHub. Every file is on the releases page.";
+    }
+  </script>
+</body>
+</html>

@@ -30,8 +30,10 @@ Wrangler is one Rust image engine with three front doors: a desktop app, a comma
 | `apps/desktop` | The desktop app. `src-tauri/` is the Rust host, `src/` is the Svelte front end. |
 | `design/` | The design system (`system/`: tokens, component CSS, fonts, textures), the brand icon, and the first interactive prototype. |
 | `docs/` | This file, the plan, the module guide, research notes. |
+| `site/` | The download page at genuinemoron.github.io/img-wrangler. It reads files and sizes from the newest release, so a new version needs no edit. `.github/workflows/pages.yml` publishes it with the design system and the install scripts. |
+| `install.sh`, `install.ps1`, `packaging/` | The one-line installers and the Arch `PKGBUILD` template the release fills in. |
 
-Dependencies point one way: `cli → engine, integrate``desktop → engine, integrate`. The engine depends on nothing of ours.
+Dependencies point one way: `cli → engine, integrate` and `desktop → engine, integrate`. The engine depends on nothing of ours.
 
 ## Recipes
 

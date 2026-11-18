@@ -42,8 +42,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: macos-15, target: aarch64-apple-darwin }
-          - { os: macos-15, target: x86_64-apple-darwin }
+          # one .dmg that runs on every Mac, Apple silicon and Intel
+          - { os: macos-15, target: universal-apple-darwin, rust: 'aarch64-apple-darwin,x86_64-apple-darwin' }
           # Linux builds on the oldest supported Ubuntu, so they run on any system with glibc 2.35 or newer
           - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
           - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu }
@@ -65,7 +65,7 @@ jobs:
         working-directory: apps/desktop
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.rust || matrix.target }}
       - uses: ilammy/setup-nasm@v1
       - uses: Swatinem/rust-cache@v2
         with:
@@ -142,6 +142,13 @@ jobs:
           sed -e "s/@VERSION@/$v/" -e "s/@SHA_DEB_X86_64@/$(sum "$deb_x")/" -e "s/@SHA_DEB_AARCH64@/$(sum "$deb_a")/" \
               -e "s/@SHA_CLI_X86_64@/$(sum "$cli_x")/" -e "s/@SHA_CLI_AARCH64@/$(sum "$cli_a")/" ../packaging/arch/PKGBUILD.in > PKGBUILD
           gh release upload "$GITHUB_REF_NAME" PKGBUILD --clobber
+      - name: Tidy the downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for a in $(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name | select(endswith(".app.tar.gz"))'); do
+            gh release delete-asset "$GITHUB_REF_NAME" "$a" --yes
+          done
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}

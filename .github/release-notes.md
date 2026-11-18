@@ -1,18 +1,29 @@
 
 ## Installing
 
-The quickest way is one line in a terminal. It fetches this release and installs it properly for your system.
+**The easy way:** [the download page](https://genuinemoron.github.io/img-wrangler/) works out which computer you're on and offers the right file. Or use one line in a terminal, which does the same and installs it properly:
 
-- **macOS and Linux:** `curl -fsSL https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/install.sh | sh`
+- **macOS and Linux:** `curl -fsSL https://genuinemoron.github.io/img-wrangler/install | sh`
 - **Windows** (PowerShell): `irm https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/install.ps1 | iex`
 
-Or download a file below:
+### Which file do I need?
 
-- **macOS:** the `.dmg` for your Mac (`aarch64` for Apple silicon, `x64` for Intel). The app isn't notarised by Apple yet, so the first time you open it macOS refuses. Go to System Settings, Privacy & Security, scroll down and choose Open Anyway. You only do that once.
-- **Windows:** the `-setup.exe`. If SmartScreen stops it, choose More info, then Run anyway.
-- **Arch, CachyOS, EndeavourOS, Manjaro:** download `PKGBUILD` into an empty folder and run `makepkg -si`. It builds a native package that uses your system's WebKitGTK.
-- **Debian, Ubuntu, Mint, Pop!_OS:** the `.deb`. **Fedora, openSUSE:** the `.rpm`.
-- **Anything else:** the `.AppImage`, made executable with `chmod +x`. Some systems need FUSE 2 for AppImages (`libfuse2` or `fuse2`).
-- **Command line only:** the `img-wrangler-…` archives hold just the CLI.
+| Your computer | The file |
+|---|---|
+| Any Mac, Apple silicon or Intel | `Wrangler_…_universal.dmg` |
+| Windows 10 or 11 | `Wrangler_…_x64-setup.exe` |
+| Arch, CachyOS, EndeavourOS, Manjaro | `PKGBUILD`, then `makepkg -si` in the same folder |
+| Debian, Ubuntu, Mint, Pop!_OS | `…_amd64.deb`, or `…_arm64.deb` on ARM |
+| Fedora, openSUSE | `….x86_64.rpm`, or `….aarch64.rpm` on ARM |
+| Any other Linux | `…_amd64.AppImage`, or `…_aarch64.AppImage` on ARM |
+| Just the command line tool | `img-wrangler-…` for your system |
+
+### The first time you open it
+
+The builds aren't signed by Apple or Microsoft yet, so the first launch takes one extra step:
+
+- **macOS** refuses to open a downloaded copy. Go to System Settings, then Privacy & Security, scroll down and choose Open Anyway. You only do that once. The one-line install skips this step.
+- **Windows** SmartScreen may stop the installer. Choose More info, then Run anyway.
+- **AppImage:** make it executable with `chmod +x`. Some systems need FUSE 2 for AppImages (`libfuse2` or `fuse2`).
 
 Undo keeps replaced originals for 30 days, but this is an alpha. Try it on copies before you point it at anything precious, and [say what breaks](https://github.com/GenuineMoron/img-wrangler/issues).

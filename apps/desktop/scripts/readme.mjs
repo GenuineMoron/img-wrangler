@@ -94,8 +94,8 @@ function hero() {
   b.push(hatScreen(56, 50, 54, 36));
   b.push(label(126, 74, 'BATCH IMAGE UNIT'));
   b.push(`<text x="50" y="178" class="hg" font-size="96" font-weight="700" letter-spacing="-4.5" fill="#18191b">wrangler</text>`);
-  b.push(`<text x="56" y="226" class="hg" font-size="21" font-weight="500" fill="#3c3e43">Resize, reshape, compress, convert and</text>`);
-  b.push(`<text x="56" y="254" class="hg" font-size="21" font-weight="500" fill="#3c3e43">rename folders of images. See every file first.</text>`);
+  b.push(`<text x="56" y="226" class="hg" font-size="21" font-weight="500" fill="#3c3e43">Resize, reshape, compress, convert, rename and</text>`);
+  b.push(`<text x="56" y="254" class="hg" font-size="21" font-weight="500" fill="#3c3e43">watermark images. See every file first.</text>`);
   let x = 56;
   for (const [g, name, c] of [['■', 'size', C.size], ['●', 'format', C.format], ['▲', 'quality', '#e0a800'], ['◆', 'name', C.name]]) {
     b.push(`<text x="${x}" y="298" class="dm" font-size="14" fill="${c}">${g}</text><text x="${x + 18}" y="298" class="dm" font-size="14" fill="${C.ink2}">${name}</text>`);
@@ -210,10 +210,10 @@ function social() {
   const b = [kase(W, H, 0)];
   b.push(hatScreen(96, 96, 120, 80));
   b.push(`<text x="88" y="330" class="hg" font-size="150" font-weight="700" letter-spacing="-7" fill="#18191b">wrangler</text>`);
-  b.push(`<text x="96" y="446" class="hg" font-size="32" font-weight="500" fill="#3c3e43">Resize, reshape, compress, convert and rename</text>`);
-  b.push(`<text x="96" y="488" class="hg" font-size="32" font-weight="500" fill="#3c3e43">folders of images. See every file first.</text>`);
+  b.push(`<text x="96" y="446" class="hg" font-size="32" font-weight="500" fill="#3c3e43">Resize, reshape, compress, convert, rename and</text>`);
+  b.push(`<text x="96" y="488" class="hg" font-size="32" font-weight="500" fill="#3c3e43">watermark images. See every file first.</text>`);
   b.push(`<text x="96" y="566" class="dm" font-size="22" fill="${C.ink2}">macOS · Windows · Linux · free and open source</text>`);
-  return svg(W, H, 'Wrangler: resize, reshape, compress, convert and rename folders of images.', '', b.join(''));
+  return svg(W, H, 'Wrangler: resize, reshape, compress, convert, rename and watermark images.', '', b.join(''));
 }
 
 for (const [name, make] of [['hero.svg', hero], ['right-click.svg', rightClick], ['social.svg', social]]) {
@@ -242,7 +242,12 @@ if (process.argv.includes('--shots')) {
     // the demo: empty unit, add a shoot, pick a recipe, size it, run it
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, recordVideo: { dir: TMP, size: { width: 1440, height: 900 } } });
     const p = await ctx.newPage();
+    const t0 = Date.now();
     await p.goto(`${base}/`);
+    // the recording starts on a blank page, so the demo is cut to begin once the app has painted
+    await p.waitForSelector('.empty');
+    await p.evaluate(() => document.fonts.ready);
+    const painted = (Date.now() - t0) / 1000 + 0.3;
     await p.waitForTimeout(2200);
     await p.click('.empty button:has-text("add images")');
     await p.waitForSelector('.tile');
@@ -263,7 +268,7 @@ if (process.argv.includes('--shots')) {
     await p.waitForTimeout(2200);
     const video = await p.video().path();
     await ctx.close();
-    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-vf', 'fps=14,scale=1080:-1:flags=lanczos', '-c:v', 'libwebp_anim', '-quality', '72', '-loop', '0', path.join(OUT, 'demo.webp')]);
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', painted.toFixed(2), '-i', video, '-vf', 'fps=14,scale=1080:-1:flags=lanczos', '-c:v', 'libwebp_anim', '-quality', '72', '-loop', '0', path.join(OUT, 'demo.webp')]);
     for (const f of ['social.jpg', 'demo.webp']) console.log(`${f}  ${Math.round(fs.statSync(path.join(OUT, f)).size / 1024)} KB`);
   } finally {
     await browser.close();

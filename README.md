@@ -88,11 +88,13 @@ A recipe is every setting in one plain TOML file. `img-wrangler recipes show web
 
 ## Get it
 
-The first alpha is out. Install it with one line:
+**[Download Wrangler](https://genuinemoron.github.io/img-wrangler/)**. The download page works out which computer you're on and offers the right file, with every other system one tap away.
+
+Or install it with one line, which works out the same thing:
 
 ```sh
 # macOS and Linux
-curl -fsSL https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/install.sh | sh
+curl -fsSL https://genuinemoron.github.io/img-wrangler/install | sh
 ```
 
 ```powershell
@@ -100,9 +102,9 @@ curl -fsSL https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/inst
 irm https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/install.ps1 | iex
 ```
 
-On Linux it uses your own package manager: a native package on Arch and CachyOS (through `makepkg`), the `.deb` on Debian and Ubuntu, the `.rpm` on Fedora and openSUSE, and the AppImage anywhere else. The scripts are short, so read them first if you like: [install.sh](install.sh), [install.ps1](install.ps1).
+On a Mac it installs the one app that runs on Apple silicon and Intel alike. On Linux it uses your own package manager: a native package on Arch and CachyOS (through `makepkg`), the `.deb` on Debian and Ubuntu, the `.rpm` on Fedora and openSUSE, and the AppImage anywhere else. The scripts are short, so read them first if you like: [install.sh](install.sh), [install.ps1](install.ps1).
 
-Or download the files yourself from [Releases](https://github.com/GenuineMoron/img-wrangler/releases), where the notes cover each system. The builds aren't signed by Apple or Microsoft yet, so a downloaded app needs one extra click the first time. It's an alpha: try it on copies first, and [say what breaks](https://github.com/GenuineMoron/img-wrangler/issues).
+Every file is also on [Releases](https://github.com/GenuineMoron/img-wrangler/releases), with a table of which one you need. The builds aren't signed by Apple or Microsoft yet, so a downloaded app needs one extra click the first time. It's an alpha: try it on copies first, and [say what breaks](https://github.com/GenuineMoron/img-wrangler/issues).
 
 ### Or build it
 

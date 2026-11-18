@@ -1,7 +1,7 @@
 #!/bin/sh
 # Installs Wrangler on macOS or Linux, from the newest release (alphas included):
 #
-#   curl -fsSL https://raw.githubusercontent.com/GenuineMoron/img-wrangler/main/install.sh | sh
+#   curl -fsSL https://genuinemoron.github.io/img-wrangler/install | sh
 #
 # It only downloads from this repository's releases. On macOS it copies Wrangler.app into
 # Applications. On Linux it uses your package manager (pacman via makepkg, apt, dnf or zypper),
@@ -31,8 +31,13 @@ fetch() {
 
 case "$(uname -s)" in
   Darwin)
-    case "$(uname -m)" in arm64) arch=aarch64 ;; *) arch=x64 ;; esac
-    fetch "_${arch}\\.dmg$"
+    # one universal .dmg runs on every Mac. Releases before 0.1.0-alpha.2 had one per chip.
+    if printf '%s\n' "$assets" | grep -q '_universal\.dmg$'; then
+      fetch '_universal\.dmg$'
+    else
+      case "$(uname -m)" in arm64) arch=aarch64 ;; *) arch=x64 ;; esac
+      fetch "_${arch}\\.dmg$"
+    fi
     mkdir "$tmp/dmg"
     hdiutil attach -nobrowse -quiet -mountpoint "$tmp/dmg" "$file"
     dest=/Applications
@@ -78,5 +83,5 @@ DESKTOP
     fi
     say "Wrangler is installed. Find it in your app launcher."
     ;;
-  *) fail "this script is for macOS and Linux. On Windows, see the README." ;;
+  *) fail "this script is for macOS and Linux. For Windows, see https://genuinemoron.github.io/img-wrangler" ;;
 esac

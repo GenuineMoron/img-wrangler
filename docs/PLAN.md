@@ -42,12 +42,13 @@ Milestones in build order. Each one ends working and tested, so the project is u
 
 ## M6 · Ship
 - [x] Licence (AGPL-3.0-or-later), NOTICE, CLA, CONTRIBUTING, TRADEMARK, THIRD_PARTY
-- [x] CI workflows: test on macOS, Linux, Windows. Release builds (DMG, AppImage/deb/rpm, MSI/NSIS). CLI archives
+- [x] CI workflows: test on macOS, Linux, Windows. Release builds (one universal DMG, AppImage/deb/rpm, NSIS). CLI archives
 - [x] First green CI run
 - [x] First alpha release (0.1.0-alpha.1)
+- [x] A download page that recognises the computer, and one-line installs for every system
 - [ ] Signed, notarised macOS build and a signed Windows installer
 - [ ] Homebrew tap, AUR package
-- [ ] README with screenshots
+- [x] README with screenshots
 
 ## Later
 Watch folders, clipboard optimise, responsive image sets and `<picture>` snippets, ThumbHash placeholders, borders, colour adjust, local background removal (commercially licensed model only), JPEG XL encode, animated GIF/WebP processing.
