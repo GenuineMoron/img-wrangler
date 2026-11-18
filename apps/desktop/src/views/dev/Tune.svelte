@@ -1,8 +1,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
   Dev builds only (open with ?tune): live controls for the design tokens worth adjusting, with
   copy-out. Starts from the values in design/system/tokens.css. Texture controls rebuild the
-  grain and scan tiles on a canvas. -->
+  grain and scan tiles on a canvas and blend them live for the preview. The app itself draws
+  them baked (pnpm textures). -->
 <script lang="ts">
+  import fineUrl from '@design/tex/fine.png?url';
   import scratchUrl from '@design/tex/scratch-l.jpg?url';
   import dustUrl from '@design/tex/dust-l.jpg?url';
 
@@ -85,6 +87,8 @@
   const changed = (id: string) => values[id] !== start[id];
   async function apply(item: Item) {
     const v = values[item.id];
+    // Material changes show by blending the source textures live, as the bake does.
+    if (GROUPS[0].items.includes(item)) root.classList.add('tune-live');
     if (item.id.startsWith('--')) root.style.setProperty(item.id, `${v}${item.unit ?? ''}`);
     else if (item.id === 'caseL' || item.id === 'caseWarm') {
       const w = Number(values.caseWarm);
@@ -105,7 +109,7 @@
 <button type="button" class="toggle" aria-expanded={open} onclick={() => (open = !open)}>{open ? 'Close' : 'Tune'}</button>
 {#if open}
   <aside class="tune" aria-label="Tune design values">
-    <p class="hint">Live, and remembered in this browser. When it looks right, copy the block into design/system/tokens.css.</p>
+    <p class="hint">Live, and remembered in this browser. When it looks right, copy the block into design/system/tokens.css, and after a material change run pnpm textures to bake it.</p>
     {#each GROUPS as g (g.group)}
       <h3>{g.group}</h3>
       {#each g.items as i (i.id)}
@@ -124,6 +128,14 @@
     <textarea readonly aria-label="Exported values">{exported}</textarea>
   </aside>
 {/if}
+
+<svelte:head>
+  {@html `<style>
+    html.tune-live { --tex-fine: url(${fineUrl}); --tex-scratch: url(${scratchUrl}); --tex-dust: url(${dustUrl}); }
+    html.tune-live .mat-case { background-image: var(--light-top), var(--tex-dust), var(--tex-scratch), var(--tex-fine);
+      background-size: auto, var(--tex-dust-size), var(--tex-scratch-size), var(--tex-fine-size); background-blend-mode: normal, soft-light, soft-light, soft-light; }
+  </style>`}
+</svelte:head>
 
 <style>
   .toggle { position: fixed; right: 18px; bottom: 18px; z-index: 60; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; font: 600 11px/1 var(--font-ui); letter-spacing: .05em; text-transform: uppercase; background: #151618; color: #eee; }

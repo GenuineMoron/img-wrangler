@@ -11,6 +11,11 @@ Thanks for helping. A few things make reviews quick:
   `// SPDX-License-Identifier: AGPL-3.0-or-later` and `// Copyright (C) 2026 Sean Hawkey`.
 - **Plain words everywhere.** Labels say what things do. Errors say what went wrong and how to
   fix it. In docs and in the app: British spelling, sentence case, no em dashes, no semicolons.
+- **Fast, and fitting, on every screen.** If you change the interface, run `pnpm selftest browser`
+  in `apps/desktop` (and `pnpm selftest app` if you can build the app). It times the everyday steps
+  and fails on cut-off or overlapping controls. Avoid effects that are redrawn on every repaint
+  (blend modes, filters, big soft shadows): WebKitGTK without a graphics card draws them slowly.
+  Textures are baked with `pnpm textures`.
 - **The README's graphics are built, not drawn.** If you change how the app looks, run
   `pnpm readme --shots` in `apps/desktop` and commit what changes in `.github/assets`.
 

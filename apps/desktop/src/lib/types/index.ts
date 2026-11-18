@@ -45,13 +45,18 @@ export type { Dims } from './engine/Dims';
 import type { Dims } from './engine/Dims';
 import type { Format } from './engine/Format';
 
-/** One image processed exactly as the run would, nothing written. */
+/** The selected image as the recipe makes it, nothing written: first a quick draft at screen
+ *  size, then the exact result. */
 export interface Preview {
-  /** URLs the webview can show. */
+  exact: boolean;
+  /** URLs the webview can show: the original at screen size and at full size, and the result
+   *  (screen size in a draft, the real output once exact). */
   before: string;
+  before_full: string;
   after: string;
   before_bytes: number;
-  after_bytes: number;
+  /** Known once exact. */
+  after_bytes: number | null;
   source_dims: Dims;
   dims: Dims;
   format: Format;
@@ -80,3 +85,48 @@ export interface Integrations {
   targets: Integration[];
   pins: string[];
 }
+
+/** What the self-test should do (see src/lib/selftest). */
+export interface SelfTest {
+  /** Files and folders to add, as a person would drop them. */
+  images: string[];
+  /** Time the everyday steps. */
+  measure: boolean;
+  /** Also run the batch, then undo it. */
+  run: boolean;
+  /** Also check the layout at several window sizes. */
+  layout: boolean;
+  /** What the app runs on, as name and value pairs. */
+  host?: [string, string][];
+  /** Effects to switch off, to measure what each costs (see src/lib/selftest/fx.css). */
+  fx?: string[];
+  /** Full or light effects for this test, instead of the automatic choice. */
+  effects?: 'full' | 'light' | null;
+}
+
+/** How the app itself behaves (settings.json), and what this system allows. */
+export interface AppSettings {
+  menu_bar: boolean;
+  /** The system can show a menu bar or tray icon. */
+  menu_bar_available: boolean;
+  auto_update: boolean;
+  /** Starts at login, in the menu bar. */
+  login: boolean;
+  /** What images dropped on the menu bar icon run. */
+  drop_recipe: string;
+  pins: string[];
+}
+
+/** A newer version, with its changelog in Markdown. */
+export interface UpdateInfo {
+  version: string;
+  current: string;
+  date: string | null;
+  notes: string;
+  /** Set when this copy can't update itself: the command that does it. */
+  manual: string | null;
+}
+
+/** One line of a right-click menu: a command, or a choice with a tick when `checked` is set.
+ *  Null draws a separator. */
+export type MenuLine = { text: string; action: () => void; enabled?: boolean; checked?: boolean } | null;

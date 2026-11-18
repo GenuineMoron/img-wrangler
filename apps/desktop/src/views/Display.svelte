@@ -24,7 +24,7 @@
       <Empty />
     {:else}
       <div class="sbar">
-        <span class="path" title={folder}>{parent}<b>{leaf}</b> · {count(batch.items.length)} · {bytes(batch.bytesIn)}</span>
+        <span class="path" title={folder} data-long>{parent}<b>{leaf}</b> · {count(batch.items.length)} · {bytes(batch.bytesIn)}</span>
         <Tabs label="Show" items={batch.tabs.map(t => ({ ...t, id: t.id as Tab }))} value={batch.tab} onchange={t => (batch.tab = t)} />
       </div>
       <div class="sbody">

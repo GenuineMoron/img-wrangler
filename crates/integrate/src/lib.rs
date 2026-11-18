@@ -37,6 +37,7 @@ pub enum Target {
     Nautilus,
     Nemo,
     Thunar,
+    Luciole,
 }
 
 impl Target {
@@ -48,6 +49,7 @@ impl Target {
             Target::Nautilus => "Files (Nautilus)",
             Target::Nemo => "Nemo",
             Target::Thunar => "Thunar",
+            Target::Luciole => "Luciole",
         }
     }
 }
@@ -82,7 +84,7 @@ pub fn targets() -> Vec<Target> {
     } else if cfg!(windows) {
         vec![Target::Explorer]
     } else {
-        [(Target::Dolphin, "dolphin"), (Target::Nautilus, "nautilus"), (Target::Nemo, "nemo"), (Target::Thunar, "thunar")].into_iter().filter(|(_, cmd)| on_path(cmd)).map(|(t, _)| t).collect()
+        [(Target::Dolphin, "dolphin"), (Target::Nautilus, "nautilus"), (Target::Nemo, "nemo"), (Target::Thunar, "thunar"), (Target::Luciole, "luciole")].into_iter().filter(|(_, cmd)| on_path(cmd)).map(|(t, _)| t).collect()
     }
 }
 
@@ -159,6 +161,24 @@ pub fn nautilus_files(setup: &Setup) -> Vec<(PathBuf, String)> {
         .collect()
 }
 
+fn luciole_dir() -> PathBuf {
+    dirs::data_dir().unwrap_or_else(|| home().join(".local/share")).join("luciole/scripts")
+}
+
+/// Luciole (the Noctalia file manager) runs executable scripts from its scripts folder, named as
+/// they appear in its Scripts menu, with the selection as arguments.
+pub fn luciole_files(setup: &Setup) -> Vec<(PathBuf, String)> {
+    let dir = luciole_dir();
+    menu_items(setup)
+        .into_iter()
+        .map(|(_, label, action)| {
+            let cmd = std::iter::once(sh_quote(&setup.program.to_string_lossy())).chain(args(action).iter().map(|a| sh_quote(a))).collect::<Vec<_>>().join(" ");
+            let name = if action.is_some() { format!("Wrangler: {label}") } else { label.clone() };
+            (dir.join(name.replace('/', "-")), format!("#!/bin/sh\n# {MARK}: {label}\nexec {cmd} \"$@\"\n"))
+        })
+        .collect()
+}
+
 pub fn nemo_files(setup: &Setup) -> Vec<(PathBuf, String)> {
     let dir = home().join(".local/share/nemo/actions");
     menu_items(setup)
@@ -221,6 +241,20 @@ fn plist_escape(s: &str) -> String {
     xml_escape(s)
 }
 
+/// The command a Quick Action runs. The app is started through Launch Services (`open`), so it
+/// opens in the person's session and outlives the Quick Action: started directly, it would be
+/// a child of Automator's script runner, which can end it as soon as the script finishes. `-n`
+/// starts a fresh copy each time so the arguments arrive, and that copy hands them to Wrangler if
+/// it's already open.
+fn finder_command(program: &Path, action: Option<&QuickAction>) -> String {
+    let words = args(action).iter().map(|a| sh_quote(a)).collect::<Vec<_>>().join(" ");
+    let p = program.to_string_lossy();
+    match p.find(".app/Contents/MacOS/") {
+        Some(i) => format!("/usr/bin/open -n -a {} --args {words}", sh_quote(&p[..i + 4])),
+        None => format!("{} {words}", sh_quote(&p)),
+    }
+}
+
 /// An Automator Quick Action (a Services workflow) that runs one command on the selected
 /// images or folders.
 pub fn finder_files(setup: &Setup) -> Vec<(PathBuf, String)> {
@@ -228,8 +262,7 @@ pub fn finder_files(setup: &Setup) -> Vec<(PathBuf, String)> {
     for (_, label, action) in menu_items(setup) {
         let title = if action.is_some() { format!("Wrangler: {label}") } else { label.clone() };
         let bundle = finder_dir().join(format!("{}.workflow", title.replace(": ", " - ").replace(['/', ':'], "-")));
-        let cmd = std::iter::once(sh_quote(&setup.program.to_string_lossy())).chain(args(action).iter().map(|a| sh_quote(a))).collect::<Vec<_>>().join(" ");
-        let script = format!("# {MARK}\n{cmd} \"$@\" > /dev/null 2>&1 &");
+        let script = format!("# {MARK}\n{} \"$@\" > /dev/null 2>&1", finder_command(&setup.program, action));
         let info = format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -493,6 +526,17 @@ pub fn install(target: Target, setup: &Setup) -> Result<Vec<PathBuf>> {
     match target {
         Target::Dolphin => write_all(&dolphin_files(setup), true),
         Target::Nautilus => write_all(&nautilus_files(setup), true),
+        Target::Luciole => {
+            // Luciole only runs scripts from a folder no one else can write to.
+            let dir = luciole_dir();
+            fs::create_dir_all(&dir).map_err(|e| Error::Io(dir.clone(), e))?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&dir, fs::Permissions::from_mode(0o755)).map_err(|e| Error::Io(dir.clone(), e))?;
+            }
+            write_all(&luciole_files(setup), true)
+        }
         Target::Nemo => write_all(&nemo_files(setup), false),
         Target::Thunar => {
             let path = thunar_path();
@@ -516,6 +560,7 @@ pub fn remove(target: Target) -> Result<()> {
         Target::Dolphin => remove_matching(&home().join(".local/share/kio/servicemenus"), |p| p.file_name().is_some_and(|n| n == "img-wrangler.desktop")),
         Target::Nautilus => remove_matching(&home().join(".local/share/nautilus/scripts"), |p| p.file_name().is_some_and(|n| n == "Wrangler")),
         Target::Nemo => remove_matching(&home().join(".local/share/nemo/actions"), |p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with(MARK))),
+        Target::Luciole => remove_matching(&luciole_dir(), |p| p.is_file() && file_mentions_mark(p)),
         Target::Thunar => {
             let path = thunar_path();
             match fs::read_to_string(&path) {
@@ -534,6 +579,7 @@ pub fn installed(target: Target) -> bool {
         Target::Nautilus => home().join(".local/share/nautilus/scripts/Wrangler").exists(),
         Target::Nemo => fs::read_dir(home().join(".local/share/nemo/actions")).is_ok_and(|d| d.flatten().any(|e| e.file_name().to_string_lossy().starts_with(MARK))),
         Target::Thunar => file_mentions_mark(&thunar_path()),
+        Target::Luciole => fs::read_dir(luciole_dir()).is_ok_and(|d| d.flatten().any(|e| file_mentions_mark(&e.path()))),
         Target::Finder => fs::read_dir(finder_dir()).is_ok_and(|d| d.flatten().any(|e| file_mentions_mark(&e.path().join("Contents/document.wflow")))),
         Target::Explorer => explorer_installed(),
     }
@@ -605,6 +651,24 @@ mod tests {
         assert_eq!(files.len(), 2);
         assert!(files[1].0.ends_with("Wrangler/Shopify product"));
         assert!(files[1].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
+    }
+
+    #[test]
+    fn luciole_scripts_pass_selection() {
+        let files = luciole_files(&setup());
+        assert_eq!(files.len(), 2);
+        assert!(files[0].0.to_string_lossy().ends_with("luciole/scripts/Open in Wrangler…"));
+        assert!(files[1].0.ends_with("Wrangler: Shopify product"));
+        assert!(files[1].1.starts_with("#!/bin/sh\n"));
+        assert!(files[1].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
+    }
+
+    #[test]
+    fn finder_starts_the_app_through_launch_services() {
+        let app = PathBuf::from("/Applications/Wrangler.app/Contents/MacOS/img-wrangler-app");
+        let a = QuickAction { id: "web-ready".into(), label: "Web ready".into() };
+        assert_eq!(finder_command(&app, Some(&a)), "/usr/bin/open -n -a '/Applications/Wrangler.app' --args 'quick' '--recipe' 'web-ready'");
+        assert_eq!(finder_command(Path::new("/usr/local/bin/img-wrangler"), None), "'/usr/local/bin/img-wrangler' 'open'");
     }
 
     #[test]

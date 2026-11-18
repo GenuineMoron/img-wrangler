@@ -46,6 +46,10 @@ Milestones in build order. Each one ends working and tested, so the project is u
 - [x] First green CI run
 - [x] First alpha release (0.1.0-alpha.1)
 - [x] A download page that recognises the computer, and one-line installs for every system
+- [x] Updates from inside the app, signed, with the changelog shown first
+- [x] Menu bar and tray icon, with drops on the icon (macOS), and starting at login
+- [x] A self-test for speed and layout in the real app and in Chromium and WebKit, run in CI
+- [x] Fast on WebKitGTK without a graphics card: baked textures, cheap glows, light effects when drawing is slow
 - [ ] Signed, notarised macOS build and a signed Windows installer
 - [ ] Homebrew tap, AUR package
 - [x] README with screenshots

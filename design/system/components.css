@@ -6,9 +6,8 @@
 /* ---------- material helpers ---------- */
 .mat-case {
   background-color: var(--surface-case);
-  background-image: var(--light-top), var(--tex-dust), var(--tex-scratch), var(--tex-fine);
-  background-size: auto, var(--tex-dust-size), var(--tex-scratch-size), var(--tex-fine-size);
-  background-blend-mode: normal, soft-light, soft-light, soft-light;
+  background-image: var(--light-top), var(--tex-grain-case), var(--tex-case);
+  background-size: auto, var(--tex-fine-size), var(--tex-scratch-size);
 }
 .panel { border-radius: var(--r-panel); box-shadow: var(--elev-panel); }
 
@@ -24,23 +23,23 @@
   border: 0; border-radius: var(--r-key); cursor: pointer; user-select: none; white-space: nowrap; overflow: hidden;
   font: 600 var(--fs-key)/1 var(--font-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-1);
   background-color: var(--surface-key);
-  background-image: var(--tex-fine), linear-gradient(180deg, #fbfbfa, var(--surface-key) 50%, var(--surface-key-lo));
-  background-size: var(--tex-fine-size), auto; background-position: var(--gx, 0) var(--gy, 0), 0 0; background-blend-mode: soft-light, normal;
+  background-image: var(--tex-grain-light), linear-gradient(180deg, #fbfbfa, var(--surface-key) 50%, var(--surface-key-lo));
+  background-size: var(--tex-fine-size), auto; background-position: var(--gx, 0) var(--gy, 0), 0 0;
   box-shadow: var(--elev-key);
   transition: transform var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out);
 }
-.key:hover { background-image: var(--tex-fine), linear-gradient(180deg, #fff, #f8f8f7 50%, var(--surface-key-lo)); }
+.key:hover { background-image: var(--tex-grain-light), linear-gradient(180deg, #fff, #f8f8f7 50%, var(--surface-key-lo)); }
 .key:active { transform: translateY(1.5px); box-shadow: var(--elev-key-pressed); }
 .key:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }
 .key[aria-pressed="true"], .key[aria-checked="true"] {
   color: var(--on-accent);
   background-color: var(--accent);
-  background-image: var(--tex-fine), linear-gradient(180deg, color-mix(in oklab, var(--accent) 84%, #fff), var(--accent) 55%, color-mix(in oklab, var(--accent) 88%, #000));
+  background-image: var(--tex-grain-mid), linear-gradient(180deg, color-mix(in oklab, var(--accent) 84%, #fff), var(--accent) 55%, color-mix(in oklab, var(--accent) 88%, #000));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(0,0,0,.18), 0 var(--key-depth) 0 color-mix(in oklab, var(--accent) 55%, #000), 0 calc(var(--key-depth) + .5px) 1px rgba(0,0,0,.18), 0 4px var(--key-soft) rgba(0,0,0,.14);
 }
 @media (forced-colors: active) { .key[aria-pressed="true"], .key[aria-checked="true"] { border: 2px solid CanvasText; } }
 .key:disabled, .key[aria-disabled="true"] { cursor: default; color: color-mix(in oklab, var(--ink-2) 70%, var(--surface-key)); box-shadow: var(--elev-key-pressed); transform: none; }
-.key--dark { color: var(--ink-on-dark); background-color: var(--surface-dark); background-image: var(--tex-fine), linear-gradient(180deg, var(--surface-dark-hi), var(--surface-dark) 55%, #27282b); box-shadow: var(--elev-dark); }
+.key--dark { color: var(--ink-on-dark); background-color: var(--surface-dark); background-image: var(--tex-grain-dark), linear-gradient(180deg, var(--surface-dark-hi), var(--surface-dark) 55%, #27282b); box-shadow: var(--elev-dark); }
 .key--icon { width: var(--key-h); padding: 0; }
 .key--tall { height: var(--key-h-lg); border-radius: var(--r-key-lg); flex-direction: column; gap: var(--sp-3); }
 .key svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
@@ -86,10 +85,14 @@
   color: var(--screen-1); font: var(--fs-small)/1.35 var(--font-data); box-shadow: var(--elev-screen); }
 .screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3; background: linear-gradient(120deg, rgba(255,255,255,var(--glass)), transparent 38%); }
 .screen--fx::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,var(--px-grid)) 0 1px, transparent 1px var(--px-pitch)), repeating-linear-gradient(90deg, rgba(0,0,0,calc(var(--px-grid) * .6)) 0 1px, transparent 1px var(--px-pitch)); }
+  background: var(--tex-pixel-grid) 0 0 / var(--px-pitch) var(--px-pitch); image-rendering: pixelated; }
 @media (prefers-contrast: more) { .screen--fx::before { display: none; } }
 .screen svg { display: block; overflow: visible; }
-.glow { filter: drop-shadow(0 0 var(--bloom) color-mix(in srgb, currentColor var(--bloom-amt), transparent)); }
+/* Glow: a text shadow on text, a box shadow on a bar, a filter only on drawn shapes. All three
+   look alike, and the first two are much cheaper to repaint than a filter. */
+.glow { text-shadow: 0 0 var(--bloom) color-mix(in srgb, currentColor var(--bloom-amt), transparent); }
+.glow:empty { box-shadow: 0 0 var(--bloom) color-mix(in srgb, currentColor var(--bloom-amt), transparent); }
+svg .glow, svg.glow { filter: drop-shadow(0 0 var(--bloom) color-mix(in srgb, currentColor var(--bloom-amt), transparent)); }
 .scr-value { font: var(--value-weight) var(--fs-value)/1 var(--font-value); }
 .scr-label { font: var(--fs-small)/1 var(--font-data); fill: var(--screen-2); color: var(--screen-2); }
 .scr-dim { fill: var(--screen-3); color: var(--screen-3); }
@@ -142,8 +145,8 @@
 /* ---------- Run ---------- */
 .run { height: var(--key-h-lg); border: 0; border-radius: var(--r-key-lg); cursor: pointer; display: grid; place-items: center; color: #fff;
   font: 800 18px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase;
-  background-color: var(--output); background-image: var(--tex-fine), linear-gradient(180deg, var(--output-hi), var(--output) 50%, var(--output-lo));
-  background-size: var(--tex-fine-size), auto; background-blend-mode: soft-light, normal;
+  background-color: var(--output); background-image: var(--tex-grain-mid), linear-gradient(180deg, var(--output-hi), var(--output) 50%, var(--output-lo));
+  background-size: var(--tex-fine-size), auto;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 var(--output-wall), 0 4px 2px rgba(0,0,0,.2);
   transition: transform var(--dur-press) var(--ease-out); }
 .run:active { transform: translateY(3px); box-shadow: inset 0 2px 5px rgba(0,0,0,.25), 0 0 0 var(--output-wall); }
@@ -154,3 +157,22 @@
 .hints kbd { font: inherit; color: var(--screen-1); margin-right: var(--sp-2); }
 
 @media (prefers-reduced-motion: reduce) { .slider__cap { transition: none; } }
+
+/* ---------- light effects ----------
+   For a webview drawing without a graphics card, where every soft shadow and glow is redrawn by
+   the processor on each repaint. The app turns this on by itself when drawing is slow, or when
+   asked to (Settings). Shapes, colours and textures stay the same. */
+html.lite {
+  --elev-key: inset 0 1px 0 #fff, 0 var(--key-depth) 0 var(--surface-key-wall), 0 calc(var(--key-depth) + 1px) 0 rgba(0,0,0,.12);
+  --elev-dark: inset 0 1px 0 rgba(255,255,255,.1), 0 var(--key-depth) 0 var(--surface-dark-wall), 0 calc(var(--key-depth) + 1px) 0 rgba(0,0,0,.22);
+  --elev-case: 0 0 0 1px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 0 rgba(0,0,0,.14);
+  --elev-screen: inset 0 0 0 1px #000, 0 1px 0 var(--seam-light), 0 -1px 0 var(--seam-dark);
+}
+html.lite .glow, html.lite .led-readout { text-shadow: none; }
+html.lite .glow:empty, html.lite .ladder i.on { box-shadow: none; }
+html.lite svg .glow, html.lite svg.glow { filter: none; }
+html.lite .key[aria-pressed="true"], html.lite .key[aria-checked="true"] {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(0,0,0,.18), 0 var(--key-depth) 0 color-mix(in oklab, var(--accent) 55%, #000); }
+html.lite .run { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 var(--output-wall); }
+html.lite .tile__img { border-radius: 0; }
+

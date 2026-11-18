@@ -133,10 +133,13 @@ Decoders: `image` (JPEG, PNG, GIF, WebP, TIFF, BMP, ICO, QOI, TGA, PNM), `avif-d
 ## Desktop app
 
 ### Host (`apps/desktop/src-tauri`)
-- **Commands** (`commands.rs`) are thin wrappers over the engine. Anything slow runs on a blocking thread: `formats`, `recipes`, `load_recipe`, `save_recipe`, `delete_recipe`, `scan`, `forget`, `plan`, `estimate` (a newer one cancels an older one), `preview` (one image processed exactly as the run would, nothing written), `run` (progress streamed over a Tauri `Channel`), `quick_run`, `cancel`, `undo`, `history`, `take_launch`, `open_main`, `integrations`, `set_integrations`.
-- **Protocols** serve images without base64: `thumb://localhost/<path>` (a cached WebP thumbnail, only for files in the batch) and `preview://localhost/<token>` (the last few previews, kept in memory).
-- **Launch modes** (`launch.rs`): plain, `open <paths…>` and `quick --recipe <id> <paths…>`, which the right-click actions run. A single-instance guard sends later launches to the running app, and pending launches merge, so the one-process-per-file launches Explorer makes fold into one batch.
-- **Windows**: `main`, and `quick`, the small unit a right-click action opens. Quick runs use their own file list (`quick_run`), so they never disturb the main window's batch. When the quick window closes and the main window was never shown, the app exits.
+- **Commands** (`commands.rs`) are thin wrappers over the engine. Anything slow runs on a blocking thread: `formats`, `recipes`, `load_recipe`, `save_recipe`, `delete_recipe`, `scan`, `forget`, `plan`, `estimate` (a newer one cancels an older one), `preview` and `preview_focus` (below), `run` (the batch, or `only` some of it, with progress streamed over a Tauri `Channel`), `quick_run`, `cancel`, `undo`, `history`, `open_image`, `take_launch`, `open_main`, `integrations`, `set_integrations`, `app_settings`, `set_app_settings`, `set_drop_recipe`, `window_ready`, and the self-test's `selftest_config` and `selftest_done`.
+- **Pictures** (`pictures.rs`). A preview comes in two steps: a draft (the recipe's framing at screen size, from `wrangler_engine::preview`) in a fraction of a second, then the exact result, which needs the full encode. Both are kept per file and recipe, so going back is instant. Work for the same preview is shared, and `preview_focus` cancels work for images the person has moved away from. `preview://localhost/<token>` serves them off the main thread. `thumb://localhost/<path>?size=` serves cached WebP thumbnails (256 px on a standard display, 384 on HiDPI) from a small pool of threads that takes the newest request first, so the ones just scrolled into view come before the ones scrolled past.
+- **Launch modes** (`launch.rs`): plain, `open <paths…>`, `quick --recipe <id> <paths…>` (what the right-click actions run), `--hidden` (a start at login) and `selftest`. A single-instance guard sends later launches to the running app, and pending launches merge, so the one-process-per-file launches Explorer makes fold into one batch.
+- **Windows**: `main`, and `quick`, the small unit a right-click action or a drop on the menu bar icon opens. Quick runs use their own file list (`quick_run`), so they never disturb the main window's batch. A window shows itself once drawn (`window_ready`), and the main window only when someone asked for it, so a quick action never brings it up.
+- **Menu bar** (`tray.rs`, and `macos.rs` for drops on the icon). The hat in the menu bar or tray, with a menu that runs pinned recipes on chosen images, picks what a drop on the hat runs, undoes the last run, and offers updates and settings. It's rebuilt whenever one of those changes. With it up, closing a window leaves Wrangler running (and hides the Dock icon on a Mac). On Linux the tray needs the AppIndicator library, which is checked for first.
+- **Updates** (`updates.rs`). The updater plugin reads `latest.json` from the download site soon after start and every six hours, and the app shows the changelog before installing. Updates are signed in CI and checked against the public key in `tauri.conf.json`. An Arch package can't update itself (makepkg doesn't run as root), so there the app gives the install command.
+- **Settings** (`settings.rs`): pinned recipes, the menu bar, automatic update checks and the drop recipe, in `settings.json` beside the recipes. Starting at login is the autostart plugin's.
 
 ### Front end (`apps/desktop/src`)
 ```
@@ -148,8 +151,11 @@ src/
                              ScreenChoice, Slider, Field, Screen, Ladder, Led, Tabs, Dialog,
                              ColourKey, AnchorPad, Row, HatScreen, Icon (+ icons.ts)
   lib/modules/               one folder per module, plus registry.ts and types.ts
-  lib/state/                 Svelte 5 rune stores: recipe, batch, catalog, ui, and the
-                             controller that keeps plan, estimate and preview current
+  lib/state/                 Svelte 5 rune stores: recipe, batch, catalog, ui, updates, fx
+                             (full or light effects), and the controller that keeps plan,
+                             estimate and preview current
+  lib/selftest/              the self-test: drives the interface, times it, checks the layout
+  lib/changelog.ts           a version's changelog, for the update dialog
   lib/ipc/                   the Backend interface, the Tauri implementation, and a mock
   lib/types/engine/          TypeScript types generated from the engine (ts-rs)
   lib/geometry.ts            the frame layout mirrored from the engine, for instant diagrams
@@ -157,14 +163,14 @@ src/
 
 - **Design system.** `design/system` (tokens, component CSS, fonts, textures) is imported directly through the `@design` alias, so there is one copy of every token.
 - **Types.** `cargo test -p wrangler-engine --features ts export_bindings` regenerates `lib/types/engine`. The recipe the UI edits is the engine's own type, so the two can't drift.
-- **State flow.** Controls write straight into `recipe.value` (a deep `$state`). The controller watches it: the plan refreshes within 40 ms, the sampled estimate after 450 ms, and the preview of the selected image after 220 ms. Stale replies are dropped by sequence number. `recipe.edited` compares against the last loaded or saved copy.
-- **Mock backend.** In `pnpm dev` outside Tauri, `lib/ipc/mock.ts` plays a product shoot from `dev/samples`, draws previews on a canvas with the same frame layout as the engine, and simulates runs. `?demo` starts with files`#quick` opens the quick window. Production builds leave it out.
+- **State flow.** Controls write straight into `recipe.value` (a deep `$state`). The controller watches it: the plan refreshes within 40 ms and the sampled estimate after 450 ms. A new selection asks for its preview at once (draft, then exact, then the neighbours' ahead of time), and a recipe edit waits 150 ms for the edit to settle. Stale replies are dropped by sequence number. `recipe.edited` compares against the last loaded or saved copy. The batch's big values (sources, plan, estimate, reports) are `$state.raw` and replaced whole, and run progress is applied once a frame, so thousands of files cost little more than a dozen.
+- **Mock backend.** In `pnpm dev` outside Tauri, `lib/ipc/mock.ts` plays a product shoot from `dev/samples`, draws previews on a canvas with the same frame layout as the engine, and simulates runs. `?demo` starts with files, and `#quick` opens the quick window. Production builds leave it out.
 - **Sheet.** The contact sheet draws only the rows in view, so thousands of files scroll as lightly as a dozen (WebKitGTK on Linux is the slowest webview we ship on).
 
 ### The unit's layout
 | Region | Holds |
 |---|---|
-| Header | grille (Add, drop target), recipe selector, Save, Add/History/Settings/Commands keys |
+| Header | the hat (Add, drop target), recipe selector, Save, an Update key when there's a new version, Add/History/Settings/Commands keys |
 | Display | where the batch is, tabs (All, Ready, Done, Kept, Clash, Over, Skipped, Failed), the virtualised sheet, the monitor (result, original, split, 1:1 zoom) and the status line |
 | Recipe panel | every step in run order, open one (accordion) for its Details, add-on keys switch on and off, Add step |
 | Channel strip | the core modules that have channels: Size, Format, Quality, Name. Each screen is itself the control |
@@ -194,7 +200,10 @@ WebKitGTK ever becomes the bottleneck. Revisit when winit 0.31 ships.
 - CLI: end-to-end tests that run recipes on fixture folders.
 - Integrations: generated files compared against expected text for every OS (runs on any OS).
 - README graphics: `pnpm readme --shots` in `apps/desktop` rebuilds every banner, screenshot and the demo from the app, with photos made by the CLI.
-- Front end: `svelte-check` for types, Vitest for logic (the geometry mirror runs the engine's own frame tests), and screenshot checks of the main views in mock mode.
+- Front end: `svelte-check` for types, Vitest for logic (the geometry mirror runs the engine's own frame tests).
+- Speed and layout (`pnpm selftest`, see `src/lib/selftest`). The interface drives itself through the everyday steps (add a folder, arrow through it, scroll, drag the size, switch recipes, open every dialog, run and undo) and times each one, then checks every screen, step and dialog for cut-off text, controls spilling out of their panel, overlapping controls and controls off the window, at three window sizes. `pnpm selftest app` runs it in the real app on this machine (on a Mac over SSH it starts the app through Launch Services and keeps the display awake), `pnpm selftest browser` in Chromium or WebKit with stand-in photos, and `pnpm selftest compare` puts two reports side by side. `--fx tex,glow,…` switches effects off one at a time to measure what each costs, and `--effects light` tries the light mode. CI runs the browser version in Chromium and WebKit on every push and fails on a layout fault.
+- Engine stages: `cargo run --release -p wrangler-engine --example stages -- photo.jpg web-ready` times decode, stages and encode for one image.
+- Textures: `pnpm textures` bakes the case and key textures and the screens' pixel grid from `design/system/tex` and the tokens, so nothing is blended on a repaint. Run it after changing a surface colour, a texture or the grid.
 
 ## Safety rules
 - Nothing is written until Run. Plans and previews never touch the source folder.

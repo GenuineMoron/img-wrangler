@@ -7,8 +7,8 @@
   import { change, fileName, kb } from '$lib/text';
   import type { PlanItem } from '$lib/types';
 
-  let { item, status, selected, index, total, onselect, left, top, width }: {
-    item: PlanItem; status: ItemStatus; selected: boolean; index: number; total: number; onselect: () => void; left: number; top: number; width: number;
+  let { item, status, selected, index, total, onselect, onmenu, left, top, width }: {
+    item: PlanItem; status: ItemStatus; selected: boolean; index: number; total: number; onselect: () => void; onmenu: () => void; left: number; top: number; width: number;
   } = $props();
 
   const FLAGS: Partial<Record<ItemStatus, { text: string; alarm: boolean; say: string }>> = {
@@ -40,12 +40,13 @@
   title={reason ?? undefined}
   aria-label="{fileName(item.output)}, {kb(inB)}{out != null ? ` to ${kb(out)}` : ''}{flag ? `, ${flag.say}` : ''}"
   onclick={onselect}
+  oncontextmenu={e => { e.preventDefault(); e.stopPropagation(); onmenu(); }}
 >
   <div class="tile__img">
     <img src={backend.thumbUrl(item.source)} alt="" loading="lazy" decoding="async" draggable="false" />
     {#if flag}<span class="flag" class:flag--alarm={flag.alarm}>{flag.text}</span>{/if}
   </div>
-  <div class="tile__name">{fileName(item.output)}</div>
+  <div class="tile__name" data-long>{fileName(item.output)}</div>
   <div class="tile__meta">
     <span>{kb(inB)} → <b>{out != null ? kb(out) : '…'}</b></span>
     <span class="pct">{status === 'kept' ? 'kept' : out != null ? change(inB, out) : ''}</span>

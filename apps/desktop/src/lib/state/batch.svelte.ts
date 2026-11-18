@@ -19,27 +19,29 @@ const TAB_ORDER: { id: Tab; label: string; alarm?: boolean }[] = [
 class BatchState {
   /** What was dropped or picked: files and folders, before the Files step filters them. */
   roots = $state<string[]>([]);
-  sources = $state<{ path: string }[]>([]);
+  // Big values are replaced whole, never edited in place, so they skip deep reactivity: a batch
+  // of thousands stays as quick as a dozen.
+  sources = $state.raw<{ path: string }[]>([]);
   /** Bumped whenever the batch changes, so effects can watch one number. */
   version = $state(0);
   scanning = $state(false);
 
-  plan = $state<Plan | null>(null);
-  estimate = $state<Estimate | null>(null);
+  plan = $state.raw<Plan | null>(null);
+  estimate = $state.raw<Estimate | null>(null);
   estimating = $state(false);
 
   selectedPath = $state<string | null>(null);
   tab = $state<Tab>('all');
 
-  preview = $state<Preview | null>(null);
+  preview = $state.raw<Preview | null>(null);
   previewPath = $state<string | null>(null);
   previewing = $state(false);
   previewError = $state<string | null>(null);
 
   running = $state(false);
-  progress = $state({ total: 0, done: 0, bytesIn: 0, bytesOut: 0 });
-  reports = $state<Record<number, ItemReport>>({});
-  summary = $state<Summary | null>(null);
+  progress = $state.raw({ total: 0, done: 0, bytesIn: 0, bytesOut: 0 });
+  reports = $state.raw<Record<number, ItemReport>>({});
+  summary = $state.raw<Summary | null>(null);
   /** The last run that can be undone. */
   undoable = $state<string | null>(null);
 
@@ -56,17 +58,20 @@ class BatchState {
   currentPath = $derived(this.current?.source ?? null);
   bytesIn = $derived(this.items.reduce((a, i) => a + (i.probe?.bytes ?? 0), 0));
 
-  statusOf(item: PlanItem): ItemStatus {
+  statusOf(item: PlanItem, neverBigger = !!recipe.value?.quality.never_bigger): ItemStatus {
     const rep = this.reports[item.id];
     if (rep) return rep.status === 'over_limit' ? 'over' : rep.status;
     if (item.action.kind === 'skip') return 'skipped';
     if (item.renamed_for_clash) return 'clash';
     const est = this.estimate?.per_item[item.id];
-    if (est != null && item.probe && est >= item.probe.bytes && recipe.value?.quality.never_bigger) return 'kept';
+    if (neverBigger && est != null && item.probe && est >= item.probe.bytes) return 'kept';
     return 'ready';
   }
 
-  statuses = $derived(this.items.map(i => this.statusOf(i)));
+  statuses = $derived.by(() => {
+    const neverBigger = !!recipe.value?.quality.never_bigger;
+    return this.items.map(i => this.statusOf(i, neverBigger));
+  });
 
   tabs = $derived.by(() => {
     const n: Record<string, number> = { all: this.items.length };
@@ -81,7 +86,7 @@ class BatchState {
   outBytes(item: PlanItem): number | null {
     const rep = this.reports[item.id];
     if (rep) return rep.bytes_out;
-    if (this.previewPath === item.source && this.preview) return this.preview.after_bytes;
+    if (this.previewPath === item.source && this.preview?.after_bytes != null) return this.preview.after_bytes;
     return this.estimate?.per_item[item.id] ?? null;
   }
 
@@ -174,9 +179,17 @@ class BatchState {
     this.#timers.est = setTimeout(() => this.#reestimate(), 450);
   }
 
-  schedulePreview() {
+  /** The selection moved (show its preview at once) or the recipe changed (wait for the edit
+   *  to settle). */
+  schedulePreview(moved = false) {
     clearTimeout(this.#timers.prev);
-    this.#timers.prev = setTimeout(() => this.#repreview(), 220);
+    this.#timers.prev = setTimeout(() => this.#repreview(), moved ? 0 : 150);
+  }
+
+  /** The images either side of the selection in the current tab. */
+  #neighbours(): string[] {
+    const list = this.shown, at = list.indexOf(this.selected);
+    return [list[at + 1], list[at - 1]].filter(i => i != null).map(i => this.items[i].source);
   }
 
   async #replan() {
@@ -204,38 +217,76 @@ class BatchState {
     }
   }
 
+  /** A quick draft first, then the exact result, then the neighbours' ahead of time, so the
+   *  next arrow press finds its preview ready. */
   async #repreview() {
     const item = this.current;
     if (!recipe.value || !item || item.action.kind === 'skip') { this.preview = null; this.previewPath = null; return; }
     const seq = ++this.#prevSeq;
+    const r = recipe.snapshot();
+    const near = this.#neighbours();
+    void backend.previewFocus([item.source, ...near], r);
     this.previewing = true;
     this.previewError = null;
     try {
-      const p = await backend.preview(item.source, recipe.snapshot());
-      if (seq === this.#prevSeq) { this.preview = p; this.previewPath = item.source; }
+      let p = await backend.preview(item.source, r, false);
+      if (seq !== this.#prevSeq) return;
+      this.preview = p;
+      this.previewPath = item.source;
+      if (!p.exact) {
+        p = await backend.preview(item.source, r, true);
+        if (seq !== this.#prevSeq) return;
+        this.preview = p;
+      }
+      for (const n of near) backend.preview(n, r, true).catch(() => {});
     } catch (e) {
-      if (seq === this.#prevSeq) { this.previewError = String(e); this.preview = null; }
+      const msg = String(e);
+      if (seq === this.#prevSeq && msg !== 'stopped' && msg !== 'superseded') { this.previewError = msg; this.preview = null; }
     } finally {
       if (seq === this.#prevSeq) this.previewing = false;
     }
   }
 
-  async run() {
+  /** Run the batch, or only some of it ("Run just this one"), keeping the others' results. */
+  async run(only?: string[]) {
     if (this.running || !recipe.value || !this.items.length) return;
     this.running = true;
-    this.reports = {};
+    if (only) {
+      const ids = new Set(this.items.filter(i => only.includes(i.source)).map(i => i.id));
+      this.reports = Object.fromEntries(Object.entries(this.reports).filter(([id]) => !ids.has(Number(id))));
+    } else {
+      this.reports = {};
+    }
     this.summary = null;
-    this.progress = { total: this.items.length, done: 0, bytesIn: 0, bytesOut: 0 };
+    this.progress = { total: only?.length ?? this.items.length, done: 0, bytesIn: 0, bytesOut: 0 };
+    // Files finish faster than frames are drawn: gather them and apply them once per frame.
+    let waiting: ItemReport[] = [];
+    let frame = 0;
+    const apply = () => {
+      frame = 0;
+      if (!waiting.length) return;
+      const reports = { ...this.reports };
+      const p = { ...this.progress };
+      for (const e of waiting) {
+        reports[e.id] = e;
+        p.done++;
+        p.bytesIn += e.bytes_in;
+        p.bytesOut += e.bytes_out;
+      }
+      waiting = [];
+      this.reports = reports;
+      this.progress = p;
+    };
     try {
       const s = await backend.run(recipe.snapshot(), e => {
-        if (e.type === 'started') this.progress.total = e.total;
+        if (e.type === 'started') this.progress = { ...this.progress, total: e.total };
         else if (e.type === 'item') {
-          this.reports[e.id] = e;
-          this.progress.done++;
-          this.progress.bytesIn += e.bytes_in;
-          this.progress.bytesOut += e.bytes_out;
+          waiting.push(e);
+          frame ||= requestAnimationFrame(apply);
         }
-      });
+      }, only);
+      cancelAnimationFrame(frame);
+      apply();
       this.summary = s;
       if (s.done + s.kept > 0) this.undoable = s.run_id;
       const problems = s.failed + s.over_limit;

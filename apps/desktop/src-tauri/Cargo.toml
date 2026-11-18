@@ -25,11 +25,23 @@ wrangler-engine.workspace = true
 wrangler-integrate.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-window-state = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-autostart = "2"
 parking_lot = "0.12"
 percent-encoding = "2"
 uuid = { version = "1", features = ["v4"] }
+
+# The tray needs the AppIndicator library, loaded at run time, so look before asking for it.
+[target.'cfg(target_os = "linux")'.dependencies]
+libloading = "0.7"
+
+# Images dropped on the menu bar icon.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSString", "NSURL", "NSGeometry", "NSObject"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSView", "NSResponder", "NSDragging", "NSPasteboard", "NSStatusItem", "NSStatusBarButton", "NSButton", "NSControl", "NSGraphics"] }

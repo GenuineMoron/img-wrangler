@@ -36,4 +36,9 @@
   .more { all: unset; cursor: pointer; border-radius: 2px; margin-left: auto; font: var(--fs-small)/1 var(--font-data); color: var(--ink-2); }
   .more:hover { color: var(--ink-1); }
   .more:focus-visible { outline: var(--focus); outline-offset: 2px; }
+  /* A narrow window: four keys to a row still fit their labels. */
+  @container channel (max-width: 210px) {
+    .channels :global(.channel__controls .keys) { gap: 4px; }
+    .channels :global(.channel__controls .keys > .key) { padding: 0 1px; letter-spacing: .02em; }
+  }
 </style>

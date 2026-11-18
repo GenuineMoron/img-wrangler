@@ -9,6 +9,8 @@
   import { batch } from '$lib/state/batch.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
   import { ui } from '$lib/state/ui.svelte';
+  import { updates } from '$lib/state/updates.svelte';
+  import Led from '$lib/components/Led.svelte';
 
   const mod = backend.platform === 'mac' ? '⌘' : 'Ctrl+';
 
@@ -34,7 +36,7 @@
     <Screen class="recipe__screen">
       <button type="button" class="recipe__name" onclick={() => (ui.dialog = 'recipes')} aria-label="Recipe: {recipe.value?.name}{recipe.edited ? ', edited' : ''}. Press to choose or manage recipes">
         <span class="num">{String(recipe.index + 1).padStart(2, '0')}</span>
-        <span class="label">{recipe.value?.name.toUpperCase() ?? '--'}</span>
+        <span class="label" data-long>{recipe.value?.name.toUpperCase() ?? '--'}</span>
         {#if recipe.edited}<span class="edited">● edited</span>{/if}
       </button>
     </Screen>
@@ -43,6 +45,11 @@
   </div>
 
   <div class="right">
+    {#if updates.found}
+      <button type="button" class="update" onclick={() => (ui.dialog = 'update')} title="Wrangler {updates.found.version} is out">
+        <Led on /> <span>Update</span>
+      </button>
+    {/if}
     <Key dark icon="plus" label="Add" onclick={() => add('files')} title="Add images ({mod}O), or folders ({mod}⇧O)" />
     <Key dark icon="history" aria-label="Past runs" title="Past runs and undo" onclick={() => (ui.dialog = 'history')} />
     <Key dark icon="settings" aria-label="Settings" title="Settings and right-click menus" onclick={() => (ui.dialog = 'settings')} />
@@ -64,5 +71,9 @@
   .label { overflow: hidden; text-overflow: ellipsis; }
   .edited { margin-left: auto; color: var(--output); font-size: var(--fs-small); }
   .right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-4); }
+  .update { all: unset; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 0 var(--sp-4); height: var(--key-h); border-radius: var(--r-key);
+    font: 600 var(--fs-key)/1 var(--font-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-1); }
+  .update:hover { color: var(--output); }
+  .update:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }
   @media (max-width: 1320px) { .word .legend { display: none; } .recipe :global(.recipe__screen) { width: 230px; } }
 </style>

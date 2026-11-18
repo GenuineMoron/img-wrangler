@@ -18,6 +18,9 @@
   .row__label { line-height: 1.25; }
   .row__control { min-width: 0; display: flex; gap: var(--sp-3); align-items: center; }
   .row__control > :global(.keys), .row__control > :global(.slider-wrap), .row__control > :global(.field) { flex: 1; }
+  /* A key keeps room for its whole label; the field beside it gives way instead. */
+  .row__control > :global(.key) { flex: none; }
+  .row__control > :global(.field) { min-width: 64px; }
   .row__note { grid-column: 2; margin-top: -2px; }
   .row--wide .row__note { grid-column: 1; }
 </style>

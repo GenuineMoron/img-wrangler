@@ -1,6 +1,7 @@
-# Publishes the download page and the short install command to genuinemoron.github.io/img-wrangler.
-# The page reads files and sizes from the newest release itself, so this only runs when the page,
-# the design system or the install scripts change.
+# Publishes the download page, the short install command and the update manifest (latest.json,
+# copied from the newest release) to genuinemoron.github.io/img-wrangler. The page reads files and
+# sizes from the newest release itself, so this runs when the page, the design system or the
+# install scripts change, and after each release (started by release.yml).
 name: Site
 
 on:
@@ -42,6 +43,12 @@ jobs:
           # the short command: curl -fsSL https://genuinemoron.github.io/img-wrangler/install | sh
           cp install.sh out/install
           cp install.sh install.ps1 out/
+      - name: The update manifest from the newest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 20 --json tagName,isDraft --jq '[.[] | select(.isDraft | not)][0].tagName')
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern latest.json --dir out || echo "$tag has no latest.json yet"
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

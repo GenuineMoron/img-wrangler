@@ -15,13 +15,21 @@ The system lives in [`design/system`](design/system) and the app imports it dire
 | Surface | Token | Notes |
 |---|---|---|
 | Case | `--surface-case` *tuned* `oklch(93.5% 0.0053 85)` | bead-blasted anodised aluminium, light from the top (`--light-amt` 0.54) |
-| Grain | `--tex-fine` 304 px, sd 16.5 *tuned* | neutral-grey tile, blended soft-light so it never shifts colour |
-| Scratches, dust | `--tex-scratch` 1920 px, `--tex-dust` 896 px *tuned* | CC0 ambientCG scans (Metal050C, SurfaceImperfections015), neutralised |
+| Grain | `--tex-fine-size` 320 px, sd 16.5 *tuned* | neutral-grey tile, soft-light so it never shifts colour. Baked into overlays for the case and for light, mid and dark keys (`--tex-grain-*`) |
+| Scratches, dust | `--tex-scratch-size` 1920 px, `--tex-dust-size` 960 px *tuned* | CC0 ambientCG scans (Metal050C, SurfaceImperfections015), neutralised, baked into the case tile (`--tex-case`) |
 | Keys | `--surface-key`, wall `--key-depth` 2.75 px, soft `--key-soft` 8 px *tuned* | light keycaps, `.key--dark` rubber keys for utility actions |
 | Screens | `--surface-screen` #050505 | OLED: pixel grid `--px-grid` 0.08 at `--px-pitch` 3 px, glass `--glass` 0.09, bloom `--bloom` 4.5 px *tuned* |
 | Panels | `--r-panel` 13 px, engraved seam | panels are pressed into the case, not floating cards |
 
 No screw heads, no faux bevels beyond the key walls, no glassmorphism.
+
+**Drawn once, not on every repaint.** The textures are soft-light blended ahead of time by
+`pnpm textures` (apps/desktop) into plain images, and the pixel grid is a baked tile, because
+WebKitGTK without a graphics card blends and filters slowly. Glow is a text shadow on text and a
+filter only on drawn shapes. The parts that change often (channel screens, sheet, monitor, meter,
+step list) sit on layers of their own. On a computer that draws slowly, light effects drop the
+soft shadows and glows and keep everything else (`html.lite` in components.css): the app measures
+this by itself, and Settings can choose.
 
 ## Type
 | Role | Face | Token |

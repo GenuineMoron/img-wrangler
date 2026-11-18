@@ -1,7 +1,7 @@
 {
   "name": "wrangler-desktop",
   "private": true,
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "scripts": {
@@ -11,7 +11,9 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "tauri": "tauri",
-    "readme": "node scripts/readme.mjs"
+    "readme": "node scripts/readme.mjs",
+    "selftest": "node scripts/selftest.mjs",
+    "textures": "node scripts/textures.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

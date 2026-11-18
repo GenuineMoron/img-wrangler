@@ -3,6 +3,8 @@
 node_modules/
 dist/
 /apps/desktop/src-tauri/gen/
+# Self-test reports and screenshots (pnpm selftest --out selftest)
+/apps/desktop/selftest/
 
 # Local design notes for the tools that work on this repo, not part of it
 PRODUCT.md

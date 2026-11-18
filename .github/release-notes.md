@@ -18,6 +18,8 @@
 | Any other Linux | `…_amd64.AppImage`, or `…_aarch64.AppImage` on ARM |
 | Just the command line tool | `img-wrangler-…` for your system |
 
+`latest.json` and `Wrangler_universal.app.tar.gz` are for the app's own updates: you don't need to download them. From 0.1.0-alpha.3 on, Wrangler tells you about new versions and installs them when you say so.
+
 ### The first time you open it
 
 The builds aren't signed by Apple or Microsoft yet, so the first launch takes one extra step:

@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
-  The small unit a file manager's right-click opens: runs a pinned recipe on the selection at
-  once, shows where the files went and what was saved, with Undo one press away. -->
+  The small unit. It runs a pinned recipe at once on images from a file manager's right-click,
+  from the menu bar icon's menu, or dropped on the icon itself (on a Mac, where it opens under
+  the icon). It shows where the files went and what was saved, with Undo one press away. -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import Key from '$lib/components/Key.svelte';
@@ -8,6 +9,7 @@
   import HatScreen from '$lib/components/HatScreen.svelte';
   import Screen from '$lib/components/Screen.svelte';
   import { backend } from '$lib/ipc';
+  import '$lib/state/fx.svelte';
   import { bytes, change, count } from '$lib/text';
   import type { QuickResult, Summary } from '$lib/types';
 

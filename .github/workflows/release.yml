@@ -1,6 +1,8 @@
 # A version tag (v0.1.0, v0.1.0-alpha.1 …) builds the app and the command line tool for every
 # platform into one draft release, and publishes it only if every build succeeds. Tags with a
 # hyphen are marked as pre-releases. Notes come from CHANGELOG.md plus release-notes.md.
+# App builds are signed for the updater (TAURI_SIGNING_PRIVATE_KEY), and publishing writes
+# latest.json, which the download site serves to the apps already out there.
 name: Release
 
 on:
@@ -73,12 +75,19 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          # Signs each build so the app's updater can check it came from here.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # linuxdeploy's own strip can't read newer binaries; AppImages work fine unstripped
           NO_STRIP: 'true'
         with:
           projectPath: apps/desktop
-          args: --target ${{ matrix.target }}
+          # Release builds also make the signed files the updater downloads (local builds don't,
+          # as they have no key).
+          args: --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json
           releaseId: ${{ needs.draft.outputs.id }}
+          # The publish job writes one manifest from every build's signature.
+          includeUpdaterJson: false
 
   cli:
     name: CLI (${{ matrix.target }})
@@ -127,6 +136,9 @@ jobs:
     name: Publish
     needs: [app, cli]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
       - name: Arch package recipe, with this release's checksums
@@ -142,14 +154,24 @@ jobs:
           sed -e "s/@VERSION@/$v/" -e "s/@SHA_DEB_X86_64@/$(sum "$deb_x")/" -e "s/@SHA_DEB_AARCH64@/$(sum "$deb_a")/" \
               -e "s/@SHA_CLI_X86_64@/$(sum "$cli_x")/" -e "s/@SHA_CLI_AARCH64@/$(sum "$cli_a")/" ../packaging/arch/PKGBUILD.in > PKGBUILD
           gh release upload "$GITHUB_REF_NAME" PKGBUILD --clobber
-      - name: Tidy the downloads
+      - name: Update manifest for the apps already installed
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for a in $(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name | select(endswith(".app.tar.gz"))'); do
-            gh release delete-asset "$GITHUB_REF_NAME" "$a" --yes
-          done
+          v="${GITHUB_REF_NAME#v}"
+          # The app shows this version's changelog, without the install instructions.
+          awk -v v="$v" 'index($0, "## " v) == 1 { on = 1; next } on && /^## / { exit } on { print }' CHANGELOG.md > changes.md
+          mkdir sigs
+          gh release download "$GITHUB_REF_NAME" --pattern '*.sig' --dir sigs
+          python3 .github/scripts/updater_manifest.py "$GITHUB_REF_NAME" changes.md sigs > latest.json
+          gh release upload "$GITHUB_REF_NAME" latest.json --clobber
+          # The signatures are in the manifest now, so the list of downloads needn't show them.
+          for f in sigs/*.sig; do gh release delete-asset "$GITHUB_REF_NAME" "$(basename "$f")" --yes; done
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release edit "$GITHUB_REF_NAME" --draft=false
+      - name: Refresh the download site, which serves the manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

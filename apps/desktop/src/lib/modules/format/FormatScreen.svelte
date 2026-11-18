@@ -70,6 +70,7 @@
   .cap.on { color: var(--accent-format); box-shadow: inset 0 0 0 1px var(--accent-format); }
   .vs { display: grid; gap: 3px; font-size: 10.5px; color: var(--screen-2); white-space: nowrap; }
   .hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; }
+  @container channel (max-width: 210px) { .hint { font-size: 9.5px; } }
   .vs .bar { height: 6px; border-radius: 1px; background: var(--screen-dim); position: relative; }
   .vs .bar::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--screen-2); }
   .vs .bar i { display: block; height: 100%; border-radius: 1px; background: var(--accent-format); }

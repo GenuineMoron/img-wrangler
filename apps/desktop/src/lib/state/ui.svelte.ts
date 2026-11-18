@@ -2,7 +2,7 @@
 // Window state that isn't part of a recipe or a batch.
 
 export type View = 'auto' | 'result' | 'original' | 'split';
-export type DialogId = 'palette' | 'settings' | 'history' | 'recipes' | null;
+export type DialogId = 'palette' | 'settings' | 'history' | 'recipes' | 'update' | null;
 
 class UiState {
   view = $state<View>('auto');

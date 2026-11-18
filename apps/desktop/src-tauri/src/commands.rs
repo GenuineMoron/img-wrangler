@@ -4,28 +4,26 @@
 //! Commands the front end calls. Each is a thin wrapper over the engine; anything slow runs on
 //! a blocking thread so the window never stalls.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, State};
-use wrangler_engine::codec::encode::{encoder_for, EncodeOptions, EncodeQuality};
-use wrangler_engine::codec::{decode_path, Format, FormatInfo};
+use wrangler_engine::codec::{Format, FormatInfo};
 use wrangler_engine::estimate::Estimate;
 use wrangler_engine::journal::{RunInfo, UndoReport};
-use wrangler_engine::modules::Cx;
 use wrangler_engine::plan::{Plan, PlanCx};
 use wrangler_engine::presets::{self, RecipeEntry};
 use wrangler_engine::recipe::Select;
 use wrangler_engine::run::{Event, RunOptions, Summary};
 use wrangler_engine::scan::SourceFile;
-use wrangler_engine::{Dims, Recipe};
+use wrangler_engine::Recipe;
 use wrangler_integrate as wi;
 
 use crate::launch::Launch;
-use crate::AppState;
+use crate::{settings, AppState};
 
 type Res<T> = Result<T, String>;
 
@@ -122,91 +120,36 @@ pub async fn estimate(app: AppHandle, recipe: Recipe, samples: Option<usize>) ->
 
 // ---------- Preview ----------
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Preview {
-    /// Token for `preview://localhost/<token>`.
-    pub before: String,
-    pub after: String,
-    pub before_bytes: u64,
-    pub after_bytes: u64,
-    pub source_dims: Dims,
-    pub dims: Dims,
-    pub format: Format,
-    pub quality: Option<u8>,
-    pub score: Option<f64>,
-    pub kept_original: bool,
-    pub over_limit: bool,
-    pub downscaled: bool,
-}
-
-/// Bytes a webview can show: the file itself when it can, otherwise a WebP copy.
-fn displayable(bytes: Vec<u8>, format: Format, path: Option<&Path>) -> Res<(Vec<u8>, &'static str)> {
-    if format.browser_displayable() {
-        return Ok((bytes, format.mime()));
-    }
-    let img = match path {
-        Some(p) => decode_path(p),
-        None => wrangler_engine::codec::decode_bytes(&bytes, Some(format)),
-    }
-    .map_err(err)?;
-    let webp = encoder_for(Format::Webp).map_err(err)?.encode(&img.px, img.has_transparency(), EncodeQuality::Lossy(92), &EncodeOptions { fast: true, ..EncodeOptions::default() }).map_err(err)?;
-    Ok((webp, Format::Webp.mime()))
-}
-
-/// Process one image exactly as the run would, without writing anything.
+/// The selected image as the recipe will make it: a quick draft, or the exact result.
 #[tauri::command]
-pub async fn preview(app: AppHandle, path: PathBuf, recipe: Recipe) -> Res<Preview> {
-    let state_dirs_ok = app.state::<AppState>().sources.lock().iter().any(|s| s.path == path);
-    if !state_dirs_ok {
+pub async fn preview(app: AppHandle, path: PathBuf, recipe: Recipe, exact: bool) -> Res<crate::pictures::Preview> {
+    if !app.state::<AppState>().sources.lock().iter().any(|s| s.path == path) {
         return Err("not in the batch".into());
     }
-    let (p, before_store, after_store) = blocking(move || {
-        let original = std::fs::read(&path).map_err(err)?;
-        let source = Format::sniff(&original[..original.len().min(64)]).or_else(|| Format::from_path(&path)).ok_or("unknown format")?;
-        let source_dims = wrangler_engine::codec::probe(&path).ok().and_then(|p| p.dims).unwrap_or(Dims::new(0, 0));
-        let out = wrangler_engine::process::process_path(&path, &recipe, &mut Cx { cancel: None }).map_err(err)?;
-        let before_bytes = original.len() as u64;
-        let after_bytes = out.bytes.len() as u64;
-        let before = displayable(original, source, Some(&path))?;
-        let after = displayable(out.bytes, out.format, None)?;
-        let token = || uuid::Uuid::new_v4().simple().to_string();
-        let p = Preview {
-            before: token(),
-            after: token(),
-            before_bytes,
-            after_bytes,
-            source_dims,
-            dims: out.dims,
-            format: out.format,
-            quality: out.quality,
-            score: out.score,
-            kept_original: out.kept_original,
-            over_limit: out.over_limit,
-            downscaled: out.downscaled,
-        };
-        Ok((p, before, after))
-    })
-    .await?;
-    let state = app.state::<AppState>();
-    let mut previews = state.previews.lock();
-    previews.push((p.before.clone(), before_store.0, before_store.1));
-    previews.push((p.after.clone(), after_store.0, after_store.1));
-    let excess = previews.len().saturating_sub(8);
-    previews.drain(..excess);
-    Ok(p)
+    blocking(move || app.state::<AppState>().pictures.preview(&path, &recipe, exact)).await
+}
+
+/// Stop working on previews of anything but these files under this recipe.
+#[tauri::command]
+pub fn preview_focus(state: State<AppState>, paths: Vec<PathBuf>, recipe: Recipe) {
+    state.pictures.focus(&paths, &recipe);
 }
 
 // ---------- Running ----------
 
+/// Run the batch, or just some of it (`only`, from "Run just this one").
 #[tauri::command]
-pub async fn run(app: AppHandle, recipe: Recipe, on_event: Channel<Event>) -> Res<Summary> {
+pub async fn run(app: AppHandle, recipe: Recipe, only: Option<Vec<PathBuf>>, on_event: Channel<Event>) -> Res<Summary> {
     let state = app.state::<AppState>();
     recipe.validate().map_err(err)?;
     state.cancel.store(false, Ordering::Relaxed);
     let cancel = state.cancel.clone();
-    let sources = state.sources.lock().clone();
+    let mut sources = state.sources.lock().clone();
+    if let Some(only) = &only {
+        sources.retain(|s| only.contains(&s.path));
+    }
     let runs = state.dirs.runs();
-    blocking(move || {
+    let out = blocking(move || {
         let plan = wrangler_engine::plan::build(&sources, &recipe, &PlanCx::default());
         let opts = RunOptions { threads: 0, memory_budget: memory_budget(), runs_dir: runs };
         wrangler_engine::run::run(&plan, &recipe, &opts, &cancel, &|e| {
@@ -214,7 +157,9 @@ pub async fn run(app: AppHandle, recipe: Recipe, on_event: Channel<Event>) -> Re
         })
         .map_err(err)
     })
-    .await
+    .await;
+    crate::tray::refresh(&app);
+    out
 }
 
 /// Memory for images in flight: a few large photos decoded at once.
@@ -237,7 +182,7 @@ pub async fn quick_run(app: AppHandle, recipe: String, paths: Vec<PathBuf>, on_e
     let dirs = state.dirs.clone();
     state.cancel.store(false, Ordering::Relaxed);
     let cancel = state.cancel.clone();
-    blocking(move || {
+    let out = blocking(move || {
         let recipe = presets::load(&dirs.recipes(), &recipe).map_err(err)?;
         let sources = wrangler_engine::scan::collect(&paths, &recipe.select).map_err(err)?;
         let plan = wrangler_engine::plan::build(&sources, &recipe, &PlanCx::default());
@@ -249,7 +194,9 @@ pub async fn quick_run(app: AppHandle, recipe: String, paths: Vec<PathBuf>, on_e
         .map_err(err)?;
         Ok(QuickResult { recipe, summary, first_output })
     })
-    .await
+    .await;
+    crate::tray::refresh(&app);
+    out
 }
 
 /// Load paths into the main window (from the quick window's Open key).
@@ -269,7 +216,19 @@ pub fn cancel(state: State<AppState>) {
 #[tauri::command]
 pub async fn undo(app: AppHandle, id: String) -> Res<UndoReport> {
     let runs = app.state::<AppState>().dirs.runs();
-    blocking(move || wrangler_engine::journal::undo(&runs, &id).map_err(err)).await
+    let out = blocking(move || wrangler_engine::journal::undo(&runs, &id).map_err(err)).await;
+    crate::tray::refresh(&app);
+    out
+}
+
+/// Open an image in the app the system uses for it (an original, or a result).
+#[tauri::command]
+pub fn open_image(app: AppHandle, path: PathBuf) -> Res<()> {
+    use tauri_plugin_opener::OpenerExt;
+    if Format::from_path(&path).is_none() || !path.is_file() {
+        return Err("not an image file".into());
+    }
+    app.opener().open_path(path.to_string_lossy(), None::<&str>).map_err(err)
 }
 
 #[tauri::command]
@@ -312,20 +271,6 @@ pub fn take_launch(state: State<AppState>, kind: String) -> Option<LaunchPayload
 
 // ---------- File-manager integration ----------
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct Settings {
-    /// Recipes offered directly in the right-click menu.
-    pub pins: Vec<String>,
-}
-
-fn settings_path(state: &AppState) -> PathBuf {
-    state.dirs.config.join("settings.json")
-}
-
-fn load_settings(state: &AppState) -> Settings {
-    std::fs::read(settings_path(state)).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_else(|| Settings { pins: vec!["web-ready".into(), "just-compress".into(), "shopify-product".into()] })
-}
-
 #[derive(Debug, Clone, Serialize)]
 pub struct Integration {
     pub target: wi::Target,
@@ -340,24 +285,21 @@ pub struct Integrations {
 }
 
 #[tauri::command]
-pub fn integrations(state: State<AppState>) -> Integrations {
-    Integrations { targets: wi::targets().into_iter().map(|t| Integration { target: t, label: t.label(), installed: wi::installed(t) }).collect(), pins: load_settings(&state).pins }
+pub fn integrations(app: AppHandle) -> Integrations {
+    Integrations { targets: wi::targets().into_iter().map(|t| Integration { target: t, label: t.label(), installed: wi::installed(t) }).collect(), pins: settings::load(&app).pins }
 }
 
 /// Install (with these pinned recipes) or remove the right-click actions everywhere.
 #[tauri::command]
-pub fn set_integrations(state: State<AppState>, install: bool, pins: Vec<String>) -> Res<Integrations> {
-    let settings = Settings { pins };
-    std::fs::create_dir_all(&state.dirs.config).map_err(err)?;
-    std::fs::write(settings_path(&state), serde_json::to_vec_pretty(&settings).map_err(err)?).map_err(err)?;
+pub fn set_integrations(app: AppHandle, install: bool, pins: Vec<String>) -> Res<Integrations> {
+    let mut s = settings::load(&app);
+    s.pins = pins;
+    settings::save(&app, &s)?;
+    crate::tray::refresh(&app);
     let mut problems = Vec::new();
     if install {
         let program = std::env::current_exe().map_err(err)?;
-        let actions = settings
-            .pins
-            .iter()
-            .filter_map(|id| presets::load(&state.dirs.recipes(), id).ok().map(|r| wi::QuickAction { id: id.clone(), label: r.name }))
-            .collect();
+        let actions = settings::pinned(&app, &s).into_iter().map(|(id, label)| wi::QuickAction { id, label }).collect();
         let setup = wi::Setup { program, actions };
         for t in wi::targets() {
             if let Err(e) = wi::install(t, &setup) {
@@ -371,5 +313,169 @@ pub fn set_integrations(state: State<AppState>, install: bool, pins: Vec<String>
             }
         }
     }
-    if problems.is_empty() { Ok(integrations(state)) } else { Err(problems.join("\n")) }
+    if problems.is_empty() { Ok(integrations(app)) } else { Err(problems.join("\n")) }
+}
+
+// ---------- The app's own settings ----------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AppSettings {
+    pub menu_bar: bool,
+    /// This system can show a menu bar or tray icon.
+    pub menu_bar_available: bool,
+    pub auto_update: bool,
+    /// Wrangler starts at login, in the menu bar.
+    pub login: bool,
+    /// What images dropped on the menu bar icon run.
+    pub drop_recipe: String,
+    pub pins: Vec<String>,
+}
+
+#[tauri::command]
+pub fn app_settings(app: AppHandle) -> AppSettings {
+    use tauri_plugin_autostart::ManagerExt;
+    let s = settings::load(&app);
+    AppSettings {
+        menu_bar: s.menu_bar,
+        menu_bar_available: crate::tray::available(),
+        auto_update: s.auto_update,
+        login: app.autolaunch().is_enabled().unwrap_or(false),
+        drop_recipe: s.drop_recipe,
+        pins: s.pins,
+    }
+}
+
+#[tauri::command]
+pub fn set_app_settings(app: AppHandle, menu_bar: bool, auto_update: bool, login: bool) -> Res<AppSettings> {
+    use std::sync::atomic::Ordering;
+    use tauri_plugin_autostart::ManagerExt;
+    let mut s = settings::load(&app);
+    s.menu_bar = menu_bar;
+    s.auto_update = auto_update;
+    settings::save(&app, &s)?;
+    let state = app.state::<AppState>();
+    let shown = state.in_menu_bar.load(Ordering::Relaxed);
+    if menu_bar && !shown && crate::tray::available() {
+        crate::tray::build(&app).map_err(err)?;
+        state.in_menu_bar.store(true, Ordering::Relaxed);
+    } else if !menu_bar && shown {
+        app.remove_tray_by_id(crate::tray::ID);
+        state.in_menu_bar.store(false, Ordering::Relaxed);
+    }
+    let launcher = app.autolaunch();
+    if login != launcher.is_enabled().unwrap_or(false) {
+        if login { launcher.enable() } else { launcher.disable() }.map_err(err)?;
+    }
+    Ok(app_settings(app))
+}
+
+#[tauri::command]
+pub fn set_drop_recipe(app: AppHandle, id: String) -> Res<()> {
+    let mut s = settings::load(&app);
+    s.drop_recipe = id;
+    settings::save(&app, &s)?;
+    crate::tray::refresh(&app);
+    Ok(())
+}
+
+/// A window has drawn its first frame: put it on screen, unless it's the main window and no one
+/// asked for it (a quick action, or a start at login).
+#[tauri::command]
+pub fn window_ready(window: tauri::WebviewWindow, state: State<AppState>) {
+    use std::sync::atomic::Ordering;
+    if window.label() != "main" || state.show_main.load(Ordering::Relaxed) {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+// ---------- Self-test ----------
+
+/// `img-wrangler-app selftest <images…> <report.json> [--no-measure] [--no-run] [--no-layout]`: the interface
+/// drives itself through the everyday steps, measures them, writes the report and quits. See
+/// apps/desktop/src/lib/selftest.
+#[derive(Debug, Clone, Serialize)]
+pub struct SelfTestRun {
+    pub images: Vec<PathBuf>,
+    #[serde(skip)]
+    pub report: PathBuf,
+    pub measure: bool,
+    pub run: bool,
+    pub layout: bool,
+    /// What the webview runs on, for reading the numbers.
+    pub host: Vec<(String, String)>,
+    /// Effects to switch off (`--fx tex,glow`), to measure what each costs.
+    pub fx: Vec<String>,
+    /// Full or light effects for this test (`--effects light`), instead of the automatic choice.
+    pub effects: Option<String>,
+}
+
+fn host_info() -> Vec<(String, String)> {
+    let env = |k: &str| std::env::var(k).unwrap_or_default();
+    let mut h = vec![("os".into(), std::env::consts::OS.into()), ("arch".into(), std::env::consts::ARCH.into()), ("cores".into(), std::thread::available_parallelism().map_or(0, |n| n.get()).to_string())];
+    if cfg!(target_os = "linux") {
+        h.push(("session".into(), env("XDG_SESSION_TYPE")));
+        h.push(("desktop".into(), env("XDG_CURRENT_DESKTOP")));
+        h.push(("nvidia".into(), std::path::Path::new("/proc/driver/nvidia/version").exists().to_string()));
+        h.push(("WEBKIT_DISABLE_DMABUF_RENDERER".into(), env("WEBKIT_DISABLE_DMABUF_RENDERER")));
+        h.push(("WEBKIT_DISABLE_COMPOSITING_MODE".into(), env("WEBKIT_DISABLE_COMPOSITING_MODE")));
+    }
+    h
+}
+
+impl SelfTestRun {
+    pub fn from_args(args: &[String]) -> Option<Self> {
+        let rest: Vec<&String> = args.iter().skip(1).collect();
+        if rest.first().map(|a| a.as_str()) != Some("selftest") {
+            return None;
+        }
+        let (mut paths, mut fx, mut effects) = (Vec::new(), Vec::new(), None);
+        let mut it = rest.iter().skip(1);
+        while let Some(a) = it.next() {
+            if *a == "--fx" {
+                fx = it.next().map(|v| v.split(',').map(String::from).collect()).unwrap_or_default();
+            } else if *a == "--effects" {
+                effects = it.next().map(|v| v.to_string());
+            } else if !a.starts_with("--") {
+                paths.push(PathBuf::from(a));
+            }
+        }
+        let (report, images) = paths.split_last()?;
+        Some(Self { images: images.to_vec(), report: report.clone(), measure: !args.iter().any(|a| a == "--no-measure"), run: !args.iter().any(|a| a == "--no-run"), layout: !args.iter().any(|a| a == "--no-layout"), host: host_info(), fx, effects })
+    }
+}
+
+#[tauri::command]
+pub fn selftest_config(state: State<AppState>) -> Option<SelfTestRun> {
+    state.selftest.clone()
+}
+
+#[tauri::command]
+pub fn selftest_done(app: AppHandle, report: String) -> Res<()> {
+    let state = app.state::<AppState>();
+    let Some(t) = &state.selftest else { return Err("not running a self-test".into()) };
+    std::fs::write(&t.report, report).map_err(err)?;
+    app.exit(0);
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(a: &[&str]) -> Vec<String> {
+        std::iter::once("img-wrangler-app").chain(a.iter().copied()).map(String::from).collect()
+    }
+
+    #[test]
+    fn selftest_arguments() {
+        assert!(SelfTestRun::from_args(&args(&["open", "/a.jpg"])).is_none());
+        let t = SelfTestRun::from_args(&args(&["selftest", "/photos", "/more", "/out/report.json", "--no-run", "--fx", "tex,glow", "--effects", "light"])).unwrap();
+        assert_eq!(t.images, vec![PathBuf::from("/photos"), PathBuf::from("/more")]);
+        assert_eq!(t.report, PathBuf::from("/out/report.json"));
+        assert!(t.measure && !t.run && t.layout);
+        assert_eq!(t.fx, vec!["tex", "glow"]);
+        assert_eq!(t.effects.as_deref(), Some("light"));
+        assert!(SelfTestRun::from_args(&args(&["selftest"])).is_none(), "needs at least a report path");
+    }
 }

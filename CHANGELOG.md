@@ -2,6 +2,21 @@
 
 Notable changes, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 0.1.0-alpha.3, 18 November 2026
+
+Much faster, the hat in the menu bar, and updates from inside the app.
+
+- Previews show in a moment. A draft of the framing comes first, the exact result follows, and the next image's preview is made while you look at this one. On a Mac Studio, arrowing to the next photo now shows its preview in about 50 ms, down from a second.
+- Faster on Linux. The case and key textures are baked rather than blended on every repaint, glows and the screens' pixel grid are cheaper to draw, and the parts that change often sit on layers of their own. On a computer drawing without a graphics card, Wrangler notices and turns the soft shadows and glows down by itself (Settings, Effects). On a small Linux computer without one, choosing the next image, dragging the size and switching recipes now take about a fifth of the time they did.
+- The hat sits in the menu bar on a Mac and in the system tray on Windows and Linux. Its menu runs a pinned recipe on images you choose, takes back the last run, and checks for updates. On a Mac, drop images straight on it.
+- Updates from inside the app. Wrangler tells you when there's a new version, shows what changed, and installs it when you say so. Updates are signed, and the app checks the signature first. On Arch and CachyOS it gives you the command instead, as the package manager looks after updates there.
+- Right-click actions in Finder now start Wrangler properly, and the ones already set up are updated when Wrangler starts. A quick action no longer opens the main window too.
+- Right-click actions for Luciole, the Noctalia file manager.
+- Right-click an image in the app to open it, show it in its folder, compare before and after, run the recipe on just that one, copy its path, or remove it from the batch.
+- Layout fixes. On a Mac the channel labels were pushed out of place, "Shrink to fit" spilled out of its key, and some labels were cut off in a small window.
+- The settings key is a gear, not a sun.
+- `pnpm selftest` times the everyday steps in the real app or a browser and checks every screen for cut-off or overlapping controls. CI runs it in Chromium and WebKit.
+
 ## 0.1.0-alpha.2, 18 November 2026
 
 Easier to install. Nothing in the app itself has changed.

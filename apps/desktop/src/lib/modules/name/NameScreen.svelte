@@ -61,7 +61,7 @@
 
 <style>
   .w-name { display: grid; grid-template-rows: auto 1fr auto; gap: 6px; height: 100%; font-size: var(--fs-small); --accent: var(--accent-name); }
-  .pat { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--screen-line); padding-bottom: 5px; min-height: 24px; }
+  .pat { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--screen-line); padding-bottom: 5px; min-height: 24px; text-wrap: balance; }
   .pat input { all: unset; flex: 1; min-width: 0; font: 12.5px/1.4 var(--font-data); color: var(--screen-1); }
   .pat input::placeholder { color: var(--screen-3); }
   .pat input:focus-visible { box-shadow: 0 1px 0 var(--accent-name); }

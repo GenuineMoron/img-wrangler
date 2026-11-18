@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Sean Hawkey
 
-//! The Wrangler desktop host: windows, commands over the engine, image protocols, and launch
-//! modes for the file-manager actions.
+//! The Wrangler desktop host: windows, commands over the engine, image protocols, the menu bar
+//! icon, updates, and launch modes for the file-manager actions.
 
 mod commands;
 mod launch;
+#[cfg(target_os = "macos")]
+mod macos;
+mod pictures;
+mod settings;
+mod tray;
+mod updates;
 
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use parking_lot::Mutex;
 use percent_encoding::percent_decode_str;
 use tauri::http::{Response, StatusCode};
-use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager};
 use wrangler_engine::paths::AppDirs;
 use wrangler_engine::scan::SourceFile;
 
@@ -25,14 +31,24 @@ pub struct AppState {
     pub dirs: AppDirs,
     /// Files in the current batch.
     pub sources: Mutex<Vec<SourceFile>>,
-    /// Encoded previews served on `preview://<token>`, newest last; a few are kept.
-    pub previews: Mutex<Vec<(String, Vec<u8>, &'static str)>>,
+    /// Previews and the pictures behind `preview://<token>`.
+    pub pictures: pictures::Pictures,
     pub cancel: Arc<AtomicBool>,
     /// Cancels the estimate still running when a newer one starts.
     pub estimating: Mutex<Option<Arc<AtomicBool>>>,
     /// Paths that arrived from the file manager before the window was ready, or between
     /// per-file launches (Explorer starts one process per selected file).
     pub pending: Mutex<Option<Launch>>,
+    /// Set when started as `selftest <images> <report.json>`.
+    pub selftest: Option<commands::SelfTestRun>,
+    /// The main window should be on screen. False after a quick action or a start at login,
+    /// until someone asks for the window.
+    pub show_main: AtomicBool,
+    /// The small unit opened under the menu bar icon, so it hides when it loses focus, as a
+    /// menu would.
+    pub popover: AtomicBool,
+    /// The menu bar icon is up, so closing a window leaves Wrangler running.
+    pub in_menu_bar: AtomicBool,
 }
 
 fn respond(bytes: Vec<u8>, mime: &str) -> Response<Vec<u8>> {
@@ -61,79 +77,138 @@ fn merge(pending: &mut Option<Launch>, next: Launch) {
     };
 }
 
+/// Bring the main window up (and, on a Mac, the Dock icon with it).
+pub fn show_main(app: &tauri::AppHandle) {
+    app.state::<AppState>().show_main.store(true, Ordering::Relaxed);
+    #[cfg(target_os = "macos")]
+    let _ = app.set_dock_visibility(true);
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
+
+pub fn set_popover(app: &tauri::AppHandle, on: bool) {
+    app.state::<AppState>().popover.store(on, Ordering::Relaxed);
+}
+
+/// Images dropped on the menu bar icon: they run with the chosen recipe, and the small unit
+/// opens under the icon with the results.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn drop_on_icon(app: &tauri::AppHandle, paths: Vec<PathBuf>) {
+    let recipe = settings::load(app).drop_recipe;
+    deliver(app, Launch::Quick { recipe, paths });
+    set_popover(app, true);
+    tray::place_under_icon(app);
+}
+
 pub(crate) fn deliver(app: &tauri::AppHandle, launch: Launch) {
     let state = app.state::<AppState>();
     merge(&mut state.pending.lock(), launch.clone());
     match launch {
         Launch::Quick { .. } => {
-            if app.get_webview_window("quick").is_none() {
-                let _ = WebviewWindowBuilder::new(app, "quick", WebviewUrl::App("index.html#quick".into()))
-                    .title("Wrangler")
-                    .inner_size(320.0, 410.0)
-                    .resizable(false)
-                    .decorations(false)
-                    .always_on_top(true)
-                    .background_color(tauri::window::Color(0xe9, 0xe8, 0xe4, 0xff))
-                    .build();
+            set_popover(app, false);
+            // A new window shows itself once drawn. One already made may be hidden (clicked away
+            // from): bring it back for the new run.
+            let existed = app.get_webview_window("quick").is_some();
+            if let Some(w) = tray::open_quick(app)
+                && existed
+            {
+                let _ = w.show();
+                let _ = w.set_focus();
             }
             let _ = app.emit_to("quick", "launch://pending", ());
         }
         Launch::Open(_) => {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.show();
-                let _ = w.set_focus();
-            }
+            show_main(app);
             let _ = app.emit_to("main", "launch://pending", ());
         }
-        Launch::Plain => {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.show();
-                let _ = w.set_focus();
-            }
-        }
+        Launch::Plain => show_main(app),
+    }
+}
+
+/// Keep the right-click entries in step with this copy of the app (its path, and fixes to how
+/// they start it), without asking.
+fn refresh_integrations(app: &tauri::AppHandle) {
+    use wrangler_integrate as wi;
+    let Ok(program) = std::env::current_exe() else { return };
+    let targets: Vec<_> = wi::targets().into_iter().filter(|t| wi::installed(*t)).collect();
+    if targets.is_empty() {
+        return;
+    }
+    let s = settings::load(app);
+    let actions = settings::pinned(app, &s).into_iter().map(|(id, label)| wi::QuickAction { id, label }).collect();
+    let setup = wi::Setup { program, actions };
+    for t in targets {
+        let _ = wi::install(t, &setup);
     }
 }
 
 pub fn run() {
     let args: Vec<String> = std::env::args().collect();
-    let first = parse(&args);
+    let selftest = commands::SelfTestRun::from_args(&args);
+    // Started at login: just the menu bar icon until someone asks for the window.
+    let hidden = args.iter().any(|a| a == "--hidden");
+    let first = if selftest.is_some() || hidden { Launch::Plain } else { parse(&args) };
     let state = AppState {
         dirs: AppDirs::detect(),
         sources: Mutex::new(Vec::new()),
-        previews: Mutex::new(Vec::new()),
+        pictures: pictures::Pictures::default(),
         cancel: Arc::new(AtomicBool::new(false)),
         estimating: Mutex::new(None),
         pending: Mutex::new(None),
+        selftest,
+        show_main: AtomicBool::new(false),
+        popover: AtomicBool::new(false),
+        in_menu_bar: AtomicBool::new(false),
     };
     let thumbs_dir: PathBuf = state.dirs.thumbs();
+    let thumb_pool = pictures::Pool::new(pictures::thumb_threads());
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| deliver(app, parse(&argv))))
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+    let mut builder = tauri::Builder::default();
+    // One Wrangler at a time: a second launch hands its files to the first, and windows open
+    // where they were left. A self-test runs on its own beside any Wrangler already open, and
+    // leaves the window size alone.
+    if state.selftest.is_none() {
+        builder = builder
+            .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| deliver(app, parse(&argv))))
+            .plugin(tauri_plugin_window_state::Builder::default().with_denylist(&["quick"]).build());
+    }
+    builder
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, Some(vec!["--hidden"])))
         .manage(state)
+        .manage(updates::Updates::default())
         // thumb://localhost/<url-encoded path>: a cached WebP thumbnail of a file in the batch.
         .register_asynchronous_uri_scheme_protocol("thumb", move |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             let dir = thumbs_dir.clone();
             let raw = request.uri().path().trim_start_matches('/').to_string();
-            std::thread::spawn(move || {
+            // ?size=256 on a standard display, 384 on a HiDPI one.
+            let size = request.uri().query().and_then(|q| q.strip_prefix("size=")).and_then(|v| v.parse::<u32>().ok()).unwrap_or(384).clamp(128, 512);
+            thumb_pool.spawn(move || {
                 let path = PathBuf::from(percent_decode_str(&raw).decode_utf8_lossy().into_owned());
                 let known = app.state::<AppState>().sources.lock().iter().any(|s| s.path == path);
                 let res = if known {
-                    wrangler_engine::thumbs::thumbnail(&path, 384, &dir).ok().and_then(|t| std::fs::read(t).ok()).map_or_else(not_found, |b| respond(b, "image/webp"))
+                    wrangler_engine::thumbs::thumbnail(&path, size, &dir).ok().and_then(|t| std::fs::read(t).ok()).map_or_else(not_found, |b| respond(b, "image/webp"))
                 } else {
                     not_found()
                 };
                 responder.respond(res);
             });
         })
-        .register_uri_scheme_protocol("preview", |ctx, request| {
+        // preview://localhost/<token>: a picture for the monitor. Off the main thread, because an
+        // original at full size can be large, or need converting.
+        .register_asynchronous_uri_scheme_protocol("preview", |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
             let token = request.uri().path().trim_matches('/').to_string();
-            let state = ctx.app_handle().state::<AppState>();
-            let found = state.previews.lock().iter().find(|(t, _, _)| *t == token).map(|(_, b, m)| (b.clone(), *m));
-            found.map_or_else(not_found, |(b, m)| respond(b, m))
+            std::thread::spawn(move || {
+                let found = app.state::<AppState>().pictures.serve(&token);
+                responder.respond(found.map_or_else(not_found, |(b, m)| respond(b.as_ref().clone(), m)));
+            });
         })
         .invoke_handler(tauri::generate_handler![
             commands::formats,
@@ -146,45 +221,97 @@ pub fn run() {
             commands::plan,
             commands::estimate,
             commands::preview,
+            commands::preview_focus,
             commands::run,
             commands::quick_run,
             commands::open_main,
+            commands::open_image,
             commands::cancel,
             commands::undo,
             commands::history,
             commands::take_launch,
             commands::integrations,
             commands::set_integrations,
+            commands::app_settings,
+            commands::set_app_settings,
+            commands::set_drop_recipe,
+            commands::window_ready,
+            commands::selftest_config,
+            commands::selftest_done,
+            updates::update_check,
+            updates::update_found,
+            updates::update_install,
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
             // Keep the undo store tidy: drop runs older than 30 days.
             let runs = app.state::<AppState>().dirs.runs();
             std::thread::spawn(move || wrangler_engine::journal::prune(&runs, 30));
-            deliver(&handle, first.clone());
+            let s = settings::load(&handle);
+            let selftest = app.state::<AppState>().selftest.is_some();
+            if s.menu_bar && tray::available() && tray::build(&handle).is_ok() {
+                app.state::<AppState>().in_menu_bar.store(true, Ordering::Relaxed);
+            }
+            if !selftest {
+                updates::watch(handle.clone());
+                let h = handle.clone();
+                std::thread::spawn(move || refresh_integrations(&h));
+            }
+            if hidden {
+                #[cfg(target_os = "macos")]
+                let _ = handle.set_dock_visibility(false);
+            } else {
+                deliver(&handle, first.clone());
+            }
             Ok(())
         })
-        // A quick action opens only the small window; when it closes and the main window was
-        // never shown, the app has nothing left to do.
         .on_window_event(|window, event| {
-            if window.label() == "quick" && matches!(event, tauri::WindowEvent::Destroyed) {
-                let app = window.app_handle();
-                let main_visible = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
-                if !main_visible {
-                    app.exit(0);
+            let app = window.app_handle();
+            let state = app.state::<AppState>();
+            let in_menu_bar = state.in_menu_bar.load(Ordering::Relaxed);
+            match (window.label(), event) {
+                // Opened under the menu bar icon, the small unit behaves like a menu: click away
+                // and it goes.
+                ("quick", tauri::WindowEvent::Focused(false)) if state.popover.load(Ordering::Relaxed) => {
+                    let _ = window.hide();
                 }
+                // With the icon in the menu bar, closing a window leaves Wrangler there.
+                (label, tauri::WindowEvent::CloseRequested { api, .. }) if in_menu_bar => {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    if label == "main" {
+                        state.show_main.store(false, Ordering::Relaxed);
+                        #[cfg(target_os = "macos")]
+                        let _ = app.set_dock_visibility(false);
+                    }
+                }
+                // Without it, a quick action that closes with the main window never shown means
+                // there's nothing left to do; and closing the main window ends the app.
+                ("quick", tauri::WindowEvent::Destroyed) => {
+                    let main_visible = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
+                    if !main_visible {
+                        app.exit(0);
+                    }
+                }
+                ("main", tauri::WindowEvent::Destroyed) => app.exit(0),
+                _ => {}
             }
         })
         .build(tauri::generate_context!())
         .expect("Wrangler failed to start")
         .run(|_app, _event| {
-            // macOS hands over files from Open With and the Dock icon as an event, not arguments.
             #[cfg(target_os = "macos")]
-            if let tauri::RunEvent::Opened { urls } = _event {
-                let paths: Vec<PathBuf> = urls.iter().filter_map(|u| u.to_file_path().ok()).collect();
-                if !paths.is_empty() {
-                    deliver(_app, Launch::Open(paths));
+            match _event {
+                // Files from Open With and the Dock icon arrive as an event, not arguments.
+                tauri::RunEvent::Opened { urls } => {
+                    let paths: Vec<PathBuf> = urls.iter().filter_map(|u| u.to_file_path().ok()).collect();
+                    if !paths.is_empty() {
+                        deliver(_app, Launch::Open(paths));
+                    }
                 }
+                // A click on the Dock icon.
+                tauri::RunEvent::Reopen { .. } => show_main(_app),
+                _ => {}
             }
         });
 }

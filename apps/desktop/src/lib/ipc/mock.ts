@@ -52,6 +52,11 @@ let batch: SourceFile[] = [];
 let cancelled = false;
 const history: RunInfo[] = [];
 let pins = ['web-ready', 'just-compress', 'shopify-product'];
+const appSettings = { menu_bar: true, menu_bar_available: true, auto_update: true, login: false, drop_recipe: 'web-ready' };
+const fakeUpdate = () => new URLSearchParams(location.search).has('update')
+  ? { version: '0.1.0-alpha.3', current: __APP_VERSION__, date: '2026-11-19', manual: null,
+      notes: 'Faster everywhere, a menu bar icon, and updates from inside the app.\n\n- Previews show in a moment, then sharpen to the exact result.\n- Drop images on the hat in the menu bar.\n- Wrangler tells you when there\'s a new version, with what changed.' }
+  : null;
 const installed = new Set<string>();
 const launched = new Set<string>();
 
@@ -196,14 +201,22 @@ export const mock: Backend = {
   saveRecipe: async r => { const id = slug(r.name); recipes[id] = clone(r); return id; },
   deleteRecipe: async id => { delete recipes[id]; },
 
-  scan: async (_paths, _select, append) => {
+  scan: async (paths, _select, append) => {
     await delay(120);
-    const all = SAMPLES.map(s => ({ path: `${HOME}/${s.name}`, root: HOME, rel: s.name }));
+    // "stress:1000" stands in for a big shoot: the samples again and again, in folders.
+    const stress = Number(paths.find(p => p.startsWith('stress:'))?.slice(7) ?? 0);
+    const all = stress
+      ? Array.from({ length: stress }, (_, i) => {
+          const s = SAMPLES[i % SAMPLES.length], dir = `set-${String(Math.floor(i / SAMPLES.length) + 1).padStart(3, '0')}`;
+          return { path: `${HOME}/${dir}/${s.name}`, root: HOME, rel: `${dir}/${s.name}` };
+        })
+      : SAMPLES.map(s => ({ path: `${HOME}/${s.name}`, root: HOME, rel: s.name }));
     batch = append ? [...batch, ...all.filter(a => !batch.some(b => b.path === a.path))] : all;
     return clone(batch);
   },
   forget: async paths => { batch = paths.length ? batch.filter(b => !paths.includes(b.path)) : []; return clone(batch); },
   plan: async r => plan(r),
+  previewFocus: async () => {},
   estimate: async r => { await delay(350); return estimate(r); },
   async preview(path, r) {
     const s = sampleFor(path);
@@ -211,22 +224,23 @@ export const mock: Backend = {
     const [before, after] = await Promise.all([render(s, null), render(s, r)]);
     const bytes = guess(r, item);
     return {
-      before: before.url, after: after.url, before_bytes: s.bytes, after_bytes: bytes, source_dims: { w: s.w, h: s.h }, dims: after.dims,
+      exact: true, before: before.url, before_full: before.url, after: after.url, before_bytes: s.bytes, after_bytes: bytes, source_dims: { w: s.w, h: s.h }, dims: after.dims,
       format: item.format, quality: typeof r.quality.look === 'number' ? r.quality.look : 72, score: 75.4,
       kept_original: bytes === s.bytes, over_limit: false, downscaled: false,
     };
   },
 
-  async run(r, onEvent: (e: RunEvent) => void) {
+  async run(r, onEvent: (e: RunEvent) => void, only) {
     cancelled = false;
-    const p = plan(r);
+    const all = plan(r);
+    const p = only ? { ...all, items: all.items.filter(i => only.includes(i.source)) } : all;
     const run_id = `mock-${Date.now()}`;
     const t0 = performance.now();
     onEvent({ type: 'started', run_id, total: p.items.length });
     const sum: Summary = { run_id, total: p.items.length, done: 0, kept: 0, over_limit: 0, skipped: 0, failed: 0, bytes_in: 0, bytes_out: 0, seconds: 0, cancelled: false };
     for (const item of p.items) {
       if (cancelled) { sum.cancelled = true; break; }
-      await delay(90 + Math.random() * 140);
+      await delay(p.items.length > 100 ? 4 : 90 + Math.random() * 140);
       const out = guess(r, item);
       const status: Status = out === item.probe!.bytes ? 'kept' : 'done';
       sum[status === 'kept' ? 'kept' : 'done']++;
@@ -264,9 +278,9 @@ export const mock: Backend = {
   },
   onLaunch: async () => () => {},
   async onDrop(drop, hover) {
-    const over = (e: DragEvent) => { e.preventDefault(); hover(true); };
-    const leave = (e: DragEvent) => { if (!e.relatedTarget) hover(false); };
-    const dropped = (e: DragEvent) => { e.preventDefault(); hover(false); drop([HOME]); };
+    const over = (e: DragEvent) => { e.preventDefault(); hover(true, { x: e.clientX, y: e.clientY }); };
+    const leave = (e: DragEvent) => { if (!e.relatedTarget) hover(false, null); };
+    const dropped = (e: DragEvent) => { e.preventDefault(); hover(false, null); drop([HOME], { x: e.clientX, y: e.clientY }); };
     addEventListener('dragover', over); addEventListener('dragleave', leave); addEventListener('drop', dropped);
     return () => { removeEventListener('dragover', over); removeEventListener('dragleave', leave); removeEventListener('drop', dropped); };
   },
@@ -274,6 +288,7 @@ export const mock: Backend = {
   pickFolder: async () => '/Users/sean/Desktop/Wrangled',
   pickImage: async () => '/Users/sean/Brand/acme-logo.png',
   reveal: async path => console.info('reveal', path),
+  openImage: async path => console.info('open', path),
   thumbUrl: path => photoUrl(sampleFor(path)?.photo ?? 1),
 
   integrations: async (): Promise<Integrations> => ({ targets: ['Finder', 'Dolphin', 'Nautilus'].map(l => ({ target: l.toLowerCase(), label: l, installed: installed.has(l) })), pins: [...pins] }),
@@ -285,4 +300,33 @@ export const mock: Backend = {
 
   ready: async () => {},
   close: async () => console.info('close window'),
+
+  // ?selftest=1000 times the everyday steps on that many stand-in files. ?selftest=layout only
+  // loads the shoot, for the browser harness (scripts/selftest.mjs) to check the layout at its
+  // own viewport sizes.
+  selftest: async () => {
+    const n = new URLSearchParams(location.search).get('selftest');
+    if (n == null) return null;
+    if (n === 'layout') return { images: [HOME], measure: false, run: false, layout: false };
+    return { images: [`stress:${Number(n) || 1000}`], measure: true, run: true, layout: false };
+  },
+  selftestDone: async report => {
+    (window as unknown as { __selftest: unknown }).__selftest = JSON.parse(report);
+    console.info('self-test finished');
+  },
+  setWindowSize: async () => false,
+
+  appSettings: async () => ({ ...appSettings, pins }),
+  setAppSettings: async s => { Object.assign(appSettings, s); return { ...appSettings, pins }; },
+  setDropRecipe: async id => { appSettings.drop_recipe = id; },
+  onMenu: async () => () => {},
+  // ?update shows what a new version looks like.
+  updateCheck: async () => { await delay(600); return fakeUpdate(); },
+  updateFound: async () => fakeUpdate(),
+  onUpdate: async () => () => {},
+  async updateInstall(progress) {
+    for (let i = 1; i <= 20; i++) { await delay(80); progress(i * 1.2e6, 24e6); }
+  },
+  openUrl: async url => { window.open(url, '_blank'); },
+  contextMenu: async lines => console.info('menu', lines.map(l => l?.text ?? '—')),
 };

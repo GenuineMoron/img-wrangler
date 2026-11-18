@@ -70,3 +70,31 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy -p wrangler-desktop --all-targets -- -D warnings
       - run: cargo test -p wrangler-desktop
+
+  interface:
+    name: Interface speed and layout (Chromium, WebKit)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright-core install --with-deps chromium webkit
+      # The self-test with 600 stand-in photos, then every state checked for cut-off,
+      # spilling and overlapping controls at three window sizes. A layout fault fails the job.
+      - run: pnpm selftest browser --files 600 --engines chromium,webkit --strict --out selftest
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selftest
+          path: apps/desktop/selftest
+

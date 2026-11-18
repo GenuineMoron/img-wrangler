@@ -38,13 +38,19 @@ pub fn output_format(recipe: &Recipe, source: Format) -> Format {
     recipe.format.id.resolve(source)
 }
 
-pub fn process_path(path: &Path, recipe: &Recipe, cx: &mut Cx) -> Result<Outcome> {
+/// A file's bytes and its decoded pixels.
+pub fn read_source(path: &Path) -> Result<(Vec<u8>, Img)> {
     let original = std::fs::read(path).map_err(|e| Error::io(path, e))?;
     let img = if Format::sniff(&original[..original.len().min(64)]) == Some(Format::Heic) || Format::from_path(path) == Some(Format::Heic) {
         decode_path(path)?
     } else {
         decode_bytes(&original, Format::from_path(path))?
     };
+    Ok((original, img))
+}
+
+pub fn process_path(path: &Path, recipe: &Recipe, cx: &mut Cx) -> Result<Outcome> {
+    let (original, img) = read_source(path)?;
     process_img(img, &original, recipe, cx)
 }
 

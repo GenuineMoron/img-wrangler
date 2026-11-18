@@ -108,7 +108,10 @@
   .dest { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--sp-6); }
   .go { display: grid; grid-template-columns: 1fr 1.7fr; gap: var(--sp-5); align-content: start; }
   .go .note { grid-column: 1 / -1; text-align: center; }
-  .run:disabled { cursor: default; filter: saturate(.35) brightness(1.05); box-shadow: 0 1px 0 var(--output-wall); transform: none; }
-  .run--stop { background-color: var(--surface-dark); background-image: var(--tex-fine), linear-gradient(180deg, var(--surface-dark-hi), var(--surface-dark) 55%, #27282b);
+  /* Greyed by mixing the colours, not with a filter (a filter is costly to repaint). */
+  .run:disabled { cursor: default; box-shadow: 0 1px 0 var(--output-wall); transform: none;
+    background-color: color-mix(in srgb, var(--output) 40%, #9a9590);
+    background-image: var(--tex-grain-mid), linear-gradient(180deg, color-mix(in srgb, var(--output-hi) 40%, #a29d98), color-mix(in srgb, var(--output) 40%, #9a9590) 50%, color-mix(in srgb, var(--output-lo) 40%, #928d88)); }
+  .run--stop { background-color: var(--surface-dark); background-image: var(--tex-grain-dark), linear-gradient(180deg, var(--surface-dark-hi), var(--surface-dark) 55%, #27282b);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 3px 0 var(--surface-dark-wall), 0 4px 2px rgba(0, 0, 0, .2); }
 </style>

@@ -15,6 +15,7 @@ pub mod ops;
 pub mod paths;
 pub mod plan;
 pub mod presets;
+pub mod preview;
 pub mod process;
 pub mod quality;
 pub mod recipe;

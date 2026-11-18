@@ -2,13 +2,28 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "What the Wrangler windows may do.",
-  "windows": ["main", "quick"],
+  "windows": [
+    "main",
+    "quick"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
     "core:window:allow-close",
     "core:window:allow-show",
+    "core:window:allow-set-size",
     "dialog:allow-open",
-    "opener:allow-reveal-item-in-dir"
+    "opener:allow-reveal-item-in-dir",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "https://genuinemoron.github.io/img-wrangler/*"
+        },
+        {
+          "url": "https://github.com/GenuineMoron/img-wrangler/*"
+        }
+      ]
+    }
   ]
 }

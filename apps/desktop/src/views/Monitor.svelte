@@ -3,6 +3,7 @@
   split. Click to see actual pixels and move the pointer to look around. -->
 <script lang="ts">
   import ScreenChoice from '$lib/components/ScreenChoice.svelte';
+  import { backend } from '$lib/ipc';
   import { MODULES } from '$lib/modules/registry';
   import { batch } from '$lib/state/batch.svelte';
   import { catalog } from '$lib/state/catalog.svelte';
@@ -66,34 +67,36 @@
     onkeydown={key}
   >
     {#if p}
+      {@const before = zoom ? p.before_full : p.before}
       {#if view === 'original'}
-        <img src={p.before} alt="" draggable="false" />
+        <img src={before} alt="" draggable="false" />
       {:else if view === 'result'}
         <span class="fit" style:--ar={p.dims.w / p.dims.h}><img src={p.after} alt="" draggable="false" /></span>
       {:else}
-        <img src={p.before} alt="" draggable="false" />
+        <img src={before} alt="" draggable="false" />
         <img src={p.after} alt="" draggable="false" class="after" />
         <span class="handle"></span>
         <span class="chip l">BEFORE</span><span class="chip r">AFTER</span>
       {/if}
-      {#if view !== 'split'}<span class="chip r">{view === 'result' ? 'RESULT' : 'ORIGINAL'}{zoom ? ' · 1:1' : ''}</span>{/if}
+      {#if view !== 'split'}<span class="chip r">{view === 'result' ? 'RESULT' : 'ORIGINAL'}{zoom ? ' · 1:1' : ''}{view === 'result' && !p.exact ? ' · …' : ''}</span>{/if}
     {:else if batch.previewError}
       <p class="msg alarm">{batch.previewError}</p>
     {:else if item}
-      <p class="msg">rendering…</p>
+      <!-- the thumbnail holds the place for the moment the draft takes -->
+      <img src={backend.thumbUrl(item.source)} alt="" draggable="false" class="placeholder" />
     {/if}
   </div>
 
   <ScreenChoice label="Monitor view" class="modes" items={modes} value={view} onchange={v => (ui.view = v)} />
 
   {#if item}
-    <dl class="facts">
+    <dl class="facts" data-long>
       <dt>FILE</dt><dd><span class="from">{fileName(item.source)} →</span> <span class="name">{fileName(item.output)}</span></dd>
       <dt>SIZE</dt><dd><span class="from">{item.probe?.dims ? `${item.probe.dims.w}×${item.probe.dims.h}` : '?'} →</span>
         <span class="size">{p ? `${p.dims.w}×${p.dims.h}` : item.planned ? `${item.planned.exact ? '' : '≈'}${item.planned.dims.w}×${item.planned.dims.h}` : '…'}</span></dd>
       <dt>WEIGHT</dt><dd><span class="from">{kb(item.probe?.bytes ?? 0)} →</span>
-        <span class="weight">{p ? kb(p.after_bytes) : '…'}</span>
-        {#if p}{p.kept_original ? ' · already smaller, kept' : ` · ${change(p.before_bytes, p.after_bytes)}`}{p.over_limit ? ' · over limit' : ''}{p.downscaled ? ' · shrunk to fit' : ''}{/if}</dd>
+        <span class="weight">{p?.after_bytes != null ? kb(p.after_bytes) : '…'}</span>
+        {#if p?.after_bytes != null}{p.kept_original ? ' · already smaller, kept' : ` · ${change(p.before_bytes, p.after_bytes)}`}{p.over_limit ? ' · over limit' : ''}{p.downscaled ? ' · shrunk to fit' : ''}{/if}</dd>
       <dt>LOOK</dt><dd><span class="fmt">{fmt?.label ?? '--'}</span> · {recipe.value ? lookText(recipe.value) : ''}{p?.score ? `, scored ${Math.round(p.score)}` : ''}{p?.quality ? ` (q${p.quality})` : ''}</dd>
     </dl>
   {/if}
@@ -105,6 +108,7 @@
   .view.zoom { cursor: zoom-out; }
   .view.split { cursor: ew-resize; touch-action: none; }
   .view.busy img { opacity: .82; transition: opacity 200ms; }
+  .view img.placeholder { opacity: .5; filter: none; }
   .view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
   .view.zoom img { object-fit: none; object-position: var(--fx) var(--fy); }
   .view { container-type: size; }

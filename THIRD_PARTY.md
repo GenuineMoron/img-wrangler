@@ -22,6 +22,7 @@ redistributing a modified build.
 | Departure Mono | Screen type | MIT (licence text in design/system/fonts) |
 | ambientCG Metal050C, SurfaceImperfections015 | Case texture source | CC0 |
 | Phosphor Icons, cowboy-hat (light) | Wrangler's hat | MIT |
+| Lucide | Interface icon shapes | ISC |
 | Tauri | Desktop app shell | MIT / Apache-2.0 |
 | Svelte | Interface | MIT |
 

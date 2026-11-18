@@ -199,5 +199,6 @@
     .value-btn.small { font-size: 15px; }
   }
   .w-size :global(.ruler button) { padding: 1px 3px; }
+  @container channel (max-width: 210px) { .w-size :global(.ruler button) { padding: 1px 1px; letter-spacing: -.02em; } }
   .w-size :global(.ruler) { grid-column: 1 / -1; border-top: 1px solid var(--screen-line); padding-top: 3px; --accent: var(--accent-size); --on-accent: #fff; }
 </style>

@@ -96,19 +96,25 @@
   --dur-screen: 160ms;
   --ease-out: cubic-bezier(.2, .7, .2, 1);
 
-  /* ---------- material: texture layers, applied per surface with soft-light ---------- */
-  --tex-fine: url(tex/fine.png);        /* 256 px bead-blast grain, shared by every surface */
-  --tex-scratch: url(tex/scratch-l.jpg);/* CC0 ambientCG Metal050C, neutral-grey */
-  --tex-dust: url(tex/dust-l.jpg);      /* CC0 ambientCG SurfaceImperfections015, neutral-grey */
+  /* ---------- material: textures, drawn as plain images ----------
+     Baked by `pnpm textures` (apps/desktop) from tex/fine.png, tex/scratch-l.jpg (CC0 ambientCG
+     Metal050C) and tex/dust-l.jpg (CC0 ambientCG SurfaceImperfections015), soft-light blended
+     ahead of time, because blending them on every repaint is slow in some webviews. */
+  --tex-case: url(tex/case.webp);             /* scratch and dust, already in the case colour */
+  --tex-grain-case: url(tex/grain-case.png);  /* the fine grain over the case */
+  --tex-grain-light: url(tex/grain-light.png);/* … over light keys */
+  --tex-grain-mid: url(tex/grain-mid.png);    /* … over lit and orange keys */
+  --tex-grain-dark: url(tex/grain-dark.png);  /* … over dark keys */
+  --tex-pixel-grid: url(tex/pixel-grid.png);  /* one cell of the screens' pixel grid */
   --light-top: linear-gradient(180deg, rgba(255,255,255,var(--light-amt)), rgba(255,255,255,0) 32%, rgba(0,0,0,calc(var(--light-amt) * .16)));
 
   /* ---------- tunable values (the Tune panel writes these) ---------- */
   --light-amt: 0.54;          /* top light falloff on the case */
-  --tex-fine-size: 304px;    /* grain tile size */
+  --tex-fine-size: 320px;    /* grain tile size. Every texture size divides the 1920 px baked case tile */
   --tex-scratch-size: 1920px;
-  --tex-dust-size: 896px;
-  --px-grid: 0.08;            /* small-screen pixel grid strength */
-  --px-pitch: 3px;           /* pixel grid pitch */
+  --tex-dust-size: 960px;
+  --px-grid: 0.08;            /* small-screen pixel grid strength (baked: pnpm textures) */
+  --px-pitch: 3px;           /* pixel grid pitch (baked: pnpm textures) */
   --glass: 0.09;             /* glass reflection on screens */
   --bloom: 4.5px;              /* glow radius on screen graphics */
   --bloom-amt: 100%;          /* glow strength */

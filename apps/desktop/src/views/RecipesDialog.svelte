@@ -38,7 +38,7 @@
     <Field label="Recipe name" bind:value={name} onkeydown={e => e.key === 'Enter' && save()} />
     <Key label={taken && !taken.built_in ? 'Replace' : 'Save'} disabled={!name.trim() || !!taken?.built_in} onclick={save} />
   </div>
-  {#if taken?.built_in}<p class="note">Built-in recipes can’t be replaced; choose another name.</p>{/if}
+  {#if taken?.built_in}<p class="note">Built-in recipes can’t be replaced. Choose another name.</p>{/if}
   {#snippet actions()}
     <Key label="Revert changes" disabled={!recipe.edited} onclick={() => recipe.revert()} />
     <Key label="Done" onclick={() => (ui.dialog = null)} />

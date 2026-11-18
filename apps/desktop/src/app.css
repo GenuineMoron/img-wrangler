@@ -14,7 +14,8 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 .device { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) clamp(312px, 25vw, 372px); grid-template-rows: 56px minmax(0, 1fr) 252px;
   gap: var(--gutter); padding: 0 16px 16px; }
 .device > * { min-width: 0; min-height: 0; position: relative; }
-:root[data-platform='mac'] .head { padding-left: 72px; }
+/* room for the window buttons, top left on a Mac */
+:root[data-platform='mac'] header.head { padding-left: 72px; }
 
 /* ---------- details panels (module settings) ---------- */
 .details { display: grid; gap: var(--sp-5); padding: var(--sp-3) 0 var(--sp-5); }
@@ -29,6 +30,10 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 .dialog__head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 8px 18px; }
 .dialog__body { padding: 4px 18px 16px; overflow: auto; display: grid; gap: var(--sp-6); align-content: start; }
 .dialog__foot { display: flex; justify-content: flex-end; gap: var(--sp-4); padding: 12px 18px 16px; border-top: 1px solid var(--seam-dark); box-shadow: inset 0 1px 0 var(--seam-light); }
+
+/* Parts that change often each get a layer of their own, so redrawing them never repaints the
+   case, keys and shadows around them. */
+.channel .screen, .sheet, .mon, .meter, .recipe-panel .steps { will-change: transform; }
 
 /* keys inside screens and fields share one focus language */
 .screen :focus-visible { outline: var(--focus-on-screen); outline-offset: 1px; }

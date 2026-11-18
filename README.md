@@ -8,7 +8,7 @@
 <p align="center">
   <a href="#see-every-file-before-anything-is-written">Demo</a> ·
   <a href="#what-it-does">What it does</a> ·
-  <a href="#three-ways-in">Three ways in</a> ·
+  <a href="#four-ways-in">Four ways in</a> ·
   <a href="#get-it">Get it</a> ·
   <a href="#licence">Licence</a>
 </p>
@@ -48,17 +48,23 @@ It all happens on your computer. No accounts, no uploads, no telemetry.
 | Metadata | Strip it all, keep the camera and copyright details without the location, or keep everything. |
 | Save | Beside the originals, into a subfolder, into another folder, or over the originals. Every write goes to a temporary file first, and replaced originals sit in an undo store for 30 days. |
 
-## Three ways in
+## Four ways in
 
 ### The window
 
 Drop files or folders anywhere on it. The four screens along the bottom are the everyday controls, and each screen is the control itself: drag the corner of the size frame, drag the red line to set a size limit, pick the format from the list. The panel on the right lists every step in the order it runs, with the rest of the settings one press away.
 
+Arrow through the images and each preview shows at once: a draft of the framing first, then the exact result with its real file size a moment later. The next image's preview is already being made while you look at this one. Right-click an image to open it, show it in its folder, compare before and after, or run the recipe on just that one.
+
 ### Right-click
 
 <img src=".github/assets/right-click.svg" width="1200" alt="Eight photos selected in a file manager. Right-click, Wrangler, Web ready. A small Wrangler window runs the recipe: 135 KB to 57 KB, with Undo, Show and Open." />
 
-Pin recipes to the right-click menu in Finder, Explorer, Dolphin, Files (Nautilus), Nemo or Thunar. Pick one and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Set it up from Settings, or with `img-wrangler integrate install`.
+Pin recipes to the right-click menu in Finder, Explorer, Dolphin, Files (Nautilus), Nemo, Thunar or Luciole. Pick one and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Set it up from Settings, or with `img-wrangler integrate install`.
+
+### The menu bar
+
+The hat sits in the menu bar on a Mac, and in the system tray on Windows and Linux. Its menu runs a pinned recipe on images you choose and takes back the last run, without opening the window. On a Mac, drop images straight on the hat: they run with the recipe you picked for drops, and the small window opens under it with the results. Closing the main window leaves Wrangler there, and it can start at login.
 
 ### The command line
 
@@ -106,6 +112,8 @@ On a Mac it installs the one app that runs on Apple silicon and Intel alike. On 
 
 Every file is also on [Releases](https://github.com/GenuineMoron/img-wrangler/releases), with a table of which one you need. The builds aren't signed by Apple or Microsoft yet, so a downloaded app needs one extra click the first time. It's an alpha: try it on copies first, and [say what breaks](https://github.com/GenuineMoron/img-wrangler/issues).
 
+From 0.1.0-alpha.3 on, Wrangler keeps itself up to date. It tells you when there's a new version and what changed, and installs it when you say so. Each update is signed, and the app checks the signature before installing anything. On Arch and CachyOS the package manager looks after updates instead, so the app gives you the command.
+
 ### Or build it
 
 ```sh
@@ -121,6 +129,8 @@ On Linux the app also needs WebKitGTK and a few friends, listed in the [Tauri pr
 ## How it's made
 
 The image work is a Rust engine (`crates/engine`): decoding, resizing, trimming, encoding, naming, the plan, the run and the undo journal. The command line tool and the desktop app are two thin front doors onto it. The app is [Tauri](https://tauri.app) with a [Svelte](https://svelte.dev) interface, drawn from one design system in `design/system`.
+
+It's built to feel instant. Previews come as a quick draft and then the exact result, worked out ahead for the next image. Big batches skip deep reactivity, and progress is drawn once a frame. The case textures are baked into plain images rather than blended on every repaint, and on a computer drawing without a graphics card Wrangler measures that and turns the soft shadows and glows down by itself. `pnpm selftest` drives the real app through the everyday steps and times them, and checks every screen for cut-off or overlapping controls at three window sizes. CI runs the same checks in Chromium and WebKit on every push.
 
 Every feature is a module, with an engine half and an interface half, each listed in one registry. Adding a step like the watermark took one Rust file, one interface folder and a line or two in each registry. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is the map and [docs/MODULES.md](docs/MODULES.md) walks through adding a feature. [DESIGN.md](DESIGN.md) covers how it looks and why.
 

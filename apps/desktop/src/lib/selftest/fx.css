@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later
+   Self-test switches that turn one kind of effect off, to measure what each costs. Loaded only
+   by the self-test (`selftest … --fx tex,glow`). */
+html.fx-off-tex .mat-case, html.fx-off-tex .key, html.fx-off-tex .run { background-image: none !important; }
+html.fx-off-blend * { background-blend-mode: normal !important; }
+html.fx-off-glow *, html.fx-off-glow *::before, html.fx-off-glow *::after { filter: none !important; text-shadow: none !important; }
+html.fx-off-grid .screen--fx::before { display: none !important; }
+html.fx-off-glass .screen::after { display: none !important; }
+html.fx-off-shadow *, html.fx-off-shadow *::before, html.fx-off-shadow *::after { box-shadow: none !important; }
+html.fx-layers .sheet, html.fx-layers .mon, html.fx-layers .channel .screen, html.fx-layers .output, html.fx-layers .recipe-panel { will-change: transform; }

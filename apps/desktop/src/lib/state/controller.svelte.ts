@@ -7,6 +7,7 @@ import { batch } from './batch.svelte';
 import { catalog } from './catalog.svelte';
 import { recipe } from './recipe.svelte';
 import { ui } from './ui.svelte';
+import { updates } from './updates.svelte';
 
 export async function start(): Promise<() => void> {
   await Promise.all([catalog.load(), recipe.init()]);
@@ -35,10 +36,14 @@ export async function start(): Promise<() => void> {
       if (lastSelect && select !== lastSelect) untrack(() => batch.rescan());
       lastSelect = select;
     });
+    let lastPath: string | null = null;
     $effect(() => {
       const path = batch.currentPath;
       const key = pixels();
-      if (path && key) untrack(() => batch.schedulePreview());
+      if (!path || !key) return;
+      const moved = path !== lastPath;
+      lastPath = path;
+      untrack(() => batch.schedulePreview(moved));
     });
   });
 
@@ -49,6 +54,12 @@ export async function start(): Promise<() => void> {
   const offs = await Promise.all([
     backend.onLaunch(takeLaunch),
     backend.onDrop(paths => batch.add(paths), over => (ui.dropping = over)),
+    updates.init(),
+    // From the menu bar icon's menu.
+    backend.onMenu(what => {
+      if (what === 'settings') ui.dialog = 'settings';
+      if (what === 'updates') { ui.dialog = 'update'; if (!updates.found) updates.check(); }
+    }),
   ]);
   await takeLaunch();
   return () => { stop(); offs.forEach(off => off()); };

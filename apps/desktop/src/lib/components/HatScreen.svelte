@@ -13,4 +13,5 @@
   .hat-screen { display: grid; place-items: center; flex: none; border-radius: var(--r-key); background: var(--surface-screen);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, .7), 0 1px 0 var(--seam-light); color: var(--accent-quality); }
   svg { fill: currentColor; filter: drop-shadow(0 0 var(--bloom) color-mix(in srgb, currentColor var(--bloom-amt), transparent)); }
+  :global(html.lite) svg { filter: none; }
 </style>

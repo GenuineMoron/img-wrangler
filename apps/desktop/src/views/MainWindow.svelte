@@ -8,6 +8,7 @@
   import { start } from '$lib/state/controller.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
   import { ui } from '$lib/state/ui.svelte';
+  import { fx } from '$lib/state/fx.svelte';
   import ChannelStrip from './ChannelStrip.svelte';
   import Display from './Display.svelte';
   import Header from './Header.svelte';
@@ -17,6 +18,7 @@
   import RecipePanel from './RecipePanel.svelte';
   import RecipesDialog from './RecipesDialog.svelte';
   import SettingsDialog from './SettingsDialog.svelte';
+  import UpdateDialog from './UpdateDialog.svelte';
 
   let ready = $state(false);
   let failed = $state<string | null>(null);
@@ -24,7 +26,21 @@
   onMount(() => {
     let stop: (() => void) | undefined;
     start()
-      .then(s => { stop = s; ready = true; requestAnimationFrame(() => backend.ready()); })
+      .then(s => {
+        stop = s;
+        ready = true;
+        requestAnimationFrame(() => backend.ready());
+        const booted = performance.now();
+        // Once the window is up: is drawing fast enough for the full effects?
+        setTimeout(() => fx.check(), 600);
+        // Started for a self-test: load it only now, so it costs nothing otherwise.
+        backend.selftest().then(async cfg => {
+          if (!cfg) return;
+          const t = await import('$lib/selftest');
+          (window as unknown as { __wrangler: unknown }).__wrangler = { layoutHere: t.layoutHere, ui, batch };
+          await t.run(cfg, booted);
+        });
+      })
       .catch(e => { failed = String(e); backend.ready(); });
     return () => stop?.();
   });
@@ -68,6 +84,7 @@
   <RecipesDialog />
   <SettingsDialog />
   <HistoryDialog />
+  <UpdateDialog />
 {:else if failed}
   <div class="device mat-case failed"><p role="alert">Wrangler couldn’t start: {failed}</p></div>
 {:else}
