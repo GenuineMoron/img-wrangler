@@ -27,11 +27,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-24.04
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - name: Put the site together
@@ -53,5 +50,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: out
+
+  # A job of its own, as in GitHub's own Pages workflows. Deploying from the job that had just
+  # uploaded the site sometimes found the upload not listed yet, and failed.
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
       - id: deploy
         uses: actions/deploy-pages@v5
