@@ -112,10 +112,11 @@ pub fn take_requests(dir: &Path) -> Vec<Request> {
 
 /// The extension inside the app a program belongs to, when there is one.
 pub fn appex_for(program: &Path) -> Option<PathBuf> {
-    let p = program.to_string_lossy();
-    let app = &p[..p.find(".app/Contents/MacOS/")? + 4];
-    let appex = Path::new(app).join("Contents/PlugIns/WranglerFinder.appex");
-    appex.is_dir().then_some(appex)
+    // <Name>.app/Contents/MacOS/<program>
+    let macos = program.parent()?;
+    let app = macos.parent()?.parent()?;
+    let appex = app.join("Contents/PlugIns/WranglerFinder.appex");
+    (macos.ends_with("Contents/MacOS") && app.extension().is_some_and(|e| e == "app") && appex.is_dir()).then_some(appex)
 }
 
 /// Where the extension stands with macOS.
