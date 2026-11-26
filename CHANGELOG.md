@@ -2,6 +2,30 @@
 
 Notable changes, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 0.1.0-alpha.4, 26 November 2026
+
+Every setting in one place, Wrangler in Finder's own menu, and set up from the first launch.
+
+- **One home for every setting.** The panel on the right is gone. Each screen's further settings now open right above it, the other steps (files, rotate, sharpen, watermark, metadata) are a row of keys, and Save's settings open from the Output panel. Nothing is set in two places any more: crop, pad and inside are only on the Size screen, the size limit is typed on the Quality screen, and the folder is only chosen with the Folder… key.
+- **More room for the images.** The display runs the full width of the window, and the preview is about twice the size.
+- **Wrangler in Finder's right-click menu.** A "Wrangler" entry with the hat, from a small Finder extension inside the app, in place of Quick Actions that macOS tucked away (and that macOS 26.1 sometimes didn't list at all). Quick Actions remain as the fallback when macOS won't load the extension.
+- **Ready from the first launch.** Wrangler puts itself in the right-click menu of every file manager it finds. Settings takes it out again, and that sticks.
+- Settings take effect as you press them. Pinning a recipe updates the menus at once, with no separate Update step.
+- Add-ons switch on with one press of their key, and off from their settings. There's no Add step menu to go through.
+- Simpler header. The hat is the mark, not a second Add button, Add offers images or a folder, and the command palette is gone: it repeated every visible control. "Save" is now "Save recipe", so it can't be mistaken for saving images.
+- The before and after view is called Compare everywhere.
+- Clear the batch from the top of the display.
+- The menu bar menu reads better: "Run Web ready…", and "Images dropped on the hat run" for choosing the drop recipe.
+- Right-click menus for two more Linux file managers: Caja (MATE), and PCManFM and PCManFM-Qt (LXDE and LXQt).
+- Right-click menus list your recipes first and "Open in Wrangler…" last. Thunar, Nemo and PCManFM keep that order, and Dolphin shows Wrangler's icon beside the entry.
+- Fixed: at the smallest window the preview could be blank. The Name screen overflowed in Replace mode. Crop, pad and inside spilled out of the Size screen in a small window.
+- Fixed: starting in the tray, or running a recipe from a right-click menu, could bring up the main window as well. Seen on Linux.
+- Fixed: in Files (Nautilus), choosing a recipe did nothing while Wrangler was already waiting in the tray. The same went for a file named from a terminal in another folder.
+- Fixed: right-click menus set up from the AppImage only worked while Wrangler was running. They now start the AppImage itself.
+- Fixed: the output meter could read −100% for a very large saving. It now stops at −99%, as the tiles do.
+- Needs macOS 13 or later. The interface uses colour and layout features that the web view in macOS 12 and earlier can't draw, so earlier versions never looked right there.
+- The self-test now opens every module's settings in each of its modes, which is how the three layout faults above were found.
+
 ## 0.1.0-alpha.3, 18 November 2026
 
 Much faster, the hat in the menu bar, and updates from inside the app.

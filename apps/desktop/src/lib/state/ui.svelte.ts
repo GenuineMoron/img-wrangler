@@ -2,13 +2,13 @@
 // Window state that isn't part of a recipe or a batch.
 
 export type View = 'auto' | 'result' | 'original' | 'split';
-export type DialogId = 'palette' | 'settings' | 'history' | 'recipes' | 'update' | null;
+export type DialogId = 'settings' | 'history' | 'recipes' | 'update' | null;
 
 class UiState {
   view = $state<View>('auto');
   split = $state(50);
-  /** The step open in the Recipe panel; one at a time keeps the list readable. */
-  step = $state<string | null>(null);
+  /** The module whose further settings are open, above its control. One at a time. */
+  more = $state<string | null>(null);
   dialog = $state<DialogId>(null);
   dropping = $state(false);
   /** A short message on the status line, read out by screen readers. */
@@ -21,18 +21,9 @@ class UiState {
     this.#timer = setTimeout(() => (this.message = null), alarm ? 9000 : 5000);
   }
 
-  toggle(id: string, open?: boolean) {
-    this.step = (open ?? this.step !== id) ? id : null;
-  }
-
-  /** Open a step's settings in the Recipe panel and move focus there. */
-  reveal(id: string) {
-    this.step = id;
-    requestAnimationFrame(() => {
-      const row = document.getElementById(`step-${id}`);
-      row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      row?.focus({ preventScroll: true });
-    });
+  /** Open a module's further settings, or close them if they're open. */
+  toggleMore(id: string) {
+    this.more = this.more === id ? null : id;
   }
 }
 

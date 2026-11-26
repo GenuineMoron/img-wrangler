@@ -42,6 +42,12 @@ pub fn formats() -> Vec<FormatInfo> {
     wrangler_engine::codec::formats().to_vec()
 }
 
+/// Every file extension Wrangler reads, for the file pickers.
+#[tauri::command]
+pub fn image_extensions() -> Vec<&'static str> {
+    Format::extensions()
+}
+
 #[tauri::command]
 pub fn recipes(state: State<AppState>) -> Vec<RecipeEntry> {
     presets::list(&state.dirs.recipes())
@@ -276,6 +282,8 @@ pub struct Integration {
     pub target: wi::Target,
     pub label: &'static str,
     pub installed: bool,
+    /// Where the menu shows, when that isn't simply the right-click menu.
+    pub place: Option<&'static str>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -286,21 +294,15 @@ pub struct Integrations {
 
 #[tauri::command]
 pub fn integrations(app: AppHandle) -> Integrations {
-    Integrations { targets: wi::targets().into_iter().map(|t| Integration { target: t, label: t.label(), installed: wi::installed(t) }).collect(), pins: settings::load(&app).pins }
+    Integrations { targets: wi::targets().into_iter().map(|t| Integration { target: t, label: t.label(), installed: wi::installed(t), place: wi::where_it_shows(t) }).collect(), pins: settings::load(&app).pins }
 }
 
-/// Install (with these pinned recipes) or remove the right-click actions everywhere.
+/// Put Wrangler in every file manager's right-click menu, or take it out of them all.
 #[tauri::command]
-pub fn set_integrations(app: AppHandle, install: bool, pins: Vec<String>) -> Res<Integrations> {
-    let mut s = settings::load(&app);
-    s.pins = pins;
-    settings::save(&app, &s)?;
-    crate::tray::refresh(&app);
+pub fn set_menus(app: AppHandle, on: bool) -> Res<Integrations> {
     let mut problems = Vec::new();
-    if install {
-        let program = std::env::current_exe().map_err(err)?;
-        let actions = settings::pinned(&app, &s).into_iter().map(|(id, label)| wi::QuickAction { id, label }).collect();
-        let setup = wi::Setup { program, actions };
+    if on {
+        let setup = settings::menu_setup(&app, &settings::load(&app), true)?;
         for t in wi::targets() {
             if let Err(e) = wi::install(t, &setup) {
                 problems.push(format!("{}: {e}", t.label()));
@@ -314,6 +316,21 @@ pub fn set_integrations(app: AppHandle, install: bool, pins: Vec<String>) -> Res
         }
     }
     if problems.is_empty() { Ok(integrations(app)) } else { Err(problems.join("\n")) }
+}
+
+/// Choose the recipes offered in the right-click menus and the menu bar menu. Menus that are
+/// installed are rewritten straight away.
+#[tauri::command]
+pub fn set_pins(app: AppHandle, pins: Vec<String>) -> Res<Integrations> {
+    let mut s = settings::load(&app);
+    s.pins = pins;
+    settings::save(&app, &s)?;
+    crate::tray::refresh(&app);
+    let setup = settings::menu_setup(&app, &s, false)?;
+    for t in wi::targets().into_iter().filter(|t| wi::installed(*t)) {
+        wi::install(t, &setup).map_err(err)?;
+    }
+    Ok(integrations(app))
 }
 
 // ---------- The app's own settings ----------

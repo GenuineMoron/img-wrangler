@@ -79,6 +79,8 @@ export interface Integration {
   target: string;
   label: string;
   installed: boolean;
+  /** Where the menu shows, when that isn't simply the right-click menu. */
+  place: string | null;
 }
 
 export interface Integrations {

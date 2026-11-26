@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
-  The top of the unit: the hat on its little screen is the Add button, the recipe
-  selector, and the utility keys. The empty parts drag the window. -->
+  The top of the unit: the mark, the recipe selector, and the keys for adding images, past runs
+  and settings. The empty parts drag the window. -->
 <script lang="ts">
   import Key from '$lib/components/Key.svelte';
   import HatScreen from '$lib/components/HatScreen.svelte';
@@ -19,6 +19,14 @@
     if (paths.length) await batch.add(paths);
   }
 
+  /** Images or a whole folder: the system's picker takes one kind at a time, so ask which. */
+  function addMenu() {
+    backend.contextMenu([
+      { text: 'Add images…', action: () => add('files') },
+      { text: 'Add a folder…', action: () => add('folder') },
+    ]);
+  }
+
   async function save() {
     if (recipe.entry?.built_in) ui.dialog = 'recipes';
     else { await recipe.save(); ui.say(`Saved “${recipe.value?.name}”.`); }
@@ -26,9 +34,7 @@
 </script>
 
 <header class="head" data-tauri-drag-region>
-  <button type="button" class="pal" aria-label="Add images. Drop them anywhere, or press to choose" title="Add images ({mod}O)" onclick={() => add('files')}>
-    <HatScreen />
-  </button>
+  <HatScreen />
   <div class="word" data-tauri-drag-region>wrangler <span class="legend legend--quiet">batch image unit</span></div>
 
   <div class="recipe">
@@ -41,7 +47,7 @@
       </button>
     </Screen>
     <Key icon="next" aria-label="Next recipe" onclick={() => recipe.step(1)} />
-    <Key label="Save" disabled={!recipe.edited} onclick={save} title="Save recipe ({mod}S)" />
+    <Key label="Save recipe" disabled={!recipe.edited} onclick={save} title="Save your changes to this recipe ({mod}S)" />
   </div>
 
   <div class="right">
@@ -50,17 +56,14 @@
         <Led on /> <span>Update</span>
       </button>
     {/if}
-    <Key dark icon="plus" label="Add" onclick={() => add('files')} title="Add images ({mod}O), or folders ({mod}⇧O)" />
+    <Key dark icon="plus" label="Add" onclick={addMenu} title="Add images ({mod}O) or a folder ({mod}⇧O). Or drop them anywhere" />
     <Key dark icon="history" aria-label="Past runs" title="Past runs and undo" onclick={() => (ui.dialog = 'history')} />
-    <Key dark icon="settings" aria-label="Settings" title="Settings and right-click menus" onclick={() => (ui.dialog = 'settings')} />
-    <Key dark icon="command" aria-label="Commands" title="Commands ({mod}K)" onclick={() => (ui.dialog = 'palette')} />
+    <Key dark icon="settings" aria-label="Settings" title="Settings ({mod},)" onclick={() => (ui.dialog = 'settings')} />
   </div>
 </header>
 
 <style>
   .head { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--sp-8); }
-  .pal { all: unset; cursor: copy; border-radius: var(--r-key); display: grid; }
-  .pal:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }
   .word { font: 700 22px/1 var(--font-ui); letter-spacing: -0.04em; color: #18191b; display: flex; align-items: baseline; gap: var(--sp-4); white-space: nowrap; }
   .recipe { display: flex; align-items: center; gap: var(--sp-3); margin-left: var(--sp-8); }
   .recipe :global(.recipe__screen) { width: 290px; height: var(--key-h); }

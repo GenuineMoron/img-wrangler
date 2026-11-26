@@ -10,14 +10,16 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 ::selection { background: var(--output); color: #fff; }
 #app { height: 100%; }
 
-/* ---------- the unit ---------- */
-.device { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) clamp(312px, 25vw, 372px); grid-template-rows: 56px minmax(0, 1fr) 252px;
+/* ---------- the unit ----------
+   Top to bottom: the header, the display across the full width, the row of step keys, then the
+   four channels with the Output panel beside them. */
+.device { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) clamp(312px, 25vw, 372px); grid-template-rows: 56px minmax(0, 1fr) auto 252px;
   gap: var(--gutter); padding: 0 16px 16px; }
 .device > * { min-width: 0; min-height: 0; position: relative; }
 /* room for the window buttons, top left on a Mac */
 :root[data-platform='mac'] header.head { padding-left: 72px; }
 
-/* ---------- details panels (module settings) ---------- */
+/* ---------- a module's further settings (in its popover) ---------- */
 .details { display: grid; gap: var(--sp-5); padding: var(--sp-3) 0 var(--sp-5); }
 .details + .details { border-top: 1px dashed var(--seam-dark); padding-top: var(--sp-5); }
 .details .note { max-width: 46ch; }
@@ -33,7 +35,7 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 
 /* Parts that change often each get a layer of their own, so redrawing them never repaints the
    case, keys and shadows around them. */
-.channel .screen, .sheet, .mon, .meter, .recipe-panel .steps { will-change: transform; }
+.channel .screen, .sheet, .mon, .meter { will-change: transform; }
 
 /* keys inside screens and fields share one focus language */
 .screen :focus-visible { outline: var(--focus-on-screen); outline-offset: 1px; }

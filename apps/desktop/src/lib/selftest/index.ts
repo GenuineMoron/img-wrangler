@@ -6,7 +6,7 @@
 // from a Mac, a Linux desktop and Windows can be put side by side. Loaded only when asked for.
 
 import { backend } from '$lib/ipc';
-import { MODULES } from '$lib/modules/registry';
+import { MODULES, addonOf, hasDetails } from '$lib/modules/registry';
 import { batch } from '$lib/state/batch.svelte';
 import { fx } from '$lib/state/fx.svelte';
 import { recipe } from '$lib/state/recipe.svelte';
@@ -110,7 +110,8 @@ async function add(images: string[], out: Result[]) {
   void batch.add(images, true);
   out.push({ name: 'Add a folder: files listed', ms: await until(() => batch.items.length > 0 && !batch.scanning, t0) });
   out.push({ name: 'Add a folder: first thumbnails shown', ms: await until(thumbsLoaded, t0) });
-  out.push({ name: 'Add a folder: first preview shown', ms: await until(previewShown, t0) });
+  out.push({ name: 'Add a folder: first preview shown', ms: await until(draftShown, t0) });
+  out.push({ name: 'Add a folder: first exact preview', ms: await until(exactShown, t0, 60000) });
   out.push({ name: 'Add a folder: sizes estimated', ms: await until(() => !!batch.estimate && !batch.estimating, t0, 120000) });
   out.push({ name: 'Add a folder: frames while loading', frames: stop() });
 }
@@ -183,7 +184,7 @@ async function switchRecipes(out: Result[]) {
   await until(() => previewShown() && !batch.estimating, performance.now(), 60000);
 }
 
-const DIALOGS: Exclude<DialogId, null>[] = ['settings', 'history', 'recipes', 'palette'];
+const DIALOGS: Exclude<DialogId, null>[] = ['settings', 'history', 'recipes'];
 
 async function dialogs(out: Result[]) {
   for (const d of DIALOGS) {
@@ -235,18 +236,47 @@ async function layoutAt(w: number, h: number, issues: Report['layout']) {
   else if (innerWidth !== w) return; // the browser harness sets its own viewport
   const take = (state: string) => issues.push(...audit().map(i => ({ ...i, state, size })));
   take('main');
-  for (const m of MODULES) {
-    ui.step = m.id;
-    await settle();
-    take(`step: ${m.id}`);
-  }
-  ui.step = null;
+  await moreStates(take);
   for (const d of DIALOGS) {
     ui.dialog = d;
     await settle();
     take(`dialog: ${d}`);
     ui.dialog = null;
   }
+  await settle();
+}
+
+/** Every module's further settings, opened in turn, in each mode that shows other rows. The
+ *  recipe is put back afterwards. */
+async function moreStates(take: (state: string) => void) {
+  const r = recipe.value!;
+  const open = async (id: string, state = id) => {
+    ui.more = id;
+    await settle();
+    take(`more: ${state}`);
+  };
+  for (const m of MODULES.filter(hasDetails)) {
+    if (m.kind === 'addon' && !addonOf(r, m)) r.addons.push(m.create());
+    await open(m.id);
+  }
+  Object.assign(r.size, { shape: '1:1', fit: 'pad', trim: { tolerance: 4, margin: 0 } });
+  await open('size', 'size, padded and trimmed');
+  r.size.fit = 'crop';
+  await open('size', 'size, cropped');
+  r.quality.max_kb = 200;
+  r.quality.look = 80;
+  await open('quality', 'quality, limit and fixed');
+  for (const mode of ['pattern', 'replace', 'list'] as const) {
+    r.rename.mode = mode;
+    if (mode === 'replace' && r.rename.replace.length < 2) r.rename.replace.push({ find: 'IMG_', with: 'photo-', regex: false, ignore_case: false }, { find: ' ', with: '-', regex: false, ignore_case: false });
+    await open('name', `name, ${mode}`);
+  }
+  for (const mode of ['beside', 'folder', 'replace'] as const) {
+    r.destination.mode = mode;
+    await open('save', `save, ${mode}`);
+  }
+  ui.more = null;
+  await recipe.load('web-ready');
   await settle();
 }
 

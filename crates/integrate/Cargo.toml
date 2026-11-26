@@ -10,6 +10,7 @@ repository.workspace = true
 [dependencies]
 thiserror.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 dirs = "6"
 
 [target.'cfg(windows)'.dependencies]

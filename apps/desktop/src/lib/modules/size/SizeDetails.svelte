@@ -1,18 +1,16 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
-  Everything about Size that isn't on its channel: trimming edges, the backdrop and how much of
-  the frame the picture fills, where it sits, other shapes, and enlarging small images. -->
+  Everything about Size that isn't on its screen: trimming edges, the backdrop and how much of
+  the frame the picture fills, where it sits, other shapes, and enlarging small images. (How
+  big, which shape, and crop, pad or inside are on the screen.) -->
 <script lang="ts">
   import AnchorPad from '$lib/components/AnchorPad.svelte';
   import ColourKey from '$lib/components/ColourKey.svelte';
   import Field from '$lib/components/Field.svelte';
   import Key from '$lib/components/Key.svelte';
-  import KeyGroup from '$lib/components/KeyGroup.svelte';
   import Row from '$lib/components/Row.svelte';
   import Slider from '$lib/components/Slider.svelte';
   import { parseShape, shapeText } from '$lib/geometry';
   import { recipe } from '$lib/state/recipe.svelte';
-  import type { Fit } from '$lib/types';
-  import { FITS } from './index';
 
   const size = $derived(recipe.value!.size);
   const shape = $derived(parseShape(size.shape) ?? { kind: 'original' as const });
@@ -52,11 +50,8 @@
   {/if}
 </div>
 
-{#if shape.kind !== 'original'}
+{#if shape.kind !== 'original' && size.fit !== 'inside'}
   <div class="details" style:--accent="var(--accent-canvas)" style:--on-accent="var(--on-canvas)">
-    <Row label="Meets frame">
-      <KeyGroup label="How the picture meets the frame" options={FITS.map(f => ({ id: f.id, label: f.label, aria: f.aria }))} value={size.fit} accent="size" onchange={(v: Fit) => (size.fit = v)} />
-    </Row>
     {#if size.fit === 'pad'}
       <Row label="Backdrop">
         <div class="keys" role="radiogroup" aria-label="Backdrop" style:--n="4">
@@ -71,11 +66,9 @@
           stops={[{ value: 50, label: '50%' }, { value: 70, label: '70' }, { value: 85, label: '85' }, { value: 100, label: '100%' }]} />
       </Row>
     {/if}
-    {#if size.fit !== 'inside'}
-      <Row label={size.fit === 'crop' ? 'Keep' : 'Position'}>
-        <AnchorPad label={size.fit === 'crop' ? 'Which part to keep' : 'Where the picture sits'} value={size.anchor} onchange={a => (size.anchor = a)} />
-      </Row>
-    {/if}
+    <Row label={size.fit === 'crop' ? 'Keep' : 'Position'}>
+      <AnchorPad label={size.fit === 'crop' ? 'Which part to keep' : 'Where the picture sits'} value={size.anchor} onchange={a => (size.anchor = a)} />
+    </Row>
   </div>
 {/if}
 

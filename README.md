@@ -31,7 +31,7 @@ It all happens on your computer. No accounts, no uploads, no telemetry.
 
 ## See every file before anything is written
 
-<img src=".github/assets/demo.webp" width="1080" alt="The Wrangler window: photos are added, the Email safe recipe is chosen, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
+<img src=".github/assets/demo.webp" width="1080" alt="The Wrangler window: photos are added, the Email safe recipe is chosen from the list, Sharpen is switched on, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
 
 <sub>Recorded from the browser preview of the app, which plays sample photos with simulated sizes. The figures in the banner above and the right-click card are from a real run of the Web ready recipe on eight sample photos.</sub>
 
@@ -52,7 +52,7 @@ It all happens on your computer. No accounts, no uploads, no telemetry.
 
 ### The window
 
-Drop files or folders anywhere on it. The four screens along the bottom are the everyday controls, and each screen is the control itself: drag the corner of the size frame, drag the red line to set a size limit, pick the format from the list. The panel on the right lists every step in the order it runs, with the rest of the settings one press away.
+Drop files or folders anywhere on it. The four screens along the bottom are the everyday controls, and each screen is the control itself: drag the corner of the size frame, drag the red line to set a size limit, pick the format from the list. The row of keys above them holds the other steps: which files to take, rotate, sharpen, watermark, metadata. Every setting has one home, and the rest of a control's settings open right above it.
 
 Arrow through the images and each preview shows at once: a draft of the framing first, then the exact result with its real file size a moment later. The next image's preview is already being made while you look at this one. Right-click an image to open it, show it in its folder, compare before and after, or run the recipe on just that one.
 
@@ -60,7 +60,9 @@ Arrow through the images and each preview shows at once: a draft of the framing 
 
 <img src=".github/assets/right-click.svg" width="1200" alt="Eight photos selected in a file manager. Right-click, Wrangler, Web ready. A small Wrangler window runs the recipe: 135 KB to 57 KB, with Undo, Show and Open." />
 
-Pin recipes to the right-click menu in Finder, Explorer, Dolphin, Files (Nautilus), Nemo, Thunar or Luciole. Pick one and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Set it up from Settings, or with `img-wrangler integrate install`.
+Wrangler puts itself in the right-click menu of Finder, Explorer, Dolphin, Files (Nautilus), Nemo, Thunar, Caja, PCManFM and Luciole the first time it runs. Pick a recipe there and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Settings chooses which recipes are offered, or takes the menus out again. From a terminal it's `img-wrangler integrate install`.
+
+In Finder it's a "Wrangler" entry in the menu itself, from a small Finder extension inside the app. If macOS won't load the extension, the recipes go under Finder's Quick Actions instead.
 
 ### The menu bar
 

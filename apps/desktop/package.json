@@ -1,7 +1,7 @@
 {
   "name": "wrangler-desktop",
   "private": true,
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "scripts": {
@@ -13,7 +13,8 @@
     "tauri": "tauri",
     "readme": "node scripts/readme.mjs",
     "selftest": "node scripts/selftest.mjs",
-    "textures": "node scripts/textures.mjs"
+    "textures": "node scripts/textures.mjs",
+    "finder:test": "node scripts/finder-extension.mjs --test"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

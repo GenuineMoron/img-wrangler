@@ -437,7 +437,8 @@ fn integrate(action: IntegrateCmd, dirs: &AppDirs) -> Result<ExitCode> {
     match action {
         IntegrateCmd::Status => {
             for t in wi::targets() {
-                println!("{:<10} {}", t.label(), if wi::installed(t) { "installed" } else { "not installed" });
+                let place = wi::where_it_shows(t).map(|w| format!(" ({w})")).unwrap_or_default();
+                println!("{:<17} {}{place}", t.label(), if wi::installed(t) { "installed" } else { "not installed" });
             }
         }
         IntegrateCmd::Install { pins, program } => {
@@ -446,7 +447,7 @@ fn integrate(action: IntegrateCmd, dirs: &AppDirs) -> Result<ExitCode> {
                 .iter()
                 .map(|p| presets::load(&dirs.recipes(), p).map(|r| wi::QuickAction { id: wrangler_engine::naming::slug(p), label: r.name }))
                 .collect::<Result<Vec<_>, _>>()?;
-            let setup = wi::Setup { program, actions };
+            let setup = wi::Setup { program, actions, extensions: wrangler_engine::codec::Format::extensions().into_iter().map(String::from).collect(), asked: true };
             for t in wi::targets() {
                 match wi::install(t, &setup) {
                     Ok(files) => println!("{}: installed ({} files)", t.label(), files.len()),

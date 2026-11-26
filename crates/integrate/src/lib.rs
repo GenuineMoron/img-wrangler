@@ -6,6 +6,13 @@
 //! Each file manager has a pure generator (`*_files` / `explorer_entries`) that turns a
 //! `Setup` into exact file contents, so every platform's output is tested on any machine.
 //! `install`, `remove` and `installed` are thin wrappers that write or delete those files.
+//!
+//! Finder is the exception with two ways in. The app carries a Finder extension (`finder`),
+//! which puts "Wrangler" in the right-click menu itself. When there's no extension (the command
+//! line tool alone) or macOS won't load it, Quick Actions are written instead, which Finder
+//! lists under its Quick Actions menu.
+
+pub mod finder;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -26,6 +33,11 @@ pub struct Setup {
     /// The executable that handles `quick` and `open` (the Wrangler app, or the CLI).
     pub program: PathBuf,
     pub actions: Vec<QuickAction>,
+    /// Image file extensions, lower case, for menus that decide for themselves what to show on.
+    pub extensions: Vec<String>,
+    /// The person asked for this just now, so a menu they once turned off comes back. False
+    /// when the app is only keeping its menus current.
+    pub asked: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -37,6 +49,8 @@ pub enum Target {
     Nautilus,
     Nemo,
     Thunar,
+    Caja,
+    Pcmanfm,
     Luciole,
 }
 
@@ -49,6 +63,8 @@ impl Target {
             Target::Nautilus => "Files (Nautilus)",
             Target::Nemo => "Nemo",
             Target::Thunar => "Thunar",
+            Target::Caja => "Caja",
+            Target::Pcmanfm => "PCManFM",
             Target::Luciole => "Luciole",
         }
     }
@@ -68,6 +84,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 const OPEN_LABEL: &str = "Open in Wrangler…";
 const MARK: &str = "img-wrangler";
+/// The icon the app's packages install, for menu entries.
+const ICON: &str = "img-wrangler-app";
 
 fn home() -> PathBuf {
     dirs::home_dir().unwrap_or_else(|| PathBuf::from("."))
@@ -84,7 +102,16 @@ pub fn targets() -> Vec<Target> {
     } else if cfg!(windows) {
         vec![Target::Explorer]
     } else {
-        [(Target::Dolphin, "dolphin"), (Target::Nautilus, "nautilus"), (Target::Nemo, "nemo"), (Target::Thunar, "thunar"), (Target::Luciole, "luciole")].into_iter().filter(|(_, cmd)| on_path(cmd)).map(|(t, _)| t).collect()
+        let found: [(Target, &[&str]); 7] = [
+            (Target::Dolphin, &["dolphin"]),
+            (Target::Nautilus, &["nautilus"]),
+            (Target::Nemo, &["nemo"]),
+            (Target::Thunar, &["thunar"]),
+            (Target::Caja, &["caja"]),
+            (Target::Pcmanfm, &["pcmanfm", "pcmanfm-qt"]),
+            (Target::Luciole, &["luciole"]),
+        ];
+        found.into_iter().filter(|(_, cmds)| cmds.iter().any(|c| on_path(c))).map(|(t, _)| t).collect()
     }
 }
 
@@ -130,9 +157,11 @@ fn xml_escape(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
+/// The menu's items as (stable id, label, action): the pinned recipes in their order, then
+/// "Open in Wrangler…". Finder, Explorer, Thunar, Nemo and PCManFM keep this order. Dolphin and
+/// the Scripts menus (Nautilus, Caja, Luciole) sort their own way, by name.
 fn menu_items(setup: &Setup) -> Vec<(String, String, Option<&QuickAction>)> {
-    // (stable id, label, action); "open" first.
-    std::iter::once(("open".to_string(), OPEN_LABEL.to_string(), None)).chain(setup.actions.iter().map(|a| (a.id.clone(), a.label.clone(), Some(a)))).collect()
+    setup.actions.iter().map(|a| (a.id.clone(), a.label.clone(), Some(a))).chain(std::iter::once(("open".to_string(), OPEN_LABEL.to_string(), None))).collect()
 }
 
 // ---------- Linux ----------
@@ -140,25 +169,41 @@ fn menu_items(setup: &Setup) -> Vec<(String, String, Option<&QuickAction>)> {
 pub fn dolphin_files(setup: &Setup) -> Vec<(PathBuf, String)> {
     let items = menu_items(setup);
     let mut s = format!(
-        "[Desktop Entry]\nType=Service\nMimeType=image/*;inode/directory;\nActions={};\nX-KDE-Submenu=Wrangler\nX-KDE-Priority=TopLevel\nIcon={MARK}\n",
+        "[Desktop Entry]\nType=Service\nMimeType=image/*;inode/directory;\nActions={};\nX-KDE-Submenu=Wrangler\nX-KDE-Priority=TopLevel\nIcon={ICON}\n",
         items.iter().map(|(id, _, _)| id.as_str()).collect::<Vec<_>>().join(";")
     );
     for (id, label, action) in &items {
         let exec = std::iter::once(desktop_quote(&setup.program.to_string_lossy())).chain(args(*action)).chain(["%F".to_string()]).collect::<Vec<_>>().join(" ");
-        s.push_str(&format!("\n[Desktop Action {id}]\nName={label}\nIcon={MARK}\nExec={exec}\n"));
+        s.push_str(&format!("\n[Desktop Action {id}]\nName={label}\nIcon={ICON}\nExec={exec}\n"));
     }
     vec![(home().join(".local/share/kio/servicemenus/img-wrangler.desktop"), s)]
 }
 
-pub fn nautilus_files(setup: &Setup) -> Vec<(PathBuf, String)> {
-    let dir = home().join(".local/share/nautilus/scripts/Wrangler");
+/// Executable scripts for a Scripts menu: each is named as it shows there and gets the selection
+/// as its arguments. `own_folder` is a folder of Wrangler's own, which shows as a "Wrangler"
+/// submenu. Without one the scripts sit beside other people's, so the recipes say whose they are.
+fn script_files(dir: &Path, setup: &Setup, own_folder: bool) -> Vec<(PathBuf, String)> {
     menu_items(setup)
         .into_iter()
         .map(|(_, label, action)| {
             let cmd = std::iter::once(sh_quote(&setup.program.to_string_lossy())).chain(args(action).iter().map(|a| sh_quote(a))).collect::<Vec<_>>().join(" ");
-            (dir.join(label.replace('/', "-")), format!("#!/bin/sh\n# {MARK}: {label}\nexec {cmd} \"$@\"\n"))
+            let name = if own_folder || action.is_none() { label.clone() } else { format!("Wrangler: {label}") };
+            (dir.join(name.replace('/', "-")), format!("#!/bin/sh\n# {MARK}: {label}\nexec {cmd} \"$@\"\n"))
         })
         .collect()
+}
+
+pub fn nautilus_files(setup: &Setup) -> Vec<(PathBuf, String)> {
+    script_files(&home().join(".local/share/nautilus/scripts/Wrangler"), setup, true)
+}
+
+fn caja_dir() -> PathBuf {
+    dirs::config_dir().unwrap_or_else(|| home().join(".config")).join("caja/scripts")
+}
+
+/// Caja (MATE) runs scripts the way Nautilus does, from a folder of its own.
+pub fn caja_files(setup: &Setup) -> Vec<(PathBuf, String)> {
+    script_files(&caja_dir().join("Wrangler"), setup, true)
 }
 
 fn luciole_dir() -> PathBuf {
@@ -168,25 +213,41 @@ fn luciole_dir() -> PathBuf {
 /// Luciole (the Noctalia file manager) runs executable scripts from its scripts folder, named as
 /// they appear in its Scripts menu, with the selection as arguments.
 pub fn luciole_files(setup: &Setup) -> Vec<(PathBuf, String)> {
-    let dir = luciole_dir();
-    menu_items(setup)
-        .into_iter()
-        .map(|(_, label, action)| {
-            let cmd = std::iter::once(sh_quote(&setup.program.to_string_lossy())).chain(args(action).iter().map(|a| sh_quote(a))).collect::<Vec<_>>().join(" ");
-            let name = if action.is_some() { format!("Wrangler: {label}") } else { label.clone() };
-            (dir.join(name.replace('/', "-")), format!("#!/bin/sh\n# {MARK}: {label}\nexec {cmd} \"$@\"\n"))
-        })
-        .collect()
+    script_files(&luciole_dir(), setup, false)
+}
+
+fn pcmanfm_dir() -> PathBuf {
+    dirs::data_dir().unwrap_or_else(|| home().join(".local/share")).join("file-manager/actions")
+}
+
+/// PCManFM and PCManFM-Qt (LXDE, LXQt) read custom actions from one shared folder: an action
+/// for each item, and a menu that lists them in order as a "Wrangler" submenu. PCManFM labels a
+/// submenu with its Tooltip and PCManFM-Qt with its Name, so the menu carries both.
+pub fn pcmanfm_files(setup: &Setup) -> Vec<(PathBuf, String)> {
+    let dir = pcmanfm_dir();
+    let items = menu_items(setup);
+    let list = items.iter().map(|(id, _, _)| format!("{MARK}-{id}")).collect::<Vec<_>>().join(";");
+    let mut files = vec![(dir.join(format!("{MARK}.desktop")), format!("[Desktop Entry]\nType=Menu\nName=Wrangler\nTooltip=Wrangler\nIcon={ICON}\nItemsList={list};\n"))];
+    for (id, label, action) in items {
+        let exec = std::iter::once(desktop_quote(&setup.program.to_string_lossy())).chain(args(action)).chain(["%F".to_string()]).collect::<Vec<_>>().join(" ");
+        files.push((
+            dir.join(format!("{MARK}-{id}.desktop")),
+            format!("[Desktop Entry]\nType=Action\nName={label}\nIcon={ICON}\nProfiles=run;\n\n[X-Action-Profile run]\nMimeTypes=image/*;inode/directory;\nExec={exec}\n"),
+        ));
+    }
+    files
 }
 
 pub fn nemo_files(setup: &Setup) -> Vec<(PathBuf, String)> {
     let dir = home().join(".local/share/nemo/actions");
     menu_items(setup)
         .into_iter()
-        .map(|(id, label, action)| {
+        .enumerate()
+        .map(|(i, (id, label, action))| {
             let exec = std::iter::once(desktop_quote(&setup.program.to_string_lossy())).chain(args(action)).chain(["%F".to_string()]).collect::<Vec<_>>().join(" ");
             let name = if action.is_some() { format!("Wrangler: {label}") } else { label.clone() };
-            (dir.join(format!("{MARK}-{id}.nemo_action")), format!("[Nemo Action]\nName={name}\nComment={name}\nExec={exec}\nIcon-Name={MARK}\nSelection=notnone\nExtensions=any;\nMimetypes=image/*;inode/directory;\n"))
+            // Nemo lists actions in the order of their file names, so the number keeps ours.
+            (dir.join(format!("{MARK}-{i:02}-{id}.nemo_action")), format!("[Nemo Action]\nName={name}\nComment={name}\nExec={exec}\nIcon-Name={ICON}\nSelection=notnone\nExtensions=any;\nMimetypes=image/*;inode/directory;\n"))
         })
         .collect()
 }
@@ -221,7 +282,7 @@ pub fn thunar_merge(existing: Option<&str>, setup: Option<&Setup>) -> String {
             let cmd = std::iter::once(desktop_quote(&setup.program.to_string_lossy())).chain(args(action)).chain(["%F".to_string()]).collect::<Vec<_>>().join(" ");
             let name = if action.is_some() { format!("Wrangler: {label}") } else { label };
             add.push_str(&format!(
-                "<action>\n\t<icon>{MARK}</icon>\n\t<name>{}</name>\n\t<submenu></submenu>\n\t<unique-id>{MARK}-{}</unique-id>\n\t<command>{}</command>\n\t<description></description>\n\t<range>*</range>\n\t<patterns>*</patterns>\n\t<directories/>\n\t<image-files/>\n</action>\n",
+                "<action>\n\t<icon>{ICON}</icon>\n\t<name>{}</name>\n\t<submenu></submenu>\n\t<unique-id>{MARK}-{}</unique-id>\n\t<command>{}</command>\n\t<description></description>\n\t<range>*</range>\n\t<patterns>*</patterns>\n\t<directories/>\n\t<image-files/>\n</action>\n",
                 xml_escape(&name), xml_escape(&id), xml_escape(&cmd)
             ));
         }
@@ -517,6 +578,15 @@ fn remove_matching(dir: &Path, is_ours: impl Fn(&Path) -> bool) -> Result<()> {
     Ok(())
 }
 
+/// A file Wrangler named: every one of its action files starts with its mark.
+fn named_ours(p: &Path) -> bool {
+    p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with(MARK))
+}
+
+fn holds_ours(dir: &Path) -> bool {
+    fs::read_dir(dir).is_ok_and(|d| d.flatten().any(|e| named_ours(&e.path())))
+}
+
 fn file_mentions_mark(p: &Path) -> bool {
     fs::read_to_string(p).is_ok_and(|t| t.contains(MARK))
 }
@@ -526,6 +596,8 @@ pub fn install(target: Target, setup: &Setup) -> Result<Vec<PathBuf>> {
     match target {
         Target::Dolphin => write_all(&dolphin_files(setup), true),
         Target::Nautilus => write_all(&nautilus_files(setup), true),
+        Target::Caja => write_all(&caja_files(setup), true),
+        Target::Pcmanfm => write_all(&pcmanfm_files(setup), false),
         Target::Luciole => {
             // Luciole only runs scripts from a folder no one else can write to.
             let dir = luciole_dir();
@@ -547,7 +619,11 @@ pub fn install(target: Target, setup: &Setup) -> Result<Vec<PathBuf>> {
             if !cfg!(target_os = "macos") {
                 return Err(Error::Unavailable("Finder"));
             }
-            let files = write_all(&finder_files(setup), false)?;
+            let mut files = vec![finder::write_menu(&finder::dir(), setup)?];
+            let in_menu = finder::appex_for(&setup.program).is_some_and(|appex| finder::turn_on(&appex, setup.asked) == finder::State::On);
+            if !in_menu {
+                files.extend(write_all(&finder_files(setup), false)?);
+            }
             let _ = std::process::Command::new("/System/Library/CoreServices/pbs").arg("-flush").status();
             Ok(files)
         }
@@ -559,7 +635,9 @@ pub fn remove(target: Target) -> Result<()> {
     match target {
         Target::Dolphin => remove_matching(&home().join(".local/share/kio/servicemenus"), |p| p.file_name().is_some_and(|n| n == "img-wrangler.desktop")),
         Target::Nautilus => remove_matching(&home().join(".local/share/nautilus/scripts"), |p| p.file_name().is_some_and(|n| n == "Wrangler")),
-        Target::Nemo => remove_matching(&home().join(".local/share/nemo/actions"), |p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with(MARK))),
+        Target::Caja => remove_matching(&caja_dir(), |p| p.file_name().is_some_and(|n| n == "Wrangler")),
+        Target::Nemo => remove_matching(&home().join(".local/share/nemo/actions"), named_ours),
+        Target::Pcmanfm => remove_matching(&pcmanfm_dir(), named_ours),
         Target::Luciole => remove_matching(&luciole_dir(), |p| p.is_file() && file_mentions_mark(p)),
         Target::Thunar => {
             let path = thunar_path();
@@ -568,7 +646,10 @@ pub fn remove(target: Target) -> Result<()> {
                 _ => Ok(()),
             }
         }
-        Target::Finder => remove_matching(&finder_dir(), |p| p.extension().is_some_and(|x| x == "workflow") && file_mentions_mark(&p.join("Contents/document.wflow"))),
+        Target::Finder => {
+            finder::remove_menu(&finder::dir())?;
+            remove_matching(&finder_dir(), |p| p.extension().is_some_and(|x| x == "workflow") && file_mentions_mark(&p.join("Contents/document.wflow")))
+        }
         Target::Explorer => remove_explorer(),
     }
 }
@@ -577,11 +658,37 @@ pub fn installed(target: Target) -> bool {
     match target {
         Target::Dolphin => home().join(".local/share/kio/servicemenus/img-wrangler.desktop").exists(),
         Target::Nautilus => home().join(".local/share/nautilus/scripts/Wrangler").exists(),
-        Target::Nemo => fs::read_dir(home().join(".local/share/nemo/actions")).is_ok_and(|d| d.flatten().any(|e| e.file_name().to_string_lossy().starts_with(MARK))),
+        Target::Caja => caja_dir().join("Wrangler").exists(),
+        Target::Nemo => holds_ours(&home().join(".local/share/nemo/actions")),
+        Target::Pcmanfm => holds_ours(&pcmanfm_dir()),
         Target::Thunar => file_mentions_mark(&thunar_path()),
         Target::Luciole => fs::read_dir(luciole_dir()).is_ok_and(|d| d.flatten().any(|e| file_mentions_mark(&e.path()))),
-        Target::Finder => fs::read_dir(finder_dir()).is_ok_and(|d| d.flatten().any(|e| file_mentions_mark(&e.path().join("Contents/document.wflow")))),
+        Target::Finder => finder_in_menu() || finder_quick_actions(),
         Target::Explorer => explorer_installed(),
+    }
+}
+
+fn finder_in_menu() -> bool {
+    finder::dir().join("menu.json").exists() && finder::state() == finder::State::On
+}
+
+fn finder_quick_actions() -> bool {
+    fs::read_dir(finder_dir()).is_ok_and(|d| d.flatten().any(|e| file_mentions_mark(&e.path().join("Contents/document.wflow"))))
+}
+
+/// Where to find the menu, in a few words: each file manager puts it somewhere of its own, and
+/// Finder has two places. None when it isn't installed.
+pub fn where_it_shows(target: Target) -> Option<&'static str> {
+    match target {
+        Target::Finder if finder_in_menu() => Some("right-click, then Wrangler"),
+        Target::Finder if finder::state() == finder::State::Off => Some("turned off in System Settings, under Login Items & Extensions"),
+        Target::Finder if finder_quick_actions() => Some("right-click, then Quick Actions"),
+        _ if !installed(target) => None,
+        Target::Explorer => Some("right-click, then Wrangler (under Show more options on Windows 11)"),
+        Target::Dolphin | Target::Pcmanfm => Some("right-click, then Wrangler"),
+        Target::Nautilus | Target::Caja | Target::Luciole => Some("right-click, then Scripts"),
+        Target::Nemo | Target::Thunar => Some("right-click"),
+        Target::Finder => None,
     }
 }
 
@@ -632,14 +739,15 @@ mod tests {
     use super::*;
 
     fn setup() -> Setup {
-        Setup { program: PathBuf::from("/opt/Wrangler/wrangler"), actions: vec![QuickAction { id: "shopify-product".into(), label: "Shopify product".into() }] }
+        Setup { program: PathBuf::from("/opt/Wrangler/wrangler"), actions: vec![QuickAction { id: "shopify-product".into(), label: "Shopify product".into() }], extensions: vec!["jpg".into()], asked: true }
     }
 
     #[test]
     fn dolphin_service_menu() {
         let (path, text) = &dolphin_files(&setup())[0];
         assert!(path.ends_with(".local/share/kio/servicemenus/img-wrangler.desktop"));
-        assert!(text.contains("Actions=open;shopify-product;"));
+        assert!(text.contains("Actions=shopify-product;open;"));
+        assert!(text.contains("Icon=img-wrangler-app"));
         assert!(text.contains("X-KDE-Submenu=Wrangler"));
         assert!(text.contains("Exec=\"/opt/Wrangler/wrangler\" quick --recipe shopify-product %F"));
         assert!(text.contains("Exec=\"/opt/Wrangler/wrangler\" open %F"));
@@ -649,18 +757,40 @@ mod tests {
     fn nautilus_scripts_pass_selection() {
         let files = nautilus_files(&setup());
         assert_eq!(files.len(), 2);
-        assert!(files[1].0.ends_with("Wrangler/Shopify product"));
-        assert!(files[1].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
+        assert!(files[0].0.ends_with("Wrangler/Shopify product"));
+        assert!(files[0].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
+    }
+
+    #[test]
+    fn caja_scripts_sit_in_their_own_folder() {
+        let files = caja_files(&setup());
+        assert_eq!(files.len(), 2);
+        assert!(files[0].0.to_string_lossy().replace('\\', "/").ends_with("caja/scripts/Wrangler/Shopify product"));
+        assert!(files[1].0.ends_with("Wrangler/Open in Wrangler…"));
+        assert!(files[0].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
+    }
+
+    #[test]
+    fn pcmanfm_menu_lists_its_actions_in_order() {
+        let files = pcmanfm_files(&setup());
+        let name = |i: usize| files[i].0.to_string_lossy().replace('\\', "/");
+        assert!(name(0).ends_with("file-manager/actions/img-wrangler.desktop"));
+        assert!(files[0].1.contains("Type=Menu\nName=Wrangler\nTooltip=Wrangler\n"));
+        assert!(files[0].1.contains("ItemsList=img-wrangler-shopify-product;img-wrangler-open;"));
+        assert!(name(1).ends_with("img-wrangler-shopify-product.desktop"));
+        assert!(files[1].1.contains("Type=Action\nName=Shopify product\n"));
+        assert!(files[1].1.contains("[X-Action-Profile run]\nMimeTypes=image/*;inode/directory;\nExec=\"/opt/Wrangler/wrangler\" quick --recipe shopify-product %F\n"));
+        assert!(files[2].1.contains("Exec=\"/opt/Wrangler/wrangler\" open %F"));
     }
 
     #[test]
     fn luciole_scripts_pass_selection() {
         let files = luciole_files(&setup());
         assert_eq!(files.len(), 2);
-        assert!(files[0].0.to_string_lossy().replace('\\', "/").ends_with("luciole/scripts/Open in Wrangler…"));
-        assert!(files[1].0.ends_with("Wrangler: Shopify product"));
-        assert!(files[1].1.starts_with("#!/bin/sh\n"));
-        assert!(files[1].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
+        assert!(files[1].0.to_string_lossy().replace('\\', "/").ends_with("luciole/scripts/Open in Wrangler…"));
+        assert!(files[0].0.ends_with("Wrangler: Shopify product"));
+        assert!(files[0].1.starts_with("#!/bin/sh\n"));
+        assert!(files[0].1.contains("exec '/opt/Wrangler/wrangler' 'quick' '--recipe' 'shopify-product' \"$@\""));
     }
 
     #[test]
@@ -674,8 +804,11 @@ mod tests {
     #[test]
     fn nemo_actions() {
         let files = nemo_files(&setup());
-        assert!(files[1].1.contains("Name=Wrangler: Shopify product"));
-        assert!(files[1].1.contains("Mimetypes=image/*;inode/directory;"));
+        assert!(files[0].1.contains("Name=Wrangler: Shopify product"));
+        assert!(files[0].1.contains("Mimetypes=image/*;inode/directory;"));
+        // Numbered, because Nemo orders its menu by file name: recipes first, Open last.
+        let names: Vec<String> = files.iter().map(|f| f.0.file_name().unwrap().to_string_lossy().into_owned()).collect();
+        assert_eq!(names, ["img-wrangler-00-shopify-product.nemo_action", "img-wrangler-01-open.nemo_action"]);
     }
 
     #[test]
@@ -708,7 +841,7 @@ mod tests {
     #[test]
     fn explorer_cascading_menu() {
         let reg = explorer_reg_text(&setup());
-        assert!(reg.contains(r"[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\image\shell\Wrangler\shell\01-shopify-product\command]"));
+        assert!(reg.contains(r"[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\image\shell\Wrangler\shell\00-shopify-product\command]"));
         assert!(reg.contains(r#"@="\"/opt/Wrangler/wrangler\" quick --recipe shopify-product \"%1\"""#));
         assert!(reg.contains("\"MultiSelectModel\"=\"Player\""));
         assert!(reg.contains(r"Directory\shell\Wrangler"));

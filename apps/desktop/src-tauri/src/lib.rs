@@ -128,21 +128,39 @@ pub(crate) fn deliver(app: &tauri::AppHandle, launch: Launch) {
     }
 }
 
-/// Keep the right-click entries in step with this copy of the app (its path, and fixes to how
-/// they start it), without asking.
-fn refresh_integrations(app: &tauri::AppHandle) {
+/// The right-click menus, without asking. The first time Wrangler runs it puts itself in every
+/// file manager it finds, so it's there from the start. After that it only keeps the menus that
+/// are still there in step with this copy of the app (its path, the pinned recipes, fixes to how
+/// they start it), so menus someone removed stay removed.
+fn keep_menus_current(app: &tauri::AppHandle) {
     use wrangler_integrate as wi;
-    let Ok(program) = std::env::current_exe() else { return };
-    let targets: Vec<_> = wi::targets().into_iter().filter(|t| wi::installed(*t)).collect();
-    if targets.is_empty() {
-        return;
+    let mut s = settings::load(app);
+    let first_time = !s.menus_set_up;
+    let targets: Vec<_> = wi::targets().into_iter().filter(|t| first_time || wi::installed(*t)).collect();
+    if let Ok(setup) = settings::menu_setup(app, &s, false) {
+        for t in targets {
+            let _ = wi::install(t, &setup);
+        }
     }
-    let s = settings::load(app);
-    let actions = settings::pinned(app, &s).into_iter().map(|(id, label)| wi::QuickAction { id, label }).collect();
-    let setup = wi::Setup { program, actions };
-    for t in targets {
-        let _ = wi::install(t, &setup);
+    if first_time {
+        s.menus_set_up = true;
+        let _ = settings::save(app, &s);
     }
+}
+
+/// What was chosen in Finder's right-click menu since we last looked: each runs, or loads into
+/// the main window. True when there was something.
+fn finder_requests(app: &tauri::AppHandle) -> bool {
+    use wrangler_integrate::finder;
+    let requests = finder::take_requests(&finder::dir());
+    let any = !requests.is_empty();
+    for r in requests {
+        deliver(app, match r.recipe {
+            Some(recipe) => Launch::Quick { recipe, paths: r.paths },
+            None => Launch::Open(r.paths),
+        });
+    }
+    any
 }
 
 pub fn run() {
@@ -150,7 +168,7 @@ pub fn run() {
     let selftest = commands::SelfTestRun::from_args(&args);
     // Started at login: just the menu bar icon until someone asks for the window.
     let hidden = args.iter().any(|a| a == "--hidden");
-    let first = if selftest.is_some() || hidden { Launch::Plain } else { parse(&args) };
+    let first = if selftest.is_some() || hidden { Launch::Plain } else { parse(&args, &std::env::current_dir().unwrap_or_default()) };
     let state = AppState {
         dirs: AppDirs::detect(),
         sources: Mutex::new(Vec::new()),
@@ -172,8 +190,22 @@ pub fn run() {
     // leaves the window size alone.
     if state.selftest.is_none() {
         builder = builder
-            .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| deliver(app, parse(&argv))))
-            .plugin(tauri_plugin_window_state::Builder::default().with_denylist(&["quick"]).build());
+            // A second start hands its request to this copy, with the folder it came from. A
+            // second start at login (`--hidden`) asks for nothing.
+            .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+                if !argv.iter().any(|a| a == "--hidden") {
+                    deliver(app, parse(&argv, std::path::Path::new(&cwd)));
+                }
+            }))
+            // The window comes back where it was left, but whether it shows is ours to say
+            // (`window_ready`): left to the plugin, the main window would open behind every
+            // quick action and at login.
+            .plugin(
+                tauri_plugin_window_state::Builder::default()
+                    .with_denylist(&["quick"])
+                    .with_state_flags(tauri_plugin_window_state::StateFlags::all() - tauri_plugin_window_state::StateFlags::VISIBLE)
+                    .build(),
+            );
     }
     builder
         .plugin(tauri_plugin_dialog::init())
@@ -212,6 +244,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::formats,
+            commands::image_extensions,
             commands::recipes,
             commands::load_recipe,
             commands::save_recipe,
@@ -231,7 +264,8 @@ pub fn run() {
             commands::history,
             commands::take_launch,
             commands::integrations,
-            commands::set_integrations,
+            commands::set_menus,
+            commands::set_pins,
             commands::app_settings,
             commands::set_app_settings,
             commands::set_drop_recipe,
@@ -255,12 +289,15 @@ pub fn run() {
             if !selftest {
                 updates::watch(handle.clone());
                 let h = handle.clone();
-                std::thread::spawn(move || refresh_integrations(&h));
+                std::thread::spawn(move || keep_menus_current(&h));
             }
+            // Started from Finder's menu, there's a request waiting: run that, and leave the main
+            // window out of it.
+            let from_finder = cfg!(target_os = "macos") && !selftest && finder_requests(&handle);
             if hidden {
                 #[cfg(target_os = "macos")]
                 let _ = handle.set_dock_visibility(false);
-            } else {
+            } else if !from_finder || first != Launch::Plain {
                 deliver(&handle, first.clone());
             }
             Ok(())
@@ -302,8 +339,13 @@ pub fn run() {
         .run(|_app, _event| {
             #[cfg(target_os = "macos")]
             match _event {
-                // Files from Open With and the Dock icon arrive as an event, not arguments.
+                // Files from Open With and the Dock icon arrive as an event, not arguments. So does
+                // the Finder extension's wake-up call, which carries nothing: what was chosen is
+                // in its request files.
                 tauri::RunEvent::Opened { urls } => {
+                    if urls.iter().any(|u| u.scheme() == wrangler_integrate::finder::SCHEME) {
+                        finder_requests(_app);
+                    }
                     let paths: Vec<PathBuf> = urls.iter().filter_map(|u| u.to_file_path().ok()).collect();
                     if !paths.is_empty() {
                         deliver(_app, Launch::Open(paths));

@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
   The bars are the looks, each as tall as the file it would make for the selected image. Press a
-  bar to choose it; drag the red line to set a size limit. -->
+  bar to choose it. With Max size on, drag the red line to set the limit, or press its label to
+  type one. -->
 <script lang="ts">
   import { batch } from '$lib/state/batch.svelte';
   import { catalog } from '$lib/state/catalog.svelte';
@@ -29,22 +30,47 @@
   const here = $derived(item ? batch.outBytes(item) : null);
 
   let chart: HTMLDivElement;
+  let typing = $state(false);
+  let field: HTMLInputElement | undefined = $state();
+
+  function startTyping() {
+    typing = true;
+    queueMicrotask(() => { field?.focus(); field?.select(); });
+  }
+  function finish(apply: boolean) {
+    if (!typing) return;
+    const v = Number(field?.value);
+    if (apply && v >= 10) q.max_kb = Math.round(v);
+    typing = false;
+  }
+
   function drag(e: PointerEvent) {
+    if (typing) return;
     const el = e.currentTarget as HTMLElement;
     el.focus();
     el.setPointerCapture(e.pointerId);
+    const from = e.clientY;
+    let moved = false;
     // Hold the scale still while dragging, or raising the line would stretch the chart under it.
     const scaleKb = max;
     const set = (ev: PointerEvent) => {
+      if (!moved && Math.abs(ev.clientY - from) < 3) return;
+      moved = true;
       const r = chart.getBoundingClientRect();
       const kb = ((r.bottom - 16 - ev.clientY) / H) * scaleKb;
       q.max_kb = Math.max(10, Math.min(Math.round(scaleKb), Math.round(kb / 10) * 10));
     };
     const move = (ev: Event) => set(ev as PointerEvent);
     el.addEventListener('pointermove', move);
-    el.addEventListener('pointerup', () => el.removeEventListener('pointermove', move), { once: true });
+    // A press without a drag, on the label: type the limit instead.
+    el.addEventListener('pointerup', ev => {
+      el.removeEventListener('pointermove', move);
+      if (!moved && (ev.target as Element).closest('.limit__label')) startTyping();
+    }, { once: true });
   }
   function limitKey(e: KeyboardEvent) {
+    if (typing) return;
+    if (e.key === 'Enter') { e.preventDefault(); startTyping(); return; }
     const d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 10, PageDown: -10 }[e.key];
     if (!d || q.max_kb == null) return;
     e.preventDefault();
@@ -54,8 +80,7 @@
 
 <div class="w-qual">
   <div class="qtop">
-    <span class="here">{lossless ? q.look : here ? `≈${Math.round(here / 1000)} KB here` : typeof q.look === 'number' ? `quality ${q.look}` : '--'}</span>
-    <button type="button" class="nb" aria-pressed={q.never_bigger} onclick={() => (q.never_bigger = !q.never_bigger)} title="Keep the original when the new file wouldn't be smaller">{q.never_bigger ? '✓ ' : ''}never bigger</button>
+    <span class="here">{lossless ? q.look : here ? `≈${Math.round(here / 1000)} KB this image` : typeof q.look === 'number' ? `quality ${q.look}` : '--'}</span>
   </div>
   <div class="chart" bind:this={chart} role="radiogroup" aria-label="Look">
     {#each LOOKS as look, i (look.id)}
@@ -71,9 +96,16 @@
       </button>
     {/each}
     {#if q.max_kb != null && !lossless}
-      <span class="limit" role="slider" tabindex="0" aria-orientation="vertical" aria-label="Size limit. Drag it or use the arrow keys"
+      <span class="limit" data-overlay role="slider" tabindex="0" aria-orientation="vertical" aria-label="Size limit. Drag it, use the arrow keys, or press Enter to type"
         aria-valuemin="10" aria-valuemax="20000" aria-valuenow={q.max_kb} aria-valuetext="{q.max_kb} KB"
-        style:bottom="calc(16px + {h(q.max_kb)}px)" onpointerdown={drag} onkeydown={limitKey}><span>max {q.max_kb} KB</span></span>
+        style:bottom="calc(16px + {h(q.max_kb)}px)" onpointerdown={drag} onkeydown={limitKey}>
+        {#if typing}
+          <span class="limit__label">max <input bind:this={field} type="number" min="10" step="10" value={q.max_kb} aria-label="Size limit in kilobytes. Enter to apply"
+            onkeydown={e => { e.stopPropagation(); if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); }} onblur={() => finish(true)} onpointerdown={e => e.stopPropagation()} /> KB</span>
+        {:else}
+          <span class="limit__label" title="Press to type a limit">max {q.max_kb} KB</span>
+        {/if}
+      </span>
     {/if}
   </div>
 </div>
@@ -82,9 +114,6 @@
   .w-qual { position: relative; height: 100%; min-width: 0; display: grid; grid-template-rows: auto 1fr; --inset: 22px; }
   .here { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .qtop { display: flex; justify-content: space-between; gap: 6px; font-size: 10.5px; color: var(--screen-2); white-space: nowrap; }
-  .nb { all: unset; cursor: pointer; color: var(--screen-2); border-radius: 2px; }
-  .nb[aria-pressed='false'] { color: var(--screen-3); text-decoration: line-through; }
-  .nb:focus-visible { outline: var(--focus-on-screen); }
   .chart { position: relative; }
   .chart button { all: unset; position: absolute; bottom: 0; top: 0; width: 46px; margin-left: -23px; left: calc(var(--inset) + (100% - 2 * var(--inset)) * var(--at));
     cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; }
@@ -99,8 +128,6 @@
   .chart button[aria-checked='true'] .kb, .chart button[aria-checked='true'] .lab { color: var(--accent-quality); }
   @container channel (max-width: 210px) {
     .w-qual { --inset: 18px; }
-    .here { display: none; }
-    .qtop { justify-content: flex-end; }
     .chart button { width: 36px; margin-left: -18px; }
     .bar { width: 18px; }
     .lab { visibility: hidden; }
@@ -108,8 +135,9 @@
   }
   .limit { position: absolute; left: -4px; right: -4px; height: 9px; margin-bottom: -4px; cursor: ns-resize; touch-action: none; z-index: 2; }
   .limit::before { content: ''; position: absolute; left: 0; right: 0; top: 4px; border-top: 1px dashed var(--status-alarm); }
-  .limit span { position: absolute; left: 0; top: -12px; font-size: 10.5px; color: var(--status-alarm); background: var(--surface-screen); padding: 0 3px; }
+  .limit__label { position: absolute; left: 0; top: -12px; font-size: 10.5px; color: var(--status-alarm); background: var(--surface-screen); padding: 0 3px; cursor: text; white-space: nowrap; }
+  .limit__label input { all: unset; width: 5ch; font: inherit; color: var(--screen-1); box-shadow: 0 1px 0 var(--status-alarm); -webkit-user-select: text; user-select: text; }
   .limit:hover::before, .limit:focus-visible::before { border-top-style: solid; }
   .limit:focus-visible { outline: none; }
-  .limit:focus-visible span { outline: var(--focus-on-screen); }
+  .limit:focus-visible .limit__label { outline: var(--focus-on-screen); }
 </style>

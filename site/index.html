@@ -151,7 +151,7 @@
             </div>
             <div role="tabpanel" aria-labelledby="tab-mac" id="panel">
               <p class="sys glow" id="sys">macOS</p>
-              <p class="sys-line" id="sys-line">One app for every Mac, Apple silicon and Intel. macOS 11 or later.</p>
+              <p class="sys-line" id="sys-line">One app for every Mac, Apple silicon and Intel. macOS 13 or later.</p>
               <p class="meta" id="meta">Newest release on GitHub</p>
             </div>
           </div>
@@ -184,7 +184,7 @@
       </section>
 
       <figure>
-        <img src="demo.webp" width="1080" height="675" loading="lazy" alt="The Wrangler window: photos are added, the Email safe recipe is chosen, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
+        <img src="demo.webp" width="1080" height="675" loading="lazy" alt="The Wrangler window: photos are added, the Email safe recipe is chosen from the list, Sharpen is switched on, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
         <figcaption>Add photos, pick a recipe, drag the size frame, press Run. Every file shows its new name, size and weight before anything is written. Recorded from the app's browser preview with sample photos.</figcaption>
       </figure>
 
@@ -223,7 +223,7 @@ img-wrangler undo</code></pre>
     // what each system offers. `file` picks the main download from the release's assets.
     const SYSTEMS = {
       mac: {
-        name: 'macOS', line: 'One app for every Mac, Apple silicon and Intel. macOS 11 or later.',
+        name: 'macOS', line: 'One app for every Mac, Apple silicon and Intel. macOS 13 or later.',
         // releases before 0.1.0-alpha.2 had one .dmg per chip. Safari on Apple silicon still says
         // "Intel Mac", so unless the browser says otherwise, assume a current Mac.
         file: (a, arch) => find(a, /_universal\.dmg$/) || find(a, arch === 'x86' ? /_x64\.dmg$/ : /_aarch64\.dmg$/),

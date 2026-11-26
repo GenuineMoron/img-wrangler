@@ -37,7 +37,7 @@
 
   const modes: { id: Exclude<View, 'auto'>; label: string; title?: string }[] = $derived([
     { id: 'result', label: 'RESULT' }, { id: 'original', label: 'ORIGINAL' },
-    { id: 'split', label: 'SPLIT', title: reframes ? 'Split lines up best when framing is unchanged' : undefined },
+    { id: 'split', label: 'COMPARE', title: reframes ? 'Before and after line up best when the framing is unchanged' : 'Drag across the picture to compare before and after' },
   ]);
   const fmt = $derived(p ? catalog.info(p.format) : item ? catalog.info(item.format) : null);
 </script>
@@ -104,7 +104,9 @@
 
 <style>
   .mon { padding: var(--sp-7); display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: var(--sp-5); min-height: 0; position: relative; z-index: 4; }
-  .view { position: relative; width: 100%; height: 100%; min-height: 160px; border-radius: var(--r-chip); overflow: hidden; background: #111; cursor: zoom-in; outline-offset: 2px; }
+  /* No minimum height: the picture's box is sized from this one, and a minimum taller than the
+     space it gets leaves that box with nothing. */
+  .view { position: relative; width: 100%; height: 100%; border-radius: var(--r-chip); overflow: hidden; background: #111; cursor: zoom-in; outline-offset: 2px; }
   .view.zoom { cursor: zoom-out; }
   .view.split { cursor: ew-resize; touch-action: none; }
   .view.busy img { opacity: .82; transition: opacity 200ms; }

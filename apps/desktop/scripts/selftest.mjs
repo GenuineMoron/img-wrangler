@@ -163,14 +163,16 @@ async function runBrowser() {
           await p.screenshot({ path: path.join(shots, `main-${w}x${h}.png`) });
           report.layout.push(...(await p.evaluate(() => window.__wrangler.layoutHere())));
           if (w === 1440) {
-            const states = await p.evaluate(() => [...document.querySelectorAll('[id^="step-"]')].map(e => e.id.slice(5)));
+            // Each module's further settings, opened from its own control.
+            const states = await p.evaluate(() => [...document.querySelectorAll('[id^="more-"]')].map(e => e.id.slice(5)));
             for (const s of states) {
-              await p.evaluate(id => (window.__wrangler.ui.step = id), s);
-              await p.waitForTimeout(250);
-              await p.screenshot({ path: path.join(shots, `step-${s}.png`) });
+              await p.click(`#more-${s}`);
+              await p.waitForTimeout(300);
+              await p.screenshot({ path: path.join(shots, `more-${s}.png`) });
+              await p.keyboard.press('Escape');
             }
-            await p.evaluate(() => (window.__wrangler.ui.step = null));
-            for (const d of ['settings', 'history', 'recipes', 'palette']) {
+            await p.evaluate(() => (window.__wrangler.ui.more = null));
+            for (const d of ['settings', 'history', 'recipes']) {
               await p.evaluate(id => (window.__wrangler.ui.dialog = id), d);
               await p.waitForTimeout(300);
               await p.screenshot({ path: path.join(shots, `dialog-${d}.png`) });

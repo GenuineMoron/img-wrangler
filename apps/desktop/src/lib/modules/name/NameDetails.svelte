@@ -48,16 +48,25 @@
       </div>
     </Row>
   {/if}
+  {#if r.mode === 'replace' && r.replace[0]}
+    <Row label="Find as" note="A pattern is a regular expression, like IMG_(\d+).">
+      <Key label="Pattern" pressed={r.replace[0].regex} onclick={() => (r.replace[0].regex = !r.replace[0].regex)} />
+    </Row>
+  {/if}
   {#if r.mode === 'pattern' || r.mode === 'replace'}
-    <Row label="Replace" wide note={r.mode === 'pattern' ? 'Applied to the original name before {name} is used.' : undefined}>
+    <!-- In Replace, the first find and replace is typed on the Name screen. These come after it. -->
+    {@const from = r.mode === 'replace' ? 1 : 0}
+    <Row label={from ? 'Then replace' : 'Replace'} wide note={r.mode === 'pattern' ? 'Applied to the original name before {name} is used.' : undefined}>
       <div class="rules">
         {#each r.replace as rule, i (i)}
-          <div class="rule">
-            <Field label="Find" placeholder="find" bind:value={rule.find} />
-            <Field label="Replace with" placeholder="with" bind:value={rule.with} />
-            <Key label=".*" pressed={rule.regex} aria-label="Regular expression" onclick={() => (rule.regex = !rule.regex)} />
-            <Key icon="x" aria-label="Remove this rule" onclick={() => r.replace.splice(i, 1)} />
-          </div>
+          {#if i >= from}
+            <div class="rule">
+              <Field label="Find" placeholder="find" bind:value={rule.find} />
+              <Field label="Replace with" placeholder="with" bind:value={rule.with} />
+              <Key label=".*" pressed={rule.regex} aria-label="Find as a pattern (regular expression)" onclick={() => (rule.regex = !rule.regex)} />
+              <Key icon="x" aria-label="Remove this rule" onclick={() => r.replace.splice(i, 1)} />
+            </div>
+          {/if}
         {/each}
         <Key insert label="Rule" onclick={() => r.replace.push({ find: '', with: '', regex: false, ignore_case: false })} />
       </div>

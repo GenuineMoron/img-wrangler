@@ -2,13 +2,14 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Wrangler",
   "mainBinaryName": "img-wrangler-app",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "identifier": "com.genuinemoron.wrangler",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist",
+    "beforeBundleCommand": "node scripts/finder-extension.mjs"
   },
   "app": {
     "windows": [
@@ -76,7 +77,10 @@
     ],
     "macOS": {
       "signingIdentity": "-",
-      "minimumSystemVersion": "11.0"
+      "minimumSystemVersion": "13.0",
+      "files": {
+        "PlugIns/WranglerFinder.appex": "gen/finder/WranglerFinder.appex"
+      }
     },
     "linux": {
       "deb": {

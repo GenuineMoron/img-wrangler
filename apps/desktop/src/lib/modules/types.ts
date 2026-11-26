@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // What a module is, to the UI. A module is one step of a recipe (Size, Format, Rotate…).
-// Core modules are always in a recipe; add-ons are added and removed. See docs/MODULES.md.
+// Core modules are always in a recipe; add-ons are switched on and off. See docs/MODULES.md.
+//
+// Where a module shows follows from what it declares, and every setting has one home:
+// - a `channel`: one of the screens under the display, with its keys;
+// - `dock: 'output'`: its everyday keys are on the Output panel;
+// - neither: a key in the row of steps.
+// `Details` are the rest of its settings. They open in a panel right above wherever it shows.
 
 import type { Component } from 'svelte';
 import type { IconName } from '$lib/components/icons';
@@ -12,7 +18,7 @@ export type Accent = 'size' | 'format' | 'quality' | 'name' | 'trim' | 'canvas' 
 interface Base {
   id: string;
   label: string;
-  /** One line on what it does: the Add menu and tooltips. */
+  /** One line on what it does, for tooltips. */
   blurb: string;
   icon: IconName;
   accent: Accent;
@@ -21,16 +27,18 @@ interface Base {
   order: number;
   /** Whether these settings change anything. */
   active(r: Recipe): boolean;
-  /** A few words for the panel row and the channel header. */
+  /** A few words on what it's set to, shown on its key or header. */
   summary(r: Recipe): string;
 }
 
 export interface CoreModule extends Base {
   kind: 'core';
-  /** Settings beyond the channel, shown when its row in the Recipe panel opens. */
+  /** The rest of its settings, opened from its header or key. */
   Details?: Component;
   /** A channel in the strip under the display. `slot` 1-4 is also its number key. */
   channel?: { slot: number; glyph: string; Screen: Component; Keys: Component };
+  /** Its everyday keys live on the Output panel, which also opens its Details. */
+  dock?: 'output';
 }
 
 export interface AddOnModule<K extends AddOn['kind'] = AddOn['kind']> extends Base {

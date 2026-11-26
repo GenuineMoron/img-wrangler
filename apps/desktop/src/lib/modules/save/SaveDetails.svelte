@@ -4,15 +4,9 @@
   import Key from '$lib/components/Key.svelte';
   import KeyGroup from '$lib/components/KeyGroup.svelte';
   import Row from '$lib/components/Row.svelte';
-  import { backend } from '$lib/ipc';
   import { recipe } from '$lib/state/recipe.svelte';
 
   const d = $derived(recipe.value!.destination);
-
-  async function choose() {
-    const f = await backend.pickFolder();
-    if (f) { d.folder = f; d.mode = 'folder'; }
-  }
 </script>
 
 <div class="details">
@@ -25,9 +19,8 @@
       <Field label="Subfolder name" value={d.folder ?? 'Wrangled'} oninput={e => (d.folder = e.currentTarget.value || 'Wrangled')} />
     </Row>
   {:else if d.mode === 'folder'}
-    <Row label="Folder" note="Subfolders are kept inside it.">
-      <Field label="Folder to save into" value={d.folder ?? ''} readonly placeholder="choose…" />
-      <Key icon="folder" label="Choose" onclick={choose} />
+    <Row label="Folder" note="Subfolders are kept inside it. Press Folder… again to choose another.">
+      <Field label="Folder to save into" value={d.folder ?? ''} readonly />
     </Row>
   {:else}
     <p class="note">Originals are replaced in place. They stay in the undo store for 30 days.</p>

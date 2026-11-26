@@ -1,6 +1,8 @@
 # Adding a feature
 
-Every feature is a module. A module has an engine half (Rust) and an app half (Svelte), and each half is registered in one list. Nothing else changes: the recipe panel, the processing-order display, the CLI and quick actions pick it up from the registries.
+Every feature is a module. A module has an engine half (Rust) and an app half (Svelte), and each half is registered in one list. Nothing else changes: the window, the CLI and the right-click actions pick it up from the registries.
+
+**Every setting has one home.** A module shows in one place, decided by what it declares: a screen under the display (`channel`), a key in the row of steps (the default), or the Output panel (`dock: 'output'`). Its further settings (`Details`) open in a panel right above that place. Don't put the same setting in two places. If a screen already sets something, its `Details` leaves it out.
 
 ## Add-on module (the watermark is a worked example)
 
@@ -30,7 +32,7 @@ Every feature is a module. A module has an engine half (Rust) and an app half (S
    export default watermark;
    ```
 3. `WatermarkDetails.svelte` takes `{ value }` (the add-on's settings, edited in place) and is built from the shared components (`Row`, `Key`, `KeyGroup`, `Slider`, `Field`, `ColourKey`, `AnchorPad`).
-4. Add it to `MODULES` in `apps/desktop/src/lib/modules/registry.ts`. It now appears under Add step, in the Recipe panel in run order, and in the command palette.
+4. Add it to `MODULES` in `apps/desktop/src/lib/modules/registry.ts`. It now has a key in the row of steps, in run order. Pressing the key switches it on and opens its settings, with an On switch in the header.
 
 **CLI**: add-ons are read from recipe files automatically. Add a flag in `crates/cli` only if it is common enough to deserve one.
 
@@ -40,7 +42,7 @@ Every feature is a module. A module has an engine half (Rust) and an app half (S
 3. Round-trip test. The app shows it under Format › More with no UI change.
 
 ## Core modules
-Core modules are always in a recipe: Files, Size, Format, Quality, Metadata, Name and Save. A core module may have a channel (`channel: { slot, glyph, Screen, Keys }`) for the everyday controls and `Details` for the rest. Size, Format, Quality and Name have channels, in slots 1 to 4 (also their number keys). A channel screen is the control itself: draw it with `ScreenChoice`, drag handles and typed values rather than a picture beside separate inputs.
+Core modules are always in a recipe: Files, Size, Format, Quality, Metadata, Name and Save. A core module may have a channel (`channel: { slot, glyph, Screen, Keys }`) for the everyday controls and `Details` for the rest, which open from the channel's header. Size, Format, Quality and Name have channels, in slots 1 to 4 (also their number keys). A channel screen is the control itself: draw it with `ScreenChoice`, drag handles and typed values rather than a picture beside separate inputs. Files and Metadata have no channel, so they're keys in the row of steps. Save is docked on the Output panel, which holds its four places as keys.
 
 The four channels have fixed places in the strip. Change their settings structs and components freely, but keep the recipe backward compatible: new fields need defaults, and removing a field means bumping `RECIPE_VERSION` with a migration in `recipe.rs`.
 
@@ -51,3 +53,4 @@ The four channels have fixed places in the strip. Change their settings structs 
 - `apply` never does IO.
 - One accent colour per module, from the tokens, and a glyph so colour is never the only cue.
 - Every control is keyboard reachable with a visible label or `aria-label`.
+- It fits: `pnpm selftest browser --strict` opens every module's settings in each mode and fails on cut-off or overlapping controls. Add your module's modes to `moreStates` in `src/lib/selftest/index.ts` if it has rows that only show in some.

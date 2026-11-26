@@ -34,11 +34,11 @@
       <input bind:value={r.replace[0].with} aria-label="Replace with" placeholder="with" spellcheck="false" autocomplete="off" />
     </div>
   {:else if r.mode === 'list'}
-    <div class="pat"><button type="button" class="paste" onclick={() => ui.reveal('name')}>{lines && batch.plan ? `${batch.items.length - batch.plan.unlisted} of ${batch.items.length} from your list ›` : 'paste a list or spreadsheet ›'}</button></div>
+    <div class="pat"><button type="button" class="paste" onclick={() => (ui.more = 'name')}>{lines && batch.plan ? `${batch.items.length - batch.plan.unlisted} of ${batch.items.length} from your list ›` : 'paste a list or spreadsheet ›'}</button></div>
   {:else}
     <div class="pat"><span class="scr-label">names stay as they are</span></div>
   {/if}
-  <div class="preview" aria-live="polite">
+  <div class="preview" aria-live="polite" data-long>
     {#if item}
       <span class="src">{fileName(item.source)}</span>
       <span class="out glow">→ {fileName(item.output)}</span>
@@ -60,9 +60,10 @@
 </div>
 
 <style>
-  .w-name { display: grid; grid-template-rows: auto 1fr auto; gap: 6px; height: 100%; font-size: var(--fs-small); --accent: var(--accent-name); }
+  .w-name { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; gap: 6px; height: 100%; font-size: var(--fs-small); --accent: var(--accent-name); }
   .pat { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--screen-line); padding-bottom: 5px; min-height: 24px; text-wrap: balance; }
-  .pat input { all: unset; flex: 1; min-width: 0; font: 12.5px/1.4 var(--font-data); color: var(--screen-1); }
+  /* width 0 and grow: an input's own width would push the screen wider than its channel */
+  .pat input { all: unset; flex: 1 1 0; width: 0; min-width: 0; font: 12.5px/1.4 var(--font-data); color: var(--screen-1); }
   .pat input::placeholder { color: var(--screen-3); }
   .pat input:focus-visible { box-shadow: 0 1px 0 var(--accent-name); }
   .pat.two span { color: var(--screen-3); }

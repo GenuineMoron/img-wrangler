@@ -81,8 +81,8 @@ export function audit(): Issue[] {
     if (!clips(s) || scrolls(s)) continue;
     if (overX > 1 || overY > 2) {
       const ellipsis = s.textOverflow === 'ellipsis' && overX > 1;
-      // File names, folders and recipe names are the person's own and can be any length, so
-      // they're allowed to end in an ellipsis (marked data-long). Labels aren't.
+      // File names, folders, recipe names and one-line summaries can be any length, so they're
+      // allowed to end in an ellipsis (marked data-long). Labels aren't.
       if (ellipsis && el.closest('[data-long]')) continue;
       issues.push({ kind: ellipsis ? 'truncated' : 'clipped', where: describe(el), text: short(text), by: Math.max(overX, overY) });
     }
@@ -91,6 +91,7 @@ export function audit(): Issue[] {
   // Controls and labels that spill out of a panel that clips them.
   for (const el of shown) {
     if (!el.matches(INTERACTIVE) && !ownText(el)) continue;
+    if (el.closest('[data-long]')) continue;
     const r = el.getBoundingClientRect();
     for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
       const s = getComputedStyle(p);
@@ -103,13 +104,17 @@ export function audit(): Issue[] {
     }
   }
 
-  // Controls overlapping each other (not one inside the other), as far as they can be seen.
+  // Controls overlapping each other (not one inside the other), as far as they can be seen. A
+  // popover covers what's under it on purpose, so only controls on the same layer count.
   const visibleControls = shown.filter(el => el.matches(INTERACTIVE) && !el.closest('.sheet')).map(el => [el, visiblePart(el)] as const).filter(([, r]) => r);
   const controls = visibleControls.map(([el]) => el);
   const rects = visibleControls.map(([, r]) => r!);
   for (let i = 0; i < controls.length; i++) {
     for (let j = i + 1; j < controls.length; j++) {
       if (controls[i].contains(controls[j]) || controls[j].contains(controls[i])) continue;
+      if (controls[i].closest('.popover') !== controls[j].closest('.popover')) continue;
+      // Drawn across other controls on purpose (the size limit line across the quality bars).
+      if (controls[i].closest('[data-overlay]') || controls[j].closest('[data-overlay]')) continue;
       const a = rects[i], b = rects[j];
       const w = Math.min(a.right, b.right) - Math.max(a.left, b.left), h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
       if (w > 2 && h > 2) issues.push({ kind: 'overlap', where: `${describe(controls[i])}  ×  ${describe(controls[j])}`, text: short(controls[i].textContent || controls[i].getAttribute('aria-label')), by: Math.round(Math.min(w, h)) });

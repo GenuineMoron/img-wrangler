@@ -9,7 +9,10 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
 import { CheckMenuItem, Menu, MenuItem, PredefinedMenuItem } from '@tauri-apps/api/menu';
 import type { Preview, RunEvent, UpdateInfo } from '$lib/types';
-import { IMAGE_EXTENSIONS, type Backend } from './backend';
+import type { Backend } from './backend';
+
+/** Every extension the engine reads, for the file pickers. Asked once. */
+const extensions = invoke<string[]>('image_extensions');
 
 const shown = (token: string) => convertFileSrc(token, 'preview');
 
@@ -66,7 +69,7 @@ export const tauri: Backend = {
   async pick(kind) {
     const r = await open(kind === 'folder'
       ? { directory: true, multiple: true, title: 'Add folders' }
-      : { multiple: true, title: 'Add images', filters: [{ name: 'Images', extensions: IMAGE_EXTENSIONS }] });
+      : { multiple: true, title: 'Add images', filters: [{ name: 'Images', extensions: await extensions }] });
     return r == null ? [] : Array.isArray(r) ? r : [r];
   },
   async pickFolder() {
@@ -74,7 +77,7 @@ export const tauri: Backend = {
     return typeof r === 'string' ? r : null;
   },
   async pickImage() {
-    const r = await open({ multiple: false, title: 'Choose a logo', filters: [{ name: 'Images', extensions: IMAGE_EXTENSIONS }] });
+    const r = await open({ multiple: false, title: 'Choose a logo', filters: [{ name: 'Images', extensions: await extensions }] });
     return typeof r === 'string' ? r : null;
   },
   reveal: path => revealItemInDir(path),
@@ -83,7 +86,8 @@ export const tauri: Backend = {
   thumbUrl: path => `${convertFileSrc(path, 'thumb')}?size=${devicePixelRatio > 1.25 ? 384 : 256}`,
 
   integrations: () => invoke('integrations'),
-  setIntegrations: (install, pins) => invoke('set_integrations', { install, pins }),
+  setMenus: on => invoke('set_menus', { on }),
+  setPins: pins => invoke('set_pins', { pins }),
 
   appSettings: () => invoke('app_settings'),
   setAppSettings: s => invoke('set_app_settings', s),

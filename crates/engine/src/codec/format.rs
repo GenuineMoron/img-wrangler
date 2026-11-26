@@ -28,6 +28,24 @@ pub enum Format {
     Heic,
 }
 
+/// The extensions of every format Wrangler reads.
+const EXTENSIONS: &[(&str, Format)] = &[
+    ("jpg", Format::Jpeg), ("jpeg", Format::Jpeg), ("jpe", Format::Jpeg), ("jfif", Format::Jpeg),
+    ("png", Format::Png), ("apng", Format::Png),
+    ("webp", Format::Webp),
+    ("avif", Format::Avif),
+    ("gif", Format::Gif),
+    ("tif", Format::Tiff), ("tiff", Format::Tiff),
+    ("bmp", Format::Bmp), ("dib", Format::Bmp),
+    ("ico", Format::Ico),
+    ("qoi", Format::Qoi),
+    ("tga", Format::Tga),
+    ("pbm", Format::Pnm), ("pgm", Format::Pnm), ("ppm", Format::Pnm), ("pnm", Format::Pnm), ("pam", Format::Pnm),
+    ("jxl", Format::Jxl),
+    ("svg", Format::Svg),
+    ("heic", Format::Heic), ("heif", Format::Heic), ("hif", Format::Heic),
+];
+
 impl Format {
     pub const ALL: [Format; 14] = [
         Format::Jpeg,
@@ -47,23 +65,13 @@ impl Format {
     ];
 
     pub fn from_extension(ext: &str) -> Option<Format> {
-        Some(match ext.to_ascii_lowercase().as_str() {
-            "jpg" | "jpeg" | "jpe" | "jfif" => Format::Jpeg,
-            "png" | "apng" => Format::Png,
-            "webp" => Format::Webp,
-            "avif" => Format::Avif,
-            "gif" => Format::Gif,
-            "tif" | "tiff" => Format::Tiff,
-            "bmp" | "dib" => Format::Bmp,
-            "ico" => Format::Ico,
-            "qoi" => Format::Qoi,
-            "tga" => Format::Tga,
-            "pbm" | "pgm" | "ppm" | "pnm" | "pam" => Format::Pnm,
-            "jxl" => Format::Jxl,
-            "svg" => Format::Svg,
-            "heic" | "heif" | "hif" => Format::Heic,
-            _ => return None,
-        })
+        let ext = ext.to_ascii_lowercase();
+        EXTENSIONS.iter().find(|(e, _)| *e == ext).map(|(_, f)| *f)
+    }
+
+    /// Every file extension Wrangler reads, lower case: for file pickers and file managers.
+    pub fn extensions() -> Vec<&'static str> {
+        EXTENSIONS.iter().map(|(e, _)| *e).collect()
     }
 
     pub fn from_path(path: &Path) -> Option<Format> {

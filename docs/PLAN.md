@@ -26,15 +26,16 @@ Milestones in build order. Each one ends working and tested, so the project is u
 - [x] Tauri host: commands, events, `thumb://` and `preview://`, single instance, window state
 - [x] Svelte front end: design system, generic components, module registry, stores, typed IPC, mock backend
 - [x] Main window: header, display (sheet, monitor, tabs, hints), channel strip, recipe panel, output panel
-- [x] Keyboard model and command palette
+- [x] Keyboard model (the command palette was removed in 0.1.0-alpha.4: it repeated every visible control)
 - [ ] Accessibility pass with a screen reader on each OS
 - [x] Quick-action window
 
 ## M5 · Lives where the files are
-- [x] Finder Quick Actions, Windows Explorer verbs, Dolphin / Nautilus / Nemo / Thunar actions
+- [x] Finder extension and Quick Actions, Windows Explorer verbs, Dolphin / Nautilus / Nemo / Thunar / Caja / PCManFM / Luciole menus
 - [x] Install, update and remove from Settings and from the CLI
 - [ ] Open With and drag onto the Dock / taskbar icon (declared. MacOS Open With and Dock drops handled, to try on a Mac)
-- [ ] Try each integration on a real machine: macOS Finder, Windows 11 Explorer, KDE Dolphin, GNOME Files, Cinnamon Nemo, Xfce Thunar
+- [x] Each Linux menu driven with real clicks in a container: Dolphin, Files (Nautilus), Nemo, Thunar, Caja, PCManFM, PCManFM-Qt
+- [ ] Try the rest on a real machine: the Finder menu by eye, Windows 11 Explorer, Luciole
 
 ## M5½ · More of the everyday
 - [x] Watermark add-on: a logo placed by anchor, sized to each image's shorter side, with opacity and margin

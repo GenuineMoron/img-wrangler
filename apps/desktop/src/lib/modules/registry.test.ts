@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import RECIPES from '../../../dev/recipes.json';
 import type { Recipe } from '$lib/types';
-import { ADDONS, CHANNELS, MODULES, addable, steps } from './registry';
+import { ADDONS, CHANNELS, KEYS, MODULES, addonOf, hasDetails } from './registry';
 
 const shopify = RECIPES['shopify-product'] as unknown as Recipe;
 
@@ -28,10 +28,19 @@ describe('module registry', () => {
     }
   });
 
-  it('lists a recipe’s steps with its add-ons in run order', () => {
-    const r: Recipe = { ...shopify, addons: [ADDONS.find(m => m.id === 'sharpen')!.create()] };
-    expect(steps(r).map(s => s.module.id)).toEqual(['files', 'size', 'sharpen', 'format', 'quality', 'metadata', 'name', 'save']);
-    expect(addable(r).map(m => m.id)).toEqual(['rotate', 'watermark']);
+  it('gives every module one home: a screen, a step key, or the Output panel', () => {
+    expect(KEYS.map(m => m.id)).toEqual(['files', 'rotate', 'sharpen', 'watermark', 'metadata']);
+    const docked = MODULES.filter(m => m.kind === 'core' && m.dock).map(m => m.id);
+    expect(docked).toEqual(['save']);
+    expect([...CHANNELS.map(m => m.id), ...KEYS.map(m => m.id), ...docked].sort()).toEqual(MODULES.map(m => m.id).sort());
+  });
+
+  it('finds an add-on’s settings in a recipe, and knows which modules open', () => {
+    const sharpen = ADDONS.find(m => m.id === 'sharpen')!;
+    const r: Recipe = { ...shopify, addons: [sharpen.create()] };
+    expect(addonOf(r, sharpen)?.kind).toBe('sharpen');
+    expect(addonOf(r, ADDONS.find(m => m.id === 'rotate')!)).toBeUndefined();
+    expect(MODULES.filter(m => !hasDetails(m)).map(m => m.id)).toEqual(['format']);
   });
 
   it('summarises every built-in recipe without throwing', () => {

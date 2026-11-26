@@ -14,17 +14,33 @@
 
   const MAX_PINS = 6;
   let info = $state<Integrations | null>(null);
-  let pins = $state<string[]>([]);
+  let app = $state<AppSettings | null>(null);
   let busy = $state(false);
   let error = $state<string | null>(null);
-  let app = $state<AppSettings | null>(null);
   const bar = backend.platform === 'mac' ? 'menu bar' : 'system tray';
+  const pins = $derived(info?.pins ?? []);
+  const installed = $derived(info?.targets.some(t => t.installed) ?? false);
 
   $effect(() => {
     if (ui.dialog !== 'settings') return;
-    backend.integrations().then(i => { info = i; pins = [...i.pins]; });
+    backend.integrations().then(i => (info = i));
     backend.appSettings().then(a => (app = a));
   });
+
+  /** Every setting here takes effect as it's pressed. */
+  async function apply(change: () => Promise<Integrations>) {
+    busy = true;
+    error = null;
+    try {
+      info = await change();
+    } catch (e) {
+      error = String(e);
+    } finally {
+      busy = false;
+    }
+  }
+
+  const togglePin = (id: string) => apply(() => backend.setPins(pins.includes(id) ? pins.filter(p => p !== id) : [...pins, id]));
 
   async function setApp(change: Partial<Pick<AppSettings, 'menu_bar' | 'auto_update' | 'login'>>) {
     if (!app) return;
@@ -35,49 +51,36 @@
       error = String(e);
     }
   }
-
-  const installed = $derived(info?.targets.some(t => t.installed) ?? false);
-
-  function toggle(id: string) {
-    pins = pins.includes(id) ? pins.filter(p => p !== id) : pins.length < MAX_PINS ? [...pins, id] : pins;
-  }
-
-  async function apply(install: boolean) {
-    busy = true;
-    error = null;
-    try {
-      info = await backend.setIntegrations(install, pins);
-      ui.say(install ? 'Right-click menus are set up.' : 'Right-click menus removed.');
-    } catch (e) {
-      error = String(e);
-    } finally {
-      busy = false;
-    }
-  }
 </script>
 
 <Dialog open={ui.dialog === 'settings'} onclose={() => (ui.dialog = null)} title="Settings" wide>
   <section class="sec">
     <h3 class="legend">Right-click menus</h3>
-    <p class="note">Select images or folders in your file manager, right-click, and choose Wrangler. Pinned recipes run straight away in a small window, with Undo. “Open in Wrangler…” loads them here.</p>
+    <p class="note">Select images or folders in your file manager, right-click, and choose Wrangler. A pinned recipe runs straight away in a small window, with Undo. “Open in Wrangler…” loads them here.</p>
     {#if info}
       {#if info.targets.length}
         <ul class="targets">
           {#each info.targets as t (t.target)}
-            <li><Led on={t.installed} color={t.installed ? 'var(--accent-format)' : undefined} /><span>{t.label}</span><span class="note">{t.installed ? 'installed' : 'not installed'}</span></li>
+            <li><Led on={t.installed} color={t.installed ? 'var(--accent-format)' : undefined} /><span>{t.label}</span><span class="note">{t.place ?? (t.installed ? 'in the right-click menu' : 'not added')}</span></li>
           {/each}
         </ul>
       {:else}
-        <p class="note">No supported file manager found. Wrangler works with Finder, Explorer, Dolphin, Files (Nautilus), Nemo, Thunar and Luciole.</p>
+        <p class="note">No supported file manager found. Wrangler works with Finder, Explorer, Dolphin, Files (Nautilus), Nemo, Thunar, Caja, PCManFM and Luciole.</p>
+      {/if}
+      {#if info.targets.length}
+        <div class="pins">
+          <Key label="In right-click menus" pressed={installed} disabled={busy} onclick={() => apply(() => backend.setMenus(!installed))} />
+        </div>
       {/if}
     {/if}
   </section>
 
   <section class="sec">
     <h3 class="legend">Pinned recipes <span class="legend--quiet">{pins.length} of {MAX_PINS}</span></h3>
+    <p class="note">The recipes offered in the right-click menu and the {bar} menu.</p>
     <div class="pins">
       {#each recipe.entries as e (e.id)}
-        <Key label={e.name} pressed={pins.includes(e.id)} disabled={!pins.includes(e.id) && pins.length >= MAX_PINS} onclick={() => toggle(e.id)} />
+        <Key label={e.name} pressed={pins.includes(e.id)} disabled={busy || (!pins.includes(e.id) && pins.length >= MAX_PINS)} onclick={() => togglePin(e.id)} />
       {/each}
     </div>
   </section>
@@ -140,11 +143,6 @@
     <h3 class="legend">About</h3>
     <p class="note">Wrangler {__APP_VERSION__} · free software under the GNU AGPL 3.0 or later · undo history is kept for 30 days.</p>
   </section>
-
-  {#snippet actions()}
-    {#if installed}<Key label="Remove menus" disabled={busy} onclick={() => apply(false)} />{/if}
-    <Key label={installed ? 'Update menus' : 'Add to right-click menus'} disabled={busy || !info?.targets.length} onclick={() => apply(true)} />
-  {/snippet}
 </Dialog>
 
 <style>

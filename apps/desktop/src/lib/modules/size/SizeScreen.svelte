@@ -193,13 +193,15 @@
   .sub { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .vals :global(.choice) { --accent: var(--accent-size); --on-accent: #fff; margin-left: -5px; }
   @container channel (max-width: 210px) {
-    .w-size { grid-template-columns: 62px minmax(0, 1fr); column-gap: var(--sp-5); }
+    .w-size { grid-template-columns: 62px minmax(0, 1fr); column-gap: var(--sp-7); }
     .dia { width: 62px; height: 62px; }
     .value-btn, .value-input { font-size: 23px; }
     .value-btn.small { font-size: 15px; }
   }
   .w-size :global(.ruler button) { padding: 1px 3px; }
   @container channel (max-width: 210px) {
+    .vals :global(.choice) { gap: 0; margin-left: -3px; }
+    .vals :global(.choice button) { padding: 1px 2px; font-size: 9.5px; }
     .w-size :global(.ruler) { gap: 1px; }
     .w-size :global(.ruler button) { padding: 1px 1px; font-size: 9.5px; }
   }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Every module the app knows. Adding a feature: a folder under modules/ and one line here
-// (plus its engine side, crates/engine/src/modules). Layout code only ever reads this list.
+// (plus its engine side, crates/engine/src/modules). Layout code only ever reads these lists.
 
 import type { AddOn, Recipe } from '$lib/types';
 import type { AddOnModule, CoreModule, UiModule } from './types';
@@ -15,28 +15,23 @@ import metadata from './metadata';
 import name from './name';
 import save from './save';
 
+/** In the order the steps run. */
 export const MODULES: UiModule[] = [files, rotate, size, sharpen, watermark, format, quality, metadata, name, save].sort((a, b) => a.order - b.order);
 
+/** The screens under the display. */
 export const CHANNELS = MODULES.filter((m): m is CoreModule & { channel: NonNullable<CoreModule['channel']> } => m.kind === 'core' && !!m.channel)
   .sort((a, b) => a.channel.slot - b.channel.slot);
+
+/** The row of step keys: every module that isn't a screen or docked on the Output panel. */
+export const KEYS = MODULES.filter(m => m.kind === 'addon' || (!m.channel && !m.dock));
 
 export const ADDONS = MODULES.filter((m): m is AddOnModule => m.kind === 'addon');
 
 export const moduleById = (id: string) => MODULES.find(m => m.id === id);
 
-export interface Step {
-  module: UiModule;
-  /** For add-ons: the settings in the recipe. */
-  addon?: AddOn;
-}
+/** An add-on's settings in a recipe, when it has been switched on at some point. */
+export const addonOf = (r: Recipe | null | undefined, m: UiModule): AddOn | undefined =>
+  m.kind === 'addon' ? r?.addons.find(a => a.kind === m.addon) : undefined;
 
-/** The steps of a recipe in run order: every core module, plus the add-ons it holds. */
-export function steps(r: Recipe): Step[] {
-  return MODULES.flatMap((m): Step[] => {
-    if (m.kind === 'core') return [{ module: m }];
-    return r.addons.filter(a => a.kind === m.addon).map(addon => ({ module: m, addon }));
-  });
-}
-
-/** Add-ons not yet in the recipe. */
-export const addable = (r: Recipe) => ADDONS.filter(m => !r.addons.some(a => a.kind === m.addon));
+/** Whether a module can be opened for more settings. */
+export const hasDetails = (m: UiModule) => m.kind === 'addon' || !!m.Details;

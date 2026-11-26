@@ -25,7 +25,7 @@ Wrangler is one Rust image engine with three front doors: a desktop app, a comma
 | Path | What lives there |
 |---|---|
 | `crates/engine` (`wrangler-engine`) | The image engine. No UI, no OS integration, no global state. Everything is testable without a window. |
-| `crates/integrate` (`wrangler-integrate`) | Generates and installs file-manager actions: Finder Quick Actions, Windows Explorer verbs, Dolphin service menus, Nautilus/Nemo/Thunar actions. Pure text generation plus small installers. |
+| `crates/integrate` (`wrangler-integrate`) | Generates and installs the right-click menus: the Finder extension's menu and Quick Actions, Windows Explorer verbs, Dolphin service menus, Nemo, Thunar and PCManFM actions, and scripts for Nautilus, Caja and Luciole. Pure text generation plus small installers. |
 | `crates/cli` (`img-wrangler`) | The command line tool. Thin: parses arguments into a recipe and calls the engine. |
 | `apps/desktop` | The desktop app. `src-tauri/` is the Rust host, `src/` is the Svelte front end. |
 | `design/` | The design system (`system/`: tokens, component CSS, fonts, textures), the brand icon, and the first interactive prototype. |
@@ -135,7 +135,8 @@ Decoders: `image` (JPEG, PNG, GIF, WebP, TIFF, BMP, ICO, QOI, TGA, PNM), `avif-d
 ### Host (`apps/desktop/src-tauri`)
 - **Commands** (`commands.rs`) are thin wrappers over the engine. Anything slow runs on a blocking thread: `formats`, `recipes`, `load_recipe`, `save_recipe`, `delete_recipe`, `scan`, `forget`, `plan`, `estimate` (a newer one cancels an older one), `preview` and `preview_focus` (below), `run` (the batch, or `only` some of it, with progress streamed over a Tauri `Channel`), `quick_run`, `cancel`, `undo`, `history`, `open_image`, `take_launch`, `open_main`, `integrations`, `set_integrations`, `app_settings`, `set_app_settings`, `set_drop_recipe`, `window_ready`, and the self-test's `selftest_config` and `selftest_done`.
 - **Pictures** (`pictures.rs`). A preview comes in two steps: a draft (the recipe's framing at screen size, from `wrangler_engine::preview`) in a fraction of a second, then the exact result, which needs the full encode. Both are kept per file and recipe, so going back is instant. Work for the same preview is shared, and `preview_focus` cancels work for images the person has moved away from. `preview://localhost/<token>` serves them off the main thread. `thumb://localhost/<path>?size=` serves cached WebP thumbnails (256 px on a standard display, 384 on HiDPI) from a small pool of threads that takes the newest request first, so the ones just scrolled into view come before the ones scrolled past.
-- **Launch modes** (`launch.rs`): plain, `open <paths…>`, `quick --recipe <id> <paths…>` (what the right-click actions run), `--hidden` (a start at login) and `selftest`. A single-instance guard sends later launches to the running app, and pending launches merge, so the one-process-per-file launches Explorer makes fold into one batch.
+- **Right-click menus**. On first launch the app installs them in every file manager it finds (`keep_menus_current`), and afterwards only keeps the ones still there current, so removing them sticks. Finder's comes from a Finder Sync extension inside the app bundle (`src-tauri/finder`, built by `scripts/finder-extension.mjs` before bundling, with no Xcode project). The extension is sandboxed: it reads `finder/menu.json` from the app's support folder, writes a request file beside it when an item is chosen, and wakes the app with `img-wrangler://finder`. That address carries nothing, so a web page opening it can't make Wrangler run anything. `wrangler_integrate::finder` writes the menu, takes requests (once each, dropping stale ones) and turns the extension on through `pluginkit`. Without the extension, Quick Actions are written instead.
+- **Launch modes** (`launch.rs`): plain, `open <paths…>`, `quick --recipe <id> <paths…>` (what the right-click actions run), `--hidden` (a start at login) and `selftest`. A single-instance guard sends later launches to the running app, along with the folder they came from (Files and Caja pass bare file names), and pending launches merge, so the one-process-per-file launches Explorer makes fold into one batch.
 - **Windows**: `main`, and `quick`, the small unit a right-click action or a drop on the menu bar icon opens. Quick runs use their own file list (`quick_run`), so they never disturb the main window's batch. A window shows itself once drawn (`window_ready`), and the main window only when someone asked for it, so a quick action never brings it up.
 - **Menu bar** (`tray.rs`, and `macos.rs` for drops on the icon). The hat in the menu bar or tray, with a menu that runs pinned recipes on chosen images, picks what a drop on the hat runs, undoes the last run, and offers updates and settings. It's rebuilt whenever one of those changes. With it up, closing a window leaves Wrangler running (and hides the Dock icon on a Mac). On Linux the tray needs the AppIndicator library, which is checked for first.
 - **Updates** (`updates.rs`). The updater plugin reads `latest.json` from the download site soon after start and every six hours, and the app shows the changelog before installing. Updates are signed in CI and checked against the public key in `tauri.conf.json`. An Arch package can't update itself (makepkg doesn't run as root), so there the app gives the install command.
@@ -146,7 +147,8 @@ Decoders: `image` (JPEG, PNG, GIF, WebP, TIFF, BMP, ICO, QOI, TGA, PNM), `avif-d
 src/
   main.ts, App.svelte        one bundle, two windows (index.html and index.html#quick)
   views/                     the regions of the unit: Header, Display (Sheet, Monitor, Empty),
-                             RecipePanel, ChannelStrip, OutputPanel, dialogs, QuickWindow
+                             StepKeys, ChannelStrip, OutputPanel, More (a module's further
+                             settings), dialogs, QuickWindow
   lib/components/            generic parts that know nothing about images: Key, KeyGroup,
                              ScreenChoice, Slider, Field, Screen, Ladder, Led, Tabs, Dialog,
                              ColourKey, AnchorPad, Row, HatScreen, Icon (+ icons.ts)
@@ -170,11 +172,13 @@ src/
 ### The unit's layout
 | Region | Holds |
 |---|---|
-| Header | the hat (Add, drop target), recipe selector, Save, an Update key when there's a new version, Add/History/Settings/Commands keys |
-| Display | where the batch is, tabs (All, Ready, Done, Kept, Clash, Over, Skipped, Failed), the virtualised sheet, the monitor (result, original, split, 1:1 zoom) and the status line |
-| Recipe panel | every step in run order, open one (accordion) for its Details, add-on keys switch on and off, Add step |
+| Header | the hat, recipe selector, Save recipe, an Update key when there's a new version, Add/Past runs/Settings keys |
+| Display | across the full width: where the batch is, Clear, tabs (All, Ready, Done, Kept, Clash, Over, Skipped, Failed), the virtualised sheet, the monitor (result, original, compare, 1:1 zoom) and the status line |
+| Step keys | every module that isn't a screen, in run order: Files, Rotate, Sharpen, Watermark, Metadata. A key opens its settings. An add-on's key is lit while it's on |
 | Channel strip | the core modules that have channels: Size, Format, Quality, Name. Each screen is itself the control |
-| Output panel | the meter, Save to, Undo and Run |
+| Output panel | the meter, Save to (with the rest of Save's settings), Undo and Run |
+
+Every setting has one home. A module's further settings (`Details`) open in a popover right above wherever it shows (`views/More.svelte`, anchored to the control with id `more-<module>`), so nothing is edited in two places and nothing is far from its control.
 
 ## Why this stack
 

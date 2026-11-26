@@ -252,11 +252,18 @@ if (process.argv.includes('--shots')) {
     await p.click('.empty button:has-text("add images")');
     await p.waitForSelector('.tile');
     await p.waitForTimeout(1400);
-    await p.keyboard.press('Control+k');
-    await p.keyboard.type('email', { delay: 70 });
-    await p.waitForTimeout(400);
-    await p.keyboard.press('Enter');
-    await p.waitForTimeout(1600);
+    // pick a recipe from the list
+    await p.click('.recipe__name');
+    await p.waitForTimeout(900);
+    await p.click('dialog[open] button.pick:has-text("Email safe")');
+    await p.waitForTimeout(700);
+    await p.click('dialog[open] button:has-text("Done")');
+    await p.waitForTimeout(1100);
+    // switch a step on: its settings open right above its key
+    await p.click('#more-sharpen');
+    await p.waitForTimeout(1500);
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(700);
     const h = await p.locator('#chan-size .handle').boundingBox();
     await p.mouse.move(h.x + 6, h.y + 6);
     await p.mouse.down();

@@ -57,7 +57,8 @@ const fakeUpdate = () => new URLSearchParams(location.search).has('update')
   ? { version: '0.1.0-alpha.3', current: __APP_VERSION__, date: '2026-11-19', manual: null,
       notes: 'Faster everywhere, a menu bar icon, and updates from inside the app.\n\n- Previews show in a moment, then sharpen to the exact result.\n- Drop images on the hat in the menu bar.\n- Wrangler tells you when there\'s a new version, with what changed.' }
   : null;
-const installed = new Set<string>();
+// As after a first launch, which puts Wrangler in the file manager's menu by itself.
+const installed = new Set<string>(['Finder', 'Dolphin', 'Nautilus']);
 const launched = new Set<string>();
 
 const sampleFor = (path: string) => SAMPLES.find(s => path.endsWith('/' + s.name))!;
@@ -291,10 +292,13 @@ export const mock: Backend = {
   openImage: async path => console.info('open', path),
   thumbUrl: path => photoUrl(sampleFor(path)?.photo ?? 1),
 
-  integrations: async (): Promise<Integrations> => ({ targets: ['Finder', 'Dolphin', 'Nautilus'].map(l => ({ target: l.toLowerCase(), label: l, installed: installed.has(l) })), pins: [...pins] }),
-  async setIntegrations(install, p) {
+  integrations: async (): Promise<Integrations> => ({ targets: ['Finder', 'Dolphin', 'Nautilus'].map(l => ({ target: l.toLowerCase(), label: l, installed: installed.has(l), place: installed.has(l) ? 'right-click, then Wrangler' : null })), pins: [...pins] }),
+  async setMenus(on) {
+    for (const l of ['Finder', 'Dolphin', 'Nautilus']) on ? installed.add(l) : installed.delete(l);
+    return this.integrations();
+  },
+  async setPins(p) {
     pins = p;
-    for (const l of ['Finder', 'Dolphin', 'Nautilus']) install ? installed.add(l) : installed.delete(l);
     return this.integrations();
   },
 

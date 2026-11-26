@@ -1,6 +1,5 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
-  import Field from '$lib/components/Field.svelte';
   import Key from '$lib/components/Key.svelte';
   import Row from '$lib/components/Row.svelte';
   import Slider from '$lib/components/Slider.svelte';
@@ -11,11 +10,8 @@
 </script>
 
 <div class="details" style:--accent="var(--accent-quality)" style:--on-accent="var(--on-quality)">
-  <Row label="Size limit" note={q.max_kb ? 'Quality drops until each file fits.' : undefined}>
-    <Field label="Size limit in kilobytes, empty for none" type="number" min="10" placeholder="none" unit="KB" value={q.max_kb ?? ''}
-      oninput={e => { const v = Number(e.currentTarget.value); q.max_kb = e.currentTarget.value === '' || !v ? null : Math.max(10, Math.round(v)); }} />
-    <Key label="Shrink to fit" pressed={q.allow_downscale} disabled={!q.max_kb} onclick={() => (q.allow_downscale = !q.allow_downscale)}
-      title="If the limit can’t be met, make the image smaller too" />
+  <Row label="Over the limit" note={q.max_kb ? `With Max size on, quality drops until each file is under ${q.max_kb} KB. If that isn’t enough, this makes the image smaller too.` : 'Needs Max size, on the Quality screen.'}>
+    <Key label="Shrink to fit" pressed={q.allow_downscale} disabled={!q.max_kb} onclick={() => (q.allow_downscale = !q.allow_downscale)} />
   </Row>
   <Row label="Never bigger" note="Keeps the original when the new file wouldn’t be smaller.">
     <Key label="Keep originals" pressed={q.never_bigger} onclick={() => (q.never_bigger = !q.never_bigger)} />

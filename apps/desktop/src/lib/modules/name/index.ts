@@ -30,7 +30,8 @@ const name: CoreModule = {
     if (n.mode === 'keep') return n.case === 'keep' ? 'unchanged' : n.case;
     if (n.mode === 'pattern') return n.pattern;
     if (n.mode === 'list') return 'from a list';
-    return `${n.replace.filter(x => x.find).length} replace`;
+    const swaps = n.replace.filter(x => x.find).length;
+    return swaps ? `${swaps} ${swaps === 1 ? 'replacement' : 'replacements'}` : 'nothing to find yet';
   },
   Details,
   channel: { slot: 4, glyph: '◆', Screen, Keys },

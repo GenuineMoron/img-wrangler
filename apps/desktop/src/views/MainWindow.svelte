@@ -13,10 +13,10 @@
   import Display from './Display.svelte';
   import Header from './Header.svelte';
   import HistoryDialog from './HistoryDialog.svelte';
+  import More from './More.svelte';
   import OutputPanel from './OutputPanel.svelte';
-  import Palette from './Palette.svelte';
-  import RecipePanel from './RecipePanel.svelte';
   import RecipesDialog from './RecipesDialog.svelte';
+  import StepKeys from './StepKeys.svelte';
   import SettingsDialog from './SettingsDialog.svelte';
   import UpdateDialog from './UpdateDialog.svelte';
 
@@ -50,7 +50,6 @@
   async function keydown(e: KeyboardEvent) {
     const mod = backend.platform === 'mac' ? e.metaKey : e.ctrlKey;
     if (mod && e.key === 'Enter') { e.preventDefault(); batch.run(); return; }
-    if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); ui.dialog = ui.dialog === 'palette' ? null : 'palette'; return; }
     if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); batch.add(await backend.pick(e.shiftKey ? 'folder' : 'files')); return; }
     if (mod && e.key.toLowerCase() === 's') {
       e.preventDefault();
@@ -76,11 +75,11 @@
   <div class="device mat-case" class:dropping={ui.dropping}>
     <Header />
     <Display />
-    <RecipePanel />
+    <StepKeys />
     <ChannelStrip />
     <OutputPanel />
   </div>
-  <Palette />
+  <More />
   <RecipesDialog />
   <SettingsDialog />
   <HistoryDialog />

@@ -25,6 +25,7 @@
     {:else}
       <div class="sbar">
         <span class="path" title={folder} data-long>{parent}<b>{leaf}</b> · {count(batch.items.length)} · {bytes(batch.bytesIn)}</span>
+        <button type="button" class="clear" disabled={batch.running} onclick={() => batch.clear()} title="Take every image out of the batch. The files themselves are untouched">clear</button>
         <Tabs label="Show" items={batch.tabs.map(t => ({ ...t, id: t.id as Tab }))} value={batch.tab} onchange={t => (batch.tab = t)} />
       </div>
       <div class="sbody">
@@ -38,7 +39,7 @@
       {:else if batch.scanning}
         <span>reading folders…</span>
       {:else if !batch.empty}
-        <span><kbd>←→</kbd>select</span><span><kbd>space</kbd>original</span><span><kbd>1-4</kbd>channels</span><span><kbd>{mod}↵</kbd>run</span><span><kbd>{mod}K</kbd>commands</span>
+        <span><kbd>←→</kbd>select</span><span><kbd>space</kbd>original</span><span><kbd>1-4</kbd>screens</span><span><kbd>{mod}↵</kbd>run</span><span><kbd>right-click</kbd>more</span>
         <span class="live">{batch.estimating ? 'measuring…' : batch.estimate ? `sizes from ${batch.estimate.sampled} samples` : ''}</span>
       {/if}
     </div>
@@ -46,14 +47,18 @@
 </section>
 
 <style>
-  .display { border-radius: var(--r-panel); padding: var(--sp-4); background: var(--surface-bezel);
+  .display { grid-column: 1 / -1; border-radius: var(--r-panel); padding: var(--sp-4); background: var(--surface-bezel);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, .4), 0 1px 0 var(--seam-light), inset 0 1px 0 rgba(255, 255, 255, .06); }
   .display :global(.main) { height: 100%; display: grid; grid-template-rows: 36px minmax(0, 1fr) 30px; }
   .sbar { display: flex; align-items: center; gap: var(--sp-8); padding: 0 var(--sp-6); border-bottom: 1px solid var(--screen-line); white-space: nowrap; position: relative; z-index: 4; }
   .path { color: var(--screen-2); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .path b { font-weight: 400; color: var(--screen-1); }
   .sbar :global(.tabs) { margin-left: auto; }
-  .sbody { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30%, 380px); min-height: 0; }
+  .sbody { display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 38%, 640px); min-height: 0; }
+  .clear { all: unset; cursor: pointer; padding: 2px 6px; border-radius: 2px; color: var(--screen-3); }
+  .clear:hover:not(:disabled) { color: var(--screen-1); background: #1a1a1a; }
+  .clear:disabled { cursor: default; opacity: .4; }
+  .clear:focus-visible { outline: var(--focus-on-screen); outline-offset: 1px; }
   .hints { grid-row: 3; padding: 0 var(--sp-6); border-top: 1px solid var(--screen-line); position: relative; z-index: 4; overflow: hidden; }
   .said { color: var(--screen-1); overflow: hidden; text-overflow: ellipsis; }
   .said.alarm { color: var(--status-alarm); }

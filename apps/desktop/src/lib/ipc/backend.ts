@@ -55,7 +55,10 @@ export interface Backend {
   thumbUrl(path: string): string;
 
   integrations(): Promise<Integrations>;
-  setIntegrations(install: boolean, pins: string[]): Promise<Integrations>;
+  /** Put Wrangler in every file manager's right-click menu, or take it out. */
+  setMenus(on: boolean): Promise<Integrations>;
+  /** The recipes offered in the right-click and menu bar menus. Takes effect at once. */
+  setPins(pins: string[]): Promise<Integrations>;
 
   appSettings(): Promise<AppSettings>;
   setAppSettings(s: { menu_bar: boolean; auto_update: boolean; login: boolean }): Promise<AppSettings>;
@@ -88,4 +91,3 @@ export interface Backend {
   setWindowSize(w: number, h: number): Promise<boolean>;
 }
 
-export const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'gif', 'bmp', 'svg', 'jxl', 'qoi', 'ico', 'tga', 'pnm', 'ppm', 'pgm'];

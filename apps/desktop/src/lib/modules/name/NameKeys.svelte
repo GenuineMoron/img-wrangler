@@ -14,7 +14,7 @@
   function set(m: RenameMode) {
     r.mode = m;
     if (m === 'replace' && !r.replace.length) r.replace.push({ find: '', with: '', regex: false, ignore_case: false });
-    if (m === 'list') ui.reveal('name');
+    if (m === 'list') ui.more = 'name';
   }
 </script>
 

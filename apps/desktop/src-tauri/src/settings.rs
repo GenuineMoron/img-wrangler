@@ -21,11 +21,14 @@ pub struct Settings {
     pub auto_update: bool,
     /// The recipe that runs on images dropped on the menu bar icon.
     pub drop_recipe: String,
+    /// Wrangler has put itself in the file managers' right-click menus once. After that, the
+    /// menus are only kept current where they still are, so removing them sticks.
+    pub menus_set_up: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { pins: vec!["web-ready".into(), "just-compress".into(), "shopify-product".into()], menu_bar: true, auto_update: true, drop_recipe: "web-ready".into() }
+        Self { pins: vec!["web-ready".into(), "just-compress".into(), "shopify-product".into()], menu_bar: true, auto_update: true, drop_recipe: "web-ready".into(), menus_set_up: false }
     }
 }
 
@@ -43,6 +46,27 @@ pub fn save(app: &AppHandle, s: &Settings) -> Result<(), String> {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     }
     std::fs::write(&p, serde_json::to_vec_pretty(s).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
+}
+
+/// The program a right-click menu should start. An AppImage runs from a mount that is gone once
+/// it quits, so its menus start the AppImage file itself.
+fn program() -> Result<std::path::PathBuf, String> {
+    let image = std::env::var_os("APPIMAGE").map(std::path::PathBuf::from).filter(|p| cfg!(target_os = "linux") && p.is_file());
+    match image {
+        Some(image) => Ok(image),
+        None => std::env::current_exe().map_err(|e| e.to_string()),
+    }
+}
+
+/// What the right-click menus are built from: this copy of the app and the pinned recipes.
+/// `asked` says the person asked for the menus just now (see `wrangler_integrate::Setup`).
+pub fn menu_setup(app: &AppHandle, s: &Settings, asked: bool) -> Result<wrangler_integrate::Setup, String> {
+    Ok(wrangler_integrate::Setup {
+        program: program()?,
+        actions: pinned(app, s).into_iter().map(|(id, label)| wrangler_integrate::QuickAction { id, label }).collect(),
+        extensions: wrangler_engine::codec::Format::extensions().into_iter().map(String::from).collect(),
+        asked,
+    })
 }
 
 /// The pinned recipes that still exist, with their names.

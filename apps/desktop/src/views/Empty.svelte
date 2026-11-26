@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
-  Before anything is added: what to do, the two ways to start, and the last few runs. -->
+  Before anything is added: what to do, the two ways to start, the last few runs, and where
+  Wrangler is in the file manager's right-click menu (it puts itself there on first launch). -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import HatScreen from '$lib/components/HatScreen.svelte';
@@ -7,10 +8,15 @@
   import { batch } from '$lib/state/batch.svelte';
   import { ui } from '$lib/state/ui.svelte';
   import { bytes, change, plural } from '$lib/text';
-  import type { RunInfo } from '$lib/types';
+  import type { Integration, RunInfo } from '$lib/types';
 
   let runs = $state<RunInfo[]>([]);
-  onMount(async () => { runs = (await backend.history()).slice(0, 3); });
+  let menus = $state<Integration[]>([]);
+  onMount(async () => {
+    runs = (await backend.history()).slice(0, 3);
+    menus = (await backend.integrations()).targets;
+  });
+  const inMenu = $derived(menus.filter(t => t.installed));
 
   async function add(kind: 'files' | 'folder') {
     const paths = await backend.pick(kind);
@@ -25,7 +31,7 @@
 <div class="empty" class:hot={ui.dropping}>
   <HatScreen size={96} width={150} />
   <h2 class="title">Drop images or folders anywhere on the unit</h2>
-  <p class="sub">The recipe on the right decides what happens. Nothing is written until you press Run.</p>
+  <p class="sub">The recipe at the top decides what happens, and the screens below tune it. Nothing is written until you press Run.</p>
   <div class="start">
     <button type="button" onclick={() => add('files')}>+ add images</button>
     <button type="button" onclick={() => add('folder')}>+ add a folder</button>
@@ -38,7 +44,11 @@
       {/each}
     </div>
   {/if}
-  <button type="button" class="tip" onclick={() => (ui.dialog = 'settings')}>Tip: add Wrangler to the right-click menu of your file manager ›</button>
+  {#if inMenu.length}
+    <button type="button" class="tip" onclick={() => (ui.dialog = 'settings')}>Or start from {inMenu.length === 1 ? inMenu[0].label : 'your file manager'}: select images, {inMenu.length === 1 ? (inMenu[0].place ?? 'right-click') : 'right-click, Wrangler'} ›</button>
+  {:else if menus.length}
+    <button type="button" class="tip" onclick={() => (ui.dialog = 'settings')}>Add Wrangler to {menus.map(t => t.label).join(' and ')}’s right-click menu ›</button>
+  {/if}
 </div>
 
 <style>
