@@ -55,8 +55,6 @@ for (const s of slices) fs.rmSync(s);
 const plist = fs.readFileSync(path.join(SRC, 'Info.plist.in'), 'utf8')
   .replaceAll('@APP_ID@', conf.identifier).replaceAll('@VERSION@', conf.version).replaceAll('@MIN_MACOS@', minMacos);
 fs.writeFileSync(path.join(appex, 'Contents/Info.plist'), plist);
-// The hat for the menu, the same one the menu bar shows.
-fs.copyFileSync(path.join(TAURI, 'icons/tray/menubar.png'), path.join(appex, 'Contents/Resources/hat.png'));
 
 const identity = process.env.APPLE_SIGNING_IDENTITY || conf.bundle.macOS.signingIdentity || '-';
 run('codesign', ['--force', '--sign', identity, '--entitlements', path.join(SRC, 'finder.entitlements'), ...(identity === '-' ? [] : ['--options', 'runtime', '--timestamp']), appex]);

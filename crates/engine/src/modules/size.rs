@@ -10,7 +10,7 @@ use super::{Cx, Planned, Stage};
 use crate::colour::Rgba;
 use crate::error::Result;
 use crate::img::{Dims, Img};
-use crate::ops::frame::{self, Fit, FrameSpec, Shape};
+use crate::ops::frame::{self, Edge, Fit, FrameSpec, Shape};
 use crate::ops::resize::{resize, Filter};
 use crate::ops::{pad, trim};
 
@@ -18,8 +18,11 @@ use crate::ops::{pad, trim};
 #[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct Size {
-    /// Long side of the output in pixels; `None` keeps the original size.
+    /// The size in pixels; `None` keeps the original size. With the original shape it measures
+    /// `edge`. With any other shape it's the frame's long side.
     pub long_side: Option<u32>,
+    /// Which side `long_side` measures when each image keeps its own shape.
+    pub edge: Edge,
     /// "original", a ratio such as "1:1" or "4:5", or an exact canvas such as "1200x628".
     #[cfg_attr(feature = "ts", ts(type = "string"))]
     pub shape: Shape,
@@ -35,7 +38,7 @@ pub struct Size {
 
 impl Default for Size {
     fn default() -> Self {
-        Self { long_side: None, shape: Shape::Original, fit: Fit::Pad, anchor: Anchor::Center, upscale: false, trim: None, pad: Pad::default(), filter: Filter::Lanczos3 }
+        Self { long_side: None, edge: Edge::Long, shape: Shape::Original, fit: Fit::Pad, anchor: Anchor::Center, upscale: false, trim: None, pad: Pad::default(), filter: Filter::Lanczos3 }
     }
 }
 
@@ -149,7 +152,7 @@ impl ts_rs::TS for Backdrop {
 
 impl Size {
     fn spec(&self) -> FrameSpec {
-        FrameSpec { long_side: self.long_side, shape: self.shape, fit: self.fit, anchor: self.anchor.fractions(), fill: self.pad.fill / 100.0, upscale: self.upscale }
+        FrameSpec { long_side: self.long_side, edge: self.edge, shape: self.shape, fit: self.fit, anchor: self.anchor.fractions(), fill: self.pad.fill / 100.0, upscale: self.upscale }
     }
 
     pub fn validate(&self) -> std::result::Result<(), String> {

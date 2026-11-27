@@ -42,9 +42,10 @@ struct WranglerMenu: Decodable {
     }
 
     /// "Wrangler ▸" with the recipes, then the open item. An item's tag is its place in the
-    /// list, as tags are all that survive the trip back from Finder. The last one opens. No
-    /// dividing line: Finder draws one of ours as an empty row.
-    func build(action: Selector, hat: NSImage?) -> NSMenu {
+    /// list, as tags are all that survive the trip back from Finder. The last one opens. Plain
+    /// text: no icon (Finder drew it invisibly in dark mode) and no dividing line (Finder draws
+    /// one of ours as an empty row).
+    func build(action: Selector) -> NSMenu {
         let sub = NSMenu(title: "Wrangler")
         for (i, recipe) in recipes.enumerated() {
             let item = NSMenuItem(title: recipe.label, action: action, keyEquivalent: "")
@@ -56,34 +57,10 @@ struct WranglerMenu: Decodable {
         sub.addItem(last)
 
         let top = NSMenuItem(title: "Wrangler", action: nil, keyEquivalent: "")
-        top.image = hat.map(WranglerMenu.icon)
         top.submenu = sub
         let root = NSMenu(title: "")
         root.addItem(top)
         return root
-    }
-
-    /// The hat as a menu icon. Finder draws every icon in a square, which squashed the wide
-    /// hat, so it's drawn at its own shape in the middle of a square of plain pixels.
-    static func icon(_ hat: NSImage) -> NSImage {
-        let side = 16, scale = 2
-        let icon = NSImage(size: NSSize(width: side, height: side))
-        guard hat.size.width > 0, hat.size.height > 0,
-              let pixels = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side * scale, pixelsHigh: side * scale, bitsPerSample: 8, samplesPerPixel: 4,
-                                            hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
-        else { return hat }
-        // Sized in points before drawing starts, so the drawing below is in points too.
-        pixels.size = icon.size
-        guard let context = NSGraphicsContext(bitmapImageRep: pixels) else { return hat }
-        let fit = min(CGFloat(side) / hat.size.width, CGFloat(side) / hat.size.height)
-        let (w, h) = (hat.size.width * fit, hat.size.height * fit)
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = context
-        hat.draw(in: NSRect(x: (CGFloat(side) - w) / 2, y: (CGFloat(side) - h) / 2, width: w, height: h))
-        NSGraphicsContext.restoreGraphicsState()
-        icon.addRepresentation(pixels)
-        icon.isTemplate = true
-        return icon
     }
 
     /// What choosing the item with this tag asks for: a recipe to run on the paths, or, with no
@@ -121,9 +98,21 @@ final class FinderSync: FIFinderSync {
 
     override init() {
         super.init()
-        // Offer the menu everywhere. The top of the disk covers every drive mounted under it,
-        // and naming the drives as well made Finder show the menu twice for files on them.
-        FIFinderSyncController.default().directoryURLs = [URL(fileURLWithPath: "/")]
+        watch()
+        let center = NSWorkspace.shared.notificationCenter
+        center.addObserver(self, selector: #selector(watch), name: NSWorkspace.didMountNotification, object: nil)
+        center.addObserver(self, selector: #selector(watch), name: NSWorkspace.didUnmountNotification, object: nil)
+    }
+
+    /// Offer the menu everywhere: the startup disk and every mounted drive, network drives
+    /// included, as they come and go. Finder doesn't count a drive as inside "/", so each one is
+    /// named.
+    @objc private func watch() {
+        var roots: Set<URL> = [URL(fileURLWithPath: "/")]
+        for volume in FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: [.skipHiddenVolumes]) ?? [] {
+            roots.insert(volume)
+        }
+        FIFinderSyncController.default().directoryURLs = roots
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
@@ -133,7 +122,7 @@ final class FinderSync: FIFinderSync {
               menu.applies(to: urls)
         else { return nil }
         shown = menu
-        return menu.build(action: #selector(choose(_:)), hat: Bundle.main.image(forResource: "hat"))
+        return menu.build(action: #selector(choose(_:)))
     }
 
     @objc private func choose(_ sender: NSMenuItem) {

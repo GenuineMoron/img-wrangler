@@ -6,11 +6,12 @@
   original, up to twice its size. Any size can be typed. -->
 <script lang="ts">
   import ScreenChoice from '$lib/components/ScreenChoice.svelte';
-  import { layout, parseShape, specOf } from '$lib/geometry';
+  import { backend } from '$lib/ipc';
+  import { edgeOf, layout, parseShape, specOf } from '$lib/geometry';
   import { batch } from '$lib/state/batch.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
   import type { Fit } from '$lib/types';
-  import { FITS, STOPS } from './index';
+  import { EDGES, FITS, STOPS } from './index';
 
   const BOX = 84;
   const size = $derived(recipe.value!.size);
@@ -19,6 +20,11 @@
   const shape = $derived(spec.shape);
   const l = $derived(layout(src, spec));
   const maxSrc = $derived(Math.max(src.w, src.h));
+  /** The side the size measures: chosen when each image keeps its shape, else the long side. */
+  const edge = $derived(shape.kind === 'original' ? size.edge : 'long');
+  const edgeName = $derived(EDGES.find(e => e.id === edge) ?? EDGES[0]);
+  /** That side of this image, and the same side of the output. */
+  const edgeSrc = $derived(edgeOf(src, edge));
   const outLong = $derived(Math.max(l.canvas.w, l.canvas.h));
   // How far the box reaches, in originals: just the original, or twice it when enlarging.
   const reach = $derived(size.upscale ? 2 : 1);
@@ -27,7 +33,7 @@
   const scale = $derived((BOX * Math.min(1, Math.sqrt(outLong / maxSrc / reach))) / outLong);
   const srcScale = $derived((BOX * Math.sqrt(1 / reach)) / maxSrc);
   /** This image is smaller than the size asked for, and isn't being enlarged. */
-  const short = $derived(!size.upscale && shape.kind !== 'exact' && size.long_side != null && maxSrc < size.long_side);
+  const short = $derived(!size.upscale && shape.kind !== 'exact' && size.long_side != null && edgeSrc < size.long_side);
 
   // Frame (the output canvas), anchored bottom-left.
   const fw = $derived(Math.max(6, l.canvas.w * scale));
@@ -52,14 +58,20 @@
     size.long_side = px;
   }
 
-  /** Long side from a pointer over the diagram, snapping to the ruler. */
+  /** The size from a pointer over the diagram, snapping to the ruler. The diagram is drawn by
+   *  the long side, so the size is worked out for that and then for the side being measured. */
   function fromPointer(e: PointerEvent, box: DOMRect) {
     const frac = Math.max((e.clientX - box.left) / box.width, (box.bottom - e.clientY) / box.height);
     // Inverse of the area scale above.
-    const px = Math.max(100, Math.round((Math.min(1, Math.max(0.1, frac)) ** 2 * reach * maxSrc) / 10) * 10);
-    const snap = STOPS.find(s => s.px && Math.abs(s.px - px) < maxSrc * 0.035);
+    const long = Math.min(1, Math.max(0.1, frac)) ** 2 * reach * maxSrc;
+    const px = Math.max(100, Math.round((long * edgeSrc) / maxSrc / 10) * 10);
+    const snap = STOPS.find(s => s.px && Math.abs(s.px - px) < edgeSrc * 0.035);
     // The original's own size is "full": no resizing at all.
-    setLong(snap?.px ?? (Math.abs(px - maxSrc) < maxSrc * 0.035 ? null : px));
+    setLong(snap?.px ?? (Math.abs(px - edgeSrc) < edgeSrc * 0.035 ? null : px));
+  }
+
+  function chooseEdge() {
+    backend.contextMenu(EDGES.map(e => ({ text: e.menu, checked: e.id === size.edge, action: () => (size.edge = e.id) })));
   }
 
   let svg: SVGSVGElement;
@@ -81,10 +93,10 @@
     const dir = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
     if (!dir) return;
     e.preventDefault();
-    const cur = size.long_side ?? maxSrc;
-    const list = [...new Set([...STOPS.map(s => s.px ?? maxSrc), maxSrc, ...(size.upscale ? [maxSrc * 2] : [])])].filter(px => px <= maxSrc * reach).sort((a, b) => a - b);
+    const cur = size.long_side ?? edgeSrc;
+    const list = [...new Set([...STOPS.map(s => s.px ?? edgeSrc), edgeSrc, ...(size.upscale ? [edgeSrc * 2] : [])])].filter(px => px <= edgeSrc * reach).sort((a, b) => a - b);
     const next = dir > 0 ? list.find(px => px > cur) : [...list].reverse().find(px => px < cur);
-    if (next) setLong(next === maxSrc ? null : next);
+    if (next) setLong(next === edgeSrc ? null : next);
   }
 
   function startTyping() {
@@ -103,7 +115,7 @@
 
   const bigText = $derived(shape.kind === 'exact' ? `${shape.w}×${shape.h}` : size.long_side ? String(size.long_side) : 'full');
   /** What the big number is, in a few words. */
-  const unit = $derived(shape.kind === 'exact' ? 'exact pixels' : size.long_side ? 'px long side' : 'size, not resized');
+  const unit = $derived(shape.kind === 'exact' ? 'exact pixels' : size.long_side ? edgeName.label : 'size, not resized');
   const approx = $derived(size.trim ? '≈ ' : '');
 </script>
 
@@ -135,9 +147,9 @@
       tabindex="0"
       aria-label="Output size. Drag the corner or use the arrow keys, Enter to type"
       aria-valuemin="16"
-      aria-valuemax={maxSrc * reach}
-      aria-valuenow={outLong}
-      aria-valuetext="{outLong} pixels on the long side"
+      aria-valuemax={edgeSrc * reach}
+      aria-valuenow={edgeOf(l.canvas, edge)}
+      aria-valuetext="{edgeOf(l.canvas, edge)} {edgeName.label.replace('px', 'pixels')}"
       style:left="{(fw / BOX) * 100}%"
       style:top="{(fy / BOX) * 100}%"
       onkeydown={handleKey}
@@ -149,13 +161,19 @@
   <div class="vals">
     {#if typing}
       <input bind:this={input} class="value-input" type="number" min="16" max="30000" step="10" value={size.long_side ?? ''} placeholder="full"
-        aria-label="Long side in pixels, empty for full size. Enter to apply"
+        aria-label="Size in {edgeName.label.replace('px', 'pixels,')}, empty for full size. Enter to apply"
         onkeydown={e => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); }} onblur={() => finish(true)} />
     {:else}
       <button type="button" class="value-btn glow" class:small={shape.kind === 'exact'} onclick={startTyping} disabled={shape.kind === 'exact'}
-        aria-label={shape.kind === 'exact' ? `Exact size ${bigText}` : `Long side ${bigText}. Press to type a size`}>{bigText}</button>
+        aria-label={shape.kind === 'exact' ? `Exact size ${bigText}` : `Size ${bigText}. Press to type a size`}>{bigText}</button>
     {/if}
-    <span class="scr-label unit">{unit}</span>
+    {#if shape.kind === 'original' && size.long_side}
+      <!-- Which side the number measures: the long or short side, the width or the height. -->
+      <button type="button" class="scr-label unit edge" onclick={chooseEdge} title="Measure the long side, the short side, the width or the height"
+        aria-label="Measures the {edgeName.menu.toLowerCase()}. Press to measure another side">{unit} ▾</button>
+    {:else}
+      <span class="scr-label unit">{unit}</span>
+    {/if}
     <span class="sub" class:short title="This image comes out at {l.canvas.w} × {l.canvas.h} pixels" data-long>{short ? 'smaller: stays ' : '→ '}{approx}{l.canvas.w}×{l.canvas.h}</span>
     {#if shape.kind !== 'original'}
       <ScreenChoice label="How the picture meets the frame" items={[...FITS]} value={size.fit} onchange={(v: Fit) => (size.fit = v)} />
@@ -192,6 +210,9 @@
   .value-btn:focus-visible { outline: var(--focus-on-screen); outline-offset: 2px; }
   .value-input { all: unset; width: 100%; font: var(--value-weight) var(--fs-value)/1 var(--font-value); color: var(--accent-size-text); box-shadow: 0 1px 0 var(--accent-size-text); }
   .unit { color: var(--screen-3); margin-top: -1px; white-space: nowrap; }
+  .edge { all: unset; cursor: pointer; font: var(--fs-small)/1 var(--font-data); color: var(--screen-2); border-radius: 2px; margin-top: -1px; white-space: nowrap; }
+  .edge:hover { color: var(--screen-1); }
+  .edge:focus-visible { outline: var(--focus-on-screen); outline-offset: 1px; }
   .sub { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-top: 3px; }
   .sub.short { color: var(--accent-quality); }
   .vals :global(.choice) { --accent: var(--accent-size); --on-accent: #fff; margin-left: -5px; }

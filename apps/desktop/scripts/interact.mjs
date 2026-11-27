@@ -111,6 +111,36 @@ export async function interact(browser, base) {
   check(await R(() => window.__wrangler.recipe.edited && window.__wrangler.recipe.value.quality.look === 'lossless'), 'changes not saved wait with their recipe while you look at another');
   await p.click('.head button[aria-label^="Undo your changes"]'); await p.waitForTimeout(300);
   check(!(await R(() => window.__wrangler.recipe.edited)), 'and one key takes them back');
+
+  // ---- the side a size measures, the clear-areas colour, and the size limit
+  await p.click('.recipe__name'); await p.waitForTimeout(300);
+  await p.click('[data-row="compress-for-web"] .pick'); await p.waitForTimeout(500);
+  await p.click('#chan-size .value-btn'); await p.keyboard.type('1080'); await p.keyboard.press('Enter');
+  await p.click('#chan-size .edge'); await p.click('.mock-menu button:has-text("Short side")'); await p.waitForTimeout(300);
+  const sub = await p.locator('#chan-size .sub').textContent();
+  check(await R(() => window.__wrangler.recipe.value.size.edge) === 'short' && sub.includes('1620×1080'), 'a size can measure the short side', sub);
+  check((await p.locator('#chan-size .edge').textContent()).includes('short side'), 'and the screen says which side');
+  const matte = p.locator('#chan-format button[aria-label^="Behind clear areas"]');
+  check(await matte.isDisabled(), 'the clear-areas colour is off for WebP, which keeps transparency');
+  await p.click('#chan-format button:has-text("JPG")'); await p.waitForTimeout(200);
+  check(!(await matte.isDisabled()), 'and on for JPEG, which has none');
+  const limit = () => R(() => window.__wrangler.recipe.value.quality.max_kb);
+  await p.click('#chan-quality .plate .switch'); await p.waitForTimeout(200);
+  const field = p.locator('#chan-quality .plate__field');
+  await field.fill('1.5 MB'); await field.press('Enter'); await p.waitForTimeout(200);
+  check(await limit() === 1500, 'a size limit can be typed in megabytes', await limit());
+  check((await p.locator('#chan-quality .limit__label').textContent()).includes('1.5 MB'), 'and the screen says it in megabytes');
+  await field.fill('lots'); await field.press('Enter');
+  check(await limit() === 1500 && (await field.getAttribute('aria-invalid')) === 'true', 'a limit it can\'t read is marked, not applied');
+  // drag the red line up past the top of the chart, twice as far, and it keeps rising
+  const line = await p.locator('#chan-quality .limit').boundingBox();
+  await p.mouse.move(line.x + 30, line.y + 4); await p.mouse.down();
+  await p.mouse.move(line.x + 30, line.y - 150, { steps: 8 });
+  const raised = await limit();
+  await p.mouse.move(line.x + 30, line.y - 300, { steps: 8 });
+  const higher = await limit();
+  await p.mouse.up();
+  check(raised > 1500 && higher > raised, 'dragging the limit past the top keeps raising it', [raised, higher]);
   await p.close();
   return { count, failed };
 }

@@ -61,8 +61,9 @@ try {
   });
 
   // Grain overlays: for a keycap of brightness b, the soft-light result of the grain, written as
-  // white or black at the alpha that gives the same brightness when laid over b normally.
-  const grains = await page.evaluate(async ({ src, bases }) => {
+  // white or black at the alpha that gives the same brightness when laid over b normally. The
+  // coloured keys (mid) get a gentler grain: on a strong colour it read as noise.
+  const grains = await page.evaluate(async ({ src, bases, strength }) => {
     const img = new Image();
     img.src = src;
     await img.decode();
@@ -83,13 +84,13 @@ try {
         const lighter = r >= b;
         const a = lighter ? (r - b) / (1 - b) : (b - r) / b;
         d[i] = d[i + 1] = d[i + 2] = lighter ? 255 : 0;
-        d[i + 3] = Math.round(Math.min(1, a) * 255);
+        d[i + 3] = Math.round(Math.min(1, a) * (strength[name] ?? 1) * 255);
       }
       g.putImageData(data, 0, 0);
       out[name] = c.toDataURL('image/png');
     }
     return out;
-  }, { src: url('fine.png'), bases: { case: caseLight, light: 0.96, mid: 0.5, dark: 0.19 } });
+  }, { src: url('fine.png'), bases: { case: caseLight, light: 0.96, mid: 0.5, dark: 0.19 }, strength: { mid: 0.45 } });
   for (const [name, dataUrl] of Object.entries(grains)) {
     fs.writeFileSync(path.join(TEX, `grain-${name}.png`), Buffer.from(dataUrl.split(',')[1], 'base64'));
   }

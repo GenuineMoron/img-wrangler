@@ -12,8 +12,11 @@
   const r = $derived(recipe.value!.rename);
   // The working copy. It can hold a text block that's still empty, which the pattern can't.
   let pieces = $state<Piece[]>([]);
-  $effect(() => { if (print(pieces) !== r.pattern) pieces = parse(r.pattern); });
-  const commit = () => { r.pattern = print(pieces); };
+  // Read again only when the pattern changes from outside (another recipe, an undo). Comparing
+  // with the blocks instead would loop forever on a pattern written another way, like "{ name }".
+  let seen: string | null = null;
+  $effect(() => { if (r.pattern !== seen) { seen = r.pattern; pieces = parse(r.pattern); } });
+  const commit = () => { r.pattern = seen = print(pieces); };
 
   /** The text block being typed in, and the block new pieces go after. */
   let editing = $state<number | null>(null);

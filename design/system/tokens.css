@@ -110,7 +110,8 @@
 
   /* ---------- tunable values (the Tune panel writes these) ---------- */
   --light-amt: 0.54;          /* top light falloff on the case */
-  --tex-fine-size: 320px;    /* grain tile size. Every texture size divides the 1920 px baked case tile */
+  --tex-fine-size: 320px;    /* grain tile size on the case. Every texture size divides the 1920 px baked case tile */
+  --tex-key-grain-size: 128px; /* grain tile size on keys: finer than the case, as keys are small and close */
   --tex-scratch-size: 1920px;
   --tex-dust-size: 960px;
   --px-grid: 0.08;            /* small-screen pixel grid strength (baked: pnpm textures) */

@@ -2,6 +2,17 @@
 
 Notable changes, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 0.1.0-alpha.6, 27 November 2026
+
+Wrangler on network drives again, and small fixes to Size, Format, Quality and the keys.
+
+- **Size by any side.** When each image keeps its shape, the size can measure the long side, the short side, the width or the height. Press "px long side ▾" under the number to choose (`--by short|width|height` on the command line).
+- **Size limits in megabytes.** Type the limit beside its switch, in KB or MB ("400", "1.5 MB", "2m"). Dragging the red line past the top of the chart keeps raising it, so there's no need to let go and grab it again. Limits over 1000 KB read as MB.
+- "Behind clear areas" is off when the format keeps transparency (PNG, WebP, AVIF, or picking per image), as nothing goes behind them.
+- **Wrangler is back in Finder's menu for files on a NAS** and other network or external drives. Alpha.5 stopped offering it there. Finder's "Wrangler" entry is now plain text, as its icon vanished in dark mode.
+- Dark keys stay dark under the pointer, so their labels and icons stay readable.
+- Finer, gentler grain on the keys, and much gentler on the coloured ones.
+
 ## 0.1.0-alpha.5, 27 November 2026
 
 Controls that look like what they are, names built from pieces, and recipes you can look after.

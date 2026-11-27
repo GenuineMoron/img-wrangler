@@ -83,9 +83,36 @@ pub enum Fit {
     Inside,
 }
 
+/// Which side the size measures, when each image keeps its own shape.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
+#[serde(rename_all = "snake_case")]
+pub enum Edge {
+    /// The longer side, whichever way round the image is.
+    #[default]
+    Long,
+    Short,
+    Width,
+    Height,
+}
+
+impl Edge {
+    /// The length of this side of an image.
+    pub fn of(self, d: Dims) -> u32 {
+        match self {
+            Edge::Long => d.w.max(d.h),
+            Edge::Short => d.w.min(d.h),
+            Edge::Width => d.w,
+            Edge::Height => d.h,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FrameSpec {
+    /// The size in pixels: of `edge` when the shape is the original, of the long side otherwise.
     pub long_side: Option<u32>,
+    pub edge: Edge,
     pub shape: Shape,
     pub fit: Fit,
     /// Where the image sits (pad) or what is kept (crop): 0 = start, 1 = end, per axis.
@@ -97,7 +124,7 @@ pub struct FrameSpec {
 
 impl Default for FrameSpec {
     fn default() -> Self {
-        Self { long_side: None, shape: Shape::Original, fit: Fit::Pad, anchor: (0.5, 0.5), fill: 1.0, upscale: false }
+        Self { long_side: None, edge: Edge::Long, shape: Shape::Original, fit: Fit::Pad, anchor: (0.5, 0.5), fill: 1.0, upscale: false }
     }
 }
 
@@ -128,10 +155,10 @@ pub fn layout(content: Dims, spec: &FrameSpec) -> Layout {
     let fill = f64::from(spec.fill.clamp(0.05, 1.0));
     let (ax, ay) = (f64::from(spec.anchor.0.clamp(0.0, 1.0)), f64::from(spec.anchor.1.clamp(0.0, 1.0)));
 
-    // Original shape: a plain resize of the long side.
+    // Original shape: a plain resize, by whichever side the size measures.
     let frame = match spec.shape {
         Shape::Original => {
-            let s = spec.long_side.map_or(1.0, |l| f64::from(l) / cw.max(ch));
+            let s = spec.long_side.map_or(1.0, |l| f64::from(l) / f64::from(spec.edge.of(content).max(1)));
             let s = if spec.upscale { s } else { s.min(1.0) };
             let d = Dims::new(round(cw * s), round(ch * s));
             return Layout { canvas: d, crop: None, scaled: d, offset: (0, 0) };
@@ -203,6 +230,18 @@ mod tests {
         let l = layout(PHOTO, &spec(Some(2048), Shape::Original, Fit::Pad));
         assert_eq!(l.canvas, Dims::new(2048, 1365));
         assert_eq!(l.scaled, l.canvas);
+    }
+
+    #[test]
+    fn original_shape_resizes_by_the_side_asked_for() {
+        let portrait = Dims::new(4000, 6000);
+        let by = |edge, d| layout(d, &FrameSpec { edge, ..spec(Some(1080), Shape::Original, Fit::Pad) }).canvas;
+        assert_eq!(by(Edge::Short, PHOTO), Dims::new(1620, 1080));
+        assert_eq!(by(Edge::Short, portrait), Dims::new(1080, 1620));
+        assert_eq!(by(Edge::Width, PHOTO), Dims::new(1080, 720));
+        assert_eq!(by(Edge::Width, portrait), Dims::new(1080, 1620));
+        assert_eq!(by(Edge::Height, PHOTO), Dims::new(1620, 1080));
+        assert_eq!(by(Edge::Height, portrait), Dims::new(720, 1080));
     }
 
     #[test]

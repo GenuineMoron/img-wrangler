@@ -39,7 +39,7 @@ It all happens on your computer. No accounts, no uploads, no telemetry.
 
 | | |
 |---|---|
-| Resize and reshape | A long side like 2048, or full size, and bigger than the original if you switch enlarging on. Keep each photo's shape, or make them all 1:1, 4:5, 3:2, 16:9, any ratio you type or exact pixels, by cropping, padding onto a backdrop or fitting inside. Empty background can be trimmed first. |
+| Resize and reshape | A long side like 2048 (or the short side, width or height), or full size, and bigger than the original if you switch enlarging on. Keep each photo's shape, or make them all 1:1, 4:5, 3:2, 16:9, any ratio you type or exact pixels, by cropping, padding onto a backdrop or fitting inside. Empty background can be trimmed first. |
 | Compress | Choose a look (small, balanced, high or pristine) instead of an encoder number. Each aims at a measured visual score ([SSIMULACRA 2](https://github.com/cloudinary/ssimulacra2)), and Wrangler finds the setting that reaches it for every image. Add a size limit if a platform has one. |
 | Convert | Reads 14 formats, HEIC, AVIF and JPEG XL included. Writes JPEG (MozJPEG), PNG (oxipng), WebP, AVIF, GIF, TIFF, BMP, ICO, QOI, TGA and PNM. Or keeps each file's own format, or picks WebP or PNG per image. |
 | Rename | Names built from pieces you drag into order: the old name, a number, a date, the size, the folder, your own text. Or find and replace, or old and new names pasted from a spreadsheet. Clashes get numbered rather than overwritten. |

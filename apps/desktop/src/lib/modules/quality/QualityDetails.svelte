@@ -4,6 +4,7 @@
   import Row from '$lib/components/Row.svelte';
   import Slider from '$lib/components/Slider.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
+  import { kbText } from './index';
 
   const q = $derived(recipe.value!.quality);
   const fixed = $derived(typeof q.look === 'number');
@@ -11,7 +12,7 @@
 
 <div class="details" style:--accent="var(--accent-quality)" style:--on-accent="var(--on-quality)">
   <Switch plate label="Shrink the image to meet the limit" on={q.allow_downscale} disabled={!q.max_kb} onchange={on => (q.allow_downscale = on)} />
-  <p class="note">{q.max_kb ? `Quality drops until each file is under ${q.max_kb} KB. If that isn’t enough, this makes the image smaller too.` : 'Needs the size limit, switched on under the Quality screen.'}</p>
+  <p class="note">{q.max_kb ? `Quality drops until each file is under ${kbText(q.max_kb)}. If that isn’t enough, this makes the image smaller too.` : 'Needs the size limit, switched on under the Quality screen.'}</p>
   <Switch plate label="Keep the original if it’s smaller" on={q.never_bigger} onchange={on => (q.never_bigger = on)} />
   <p class="note">When the new file wouldn’t be smaller, the original is kept as it is.</p>
   <Switch plate label="Set the quality by hand" on={fixed} onchange={on => (q.look = on ? 80 : 'balanced')} />

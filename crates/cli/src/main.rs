@@ -15,7 +15,7 @@ use wrangler_engine::codec::metadata::KeepMeta;
 use wrangler_engine::codec::{formats, probe};
 use wrangler_engine::journal::{history, undo};
 use wrangler_engine::modules::{AddOn, Backdrop, Rotate, Sharpen, Trim, Watermark};
-use wrangler_engine::ops::frame::{Fit, Shape};
+use wrangler_engine::ops::frame::{Edge, Fit, Shape};
 use wrangler_engine::paths::AppDirs;
 use wrangler_engine::plan::{build, Action, PlanCx};
 use wrangler_engine::recipe::{DestinationMode, Look, OutputFormat, Rename, RenameMode};
@@ -105,9 +105,12 @@ struct RunArgs {
     /// Recipe name, id, or path to a .toml file.
     #[arg(short, long)]
     recipe: Option<String>,
-    /// Long side in pixels.
+    /// Size in pixels: the long side, or the side --by names.
     #[arg(long)]
     size: Option<u32>,
+    /// The side --size measures when images keep their shape: long, short, width or height.
+    #[arg(long)]
+    by: Option<String>,
     /// original, 1:1, 4:5, 3:2, 16:9 or WxH.
     #[arg(long)]
     shape: Option<String>,
@@ -174,6 +177,15 @@ fn recipe_from(args: &RunArgs, dirs: &AppDirs) -> Result<Recipe> {
     };
     if let Some(s) = args.size {
         r.size.long_side = Some(s);
+    }
+    if let Some(b) = &args.by {
+        r.size.edge = match b.as_str() {
+            "long" => Edge::Long,
+            "short" => Edge::Short,
+            "width" => Edge::Width,
+            "height" => Edge::Height,
+            other => bail!("--by must be long, short, width or height, not {other}"),
+        };
     }
     if let Some(s) = &args.shape {
         r.size.shape = Shape::parse(s).with_context(|| format!("not a shape: {s}"))?;

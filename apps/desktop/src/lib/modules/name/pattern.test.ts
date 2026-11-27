@@ -11,6 +11,10 @@ describe('name patterns as pieces', () => {
     expect(parse('{name|slug}')).toEqual([{ kind: 'token', key: 'name', pad: 0, filter: 'slug' }]);
   });
 
+  it('reads a token written with spaces, and writes it the usual way', () => {
+    expect(print(parse('{ name }-{ n:00 }'))).toBe('{name}-{n:00}');
+  });
+
   it('keeps a brace that never closes as text', () => {
     expect(parse('a{b')).toEqual([text('a{b')]);
     expect(print(parse('a{b'))).toBe('a{b');

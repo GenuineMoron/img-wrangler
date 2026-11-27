@@ -11,7 +11,7 @@ export interface Bit { id: string; label: string; accent: Accent; text: string }
 /** A summary with room to breathe, and a bare size given its unit. */
 const say = (id: string, text: string) => {
   const spaced = text.replace(/\s*·\s*/g, ' · ');
-  return id === 'size' ? spaced.replace(/(^| · )(\d+)(?= · |$)/, '$1$2 px') : spaced;
+  return id === 'size' ? spaced.replace(/(^| · )(\d+)(?=( short side| wide| high)? · |( short side| wide| high)?$)/, '$1$2 px') : spaced;
 };
 
 /** The steps worth saying, in the order they run. Size, format, quality and where it saves always

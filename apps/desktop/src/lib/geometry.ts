@@ -3,7 +3,7 @@
 // can answer while you drag. The plan from the engine stays the authority for real numbers;
 // geometry.test.ts holds this to the engine's own test cases.
 
-import type { Anchor, Dims, Fit, Size } from '$lib/types';
+import type { Anchor, Dims, Edge, Fit, Size } from '$lib/types';
 
 export type Shape = { kind: 'original' } | { kind: 'ratio'; a: number; b: number } | { kind: 'exact'; w: number; h: number };
 
@@ -50,8 +50,15 @@ function ratioFrame(a: number, b: number, long: number): Dims {
   return a >= b ? { w: long, h: round((long * b) / a) } : { w: round((long * a) / b), h: long };
 }
 
+/** The length of one side of an image. */
+export function edgeOf(d: Dims, edge: Edge): number {
+  return edge === 'short' ? Math.min(d.w, d.h) : edge === 'width' ? d.w : edge === 'height' ? d.h : Math.max(d.w, d.h);
+}
+
 export interface FrameSpec {
+  /** The size: of `edge` with the original shape, of the frame's long side otherwise. */
   long_side: number | null;
+  edge: Edge;
   shape: Shape;
   fit: Fit;
   anchor: [number, number];
@@ -63,6 +70,7 @@ export interface FrameSpec {
 export function specOf(size: Size): FrameSpec {
   return {
     long_side: size.long_side,
+    edge: size.edge,
     shape: parseShape(size.shape) ?? { kind: 'original' },
     fit: size.fit,
     anchor: ANCHORS[size.anchor],
@@ -79,7 +87,7 @@ export function layout(content: Dims, spec: FrameSpec): Layout {
 
   let frame: Dims;
   if (s0.kind === 'original') {
-    let s = spec.long_side == null ? 1 : spec.long_side / Math.max(cw, ch);
+    let s = spec.long_side == null ? 1 : spec.long_side / Math.max(1, edgeOf(content, spec.edge));
     if (!spec.upscale) s = Math.min(s, 1);
     const d = { w: round(cw * s), h: round(ch * s) };
     return { canvas: d, crop: null, scaled: d, offset: [0, 0] };

@@ -50,6 +50,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "pad",
           "long_side": 2560,
@@ -114,6 +115,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "pad",
           "long_side": null,
@@ -178,6 +180,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "pad",
           "long_side": null,
@@ -242,6 +245,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "crop",
           "long_side": null,
@@ -306,6 +310,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "crop",
           "long_side": null,
@@ -370,6 +375,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "pad",
           "long_side": 1200,
@@ -434,6 +440,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "crop",
           "long_side": null,
@@ -498,6 +505,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "pad",
           "long_side": 2048,
@@ -565,6 +573,7 @@
         },
         "size": {
           "anchor": "center",
+          "edge": "long",
           "filter": "lanczos3",
           "fit": "pad",
           "long_side": 2000,
@@ -626,6 +635,7 @@
     },
     "size": {
       "anchor": "center",
+      "edge": "long",
       "filter": "lanczos3",
       "fit": "pad",
       "long_side": null,

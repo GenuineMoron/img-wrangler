@@ -24,7 +24,7 @@
   font: 600 var(--fs-key)/1 var(--font-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-1);
   background-color: var(--surface-key);
   background-image: var(--tex-grain-light), linear-gradient(180deg, #fbfbfa, var(--surface-key) 50%, var(--surface-key-lo));
-  background-size: var(--tex-fine-size), auto; background-position: var(--gx, 0) var(--gy, 0), 0 0;
+  background-size: var(--tex-key-grain-size), auto; background-position: var(--gx, 0) var(--gy, 0), 0 0;
   box-shadow: var(--elev-key);
   transition: transform var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out);
 }
@@ -33,6 +33,9 @@
 .key:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }
 .key:disabled, .key[aria-disabled="true"] { cursor: default; color: color-mix(in oklab, var(--ink-2) 70%, var(--surface-key)); box-shadow: var(--elev-key-pressed); transform: none; }
 .key--dark { color: var(--ink-on-dark); background-color: var(--surface-dark); background-image: var(--tex-grain-dark), linear-gradient(180deg, var(--surface-dark-hi), var(--surface-dark) 55%, #27282b); box-shadow: var(--elev-dark); }
+/* a dark key lightens a little under the pointer, and stays dark so its legend stays readable */
+.key--dark:hover { background-image: var(--tex-grain-dark), linear-gradient(180deg, #55575d, var(--surface-dark-hi) 55%, #303135); }
+.key--dark:disabled, .key--dark[aria-disabled="true"] { color: color-mix(in oklab, var(--ink-on-dark) 45%, var(--surface-dark)); background-image: var(--tex-grain-dark), linear-gradient(180deg, var(--surface-dark-hi), var(--surface-dark) 55%, #27282b); }
 .key--icon { width: var(--key-h); padding: 0; }
 .key--tall { height: var(--key-h-lg); border-radius: var(--r-key-lg); flex-direction: column; gap: var(--sp-3); }
 .key svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
@@ -57,10 +60,18 @@
 .switch:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }
 .switch:disabled { cursor: default; color: color-mix(in oklab, var(--ink-2) 70%, var(--surface-key)); }
 .switch:disabled .switch__slot { opacity: .45; }
-/* in a row with keys: the label on the left, the switch on the right, on an engraved plate */
-.switch--plate { display: flex; width: 100%; height: var(--key-h); justify-content: space-between; padding: 0 var(--sp-3) 0 var(--sp-5);
+/* in a row with keys: the label on the left, the switch on the right, on an engraved plate.
+   .plate is the same plate for a row that holds more than the switch, like a field. */
+.switch--plate, .plate { display: flex; align-items: center; gap: var(--sp-4); width: 100%; height: var(--key-h); justify-content: space-between; padding: 0 var(--sp-3) 0 var(--sp-5); border-radius: var(--r-key);
   background: rgba(0,0,0,.035); box-shadow: inset 0 0 0 1px var(--seam-dark), 0 1px 0 var(--seam-light); }
-.switch--plate .switch__label { margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.switch--plate .switch__label, .plate__label { margin-right: auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plate__label { font: 600 var(--fs-key)/1.15 var(--font-ui); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-1); }
+/* a small screen-like field inside a plate */
+.plate__field { all: unset; box-sizing: border-box; width: 72px; height: 19px; padding: 0 var(--sp-3); border-radius: 4px; text-align: right;
+  font: 11.5px/19px var(--font-data); color: var(--screen-1); background: var(--surface-screen); box-shadow: inset 0 1px 2px rgba(0,0,0,.6), 0 1px 0 var(--seam-light);
+  -webkit-user-select: text; user-select: text; }
+.plate__field:focus-visible { outline: var(--focus); outline-offset: 2px; }
+.plate__field[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--status-alarm); }
 @media (forced-colors: active) { .switch__slot { border: 1px solid CanvasText; } .switch[aria-checked="true"] .switch__cap { background: Highlight; } }
 
 /* ---------- selector: one of several. A recessed track, a raised cap on the chosen place ---------- */
@@ -70,6 +81,7 @@
 .seg__cap { position: absolute; top: 2px; bottom: 3px; left: 2px; width: calc((100% - 4px) / var(--n, 3)); transform: translateX(calc(var(--at, 0) * 100%)); border-radius: calc(var(--r-key) - 2px);
   background-color: var(--accent);
   background-image: var(--tex-grain-mid), linear-gradient(180deg, color-mix(in oklab, var(--accent) 84%, #fff), var(--accent) 55%, color-mix(in oklab, var(--accent) 88%, #000));
+  background-size: var(--tex-key-grain-size), auto;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(0,0,0,.18), 0 1.5px 0 color-mix(in oklab, var(--accent) 55%, #000), 0 2px 3px rgba(0,0,0,.25);
   transition: transform var(--dur-latch) var(--ease-out); }
 .seg > button { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: 0; padding: 0 var(--sp-1) 1px; border: 0; background: none; cursor: pointer;
@@ -177,7 +189,7 @@ svg .glow, svg.glow { filter: drop-shadow(0 0 var(--bloom) color-mix(in srgb, cu
 .run { height: var(--key-h-lg); border: 0; border-radius: var(--r-key-lg); cursor: pointer; display: grid; place-items: center; color: #fff;
   font: 800 18px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase;
   background-color: var(--output); background-image: var(--tex-grain-mid), linear-gradient(180deg, var(--output-hi), var(--output) 50%, var(--output-lo));
-  background-size: var(--tex-fine-size), auto;
+  background-size: var(--tex-key-grain-size), auto;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 0 var(--output-wall), 0 4px 2px rgba(0,0,0,.2);
   transition: transform var(--dur-press) var(--ease-out); }
 .run:active { transform: translateY(3px); box-shadow: inset 0 2px 5px rgba(0,0,0,.25), 0 0 0 var(--output-wall); }

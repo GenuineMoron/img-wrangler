@@ -4,6 +4,7 @@
 export type { Recipe } from './engine/Recipe';
 export type { Size } from './engine/Size';
 export type { Fit } from './engine/Fit';
+export type { Edge } from './engine/Edge';
 export type { Anchor } from './engine/Anchor';
 export type { Trim } from './engine/Trim';
 export type { Pad } from './engine/Pad';

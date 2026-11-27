@@ -6,13 +6,21 @@ import { layout, parseShape, shapeText, type FrameSpec, type Shape } from './geo
 
 const PHOTO = { w: 6000, h: 4000 };
 const spec = (long: number | null, shape: Shape, fit: FrameSpec['fit'], extra: Partial<FrameSpec> = {}): FrameSpec =>
-  ({ long_side: long, shape, fit, anchor: [0.5, 0.5], fill: 1, upscale: false, ...extra });
+  ({ long_side: long, edge: 'long', shape, fit, anchor: [0.5, 0.5], fill: 1, upscale: false, ...extra });
 const sq: Shape = { kind: 'ratio', a: 1, b: 1 };
 
 describe('frame layout matches the engine', () => {
   it('resizes the long side', () => {
     const l = layout(PHOTO, spec(2048, { kind: 'original' }, 'pad'));
     expect(l.canvas).toEqual({ w: 2048, h: 1365 });
+  });
+  it('resizes by the side asked for', () => {
+    const portrait = { w: 4000, h: 6000 };
+    const by = (edge: FrameSpec['edge'], d: { w: number; h: number }) => layout(d, spec(1080, { kind: 'original' }, 'pad', { edge })).canvas;
+    expect(by('short', PHOTO)).toEqual({ w: 1620, h: 1080 });
+    expect(by('short', portrait)).toEqual({ w: 1080, h: 1620 });
+    expect(by('width', PHOTO)).toEqual({ w: 1080, h: 720 });
+    expect(by('height', portrait)).toEqual({ w: 720, h: 1080 });
   });
   it('never upscales unless asked', () => {
     expect(layout({ w: 800, h: 600 }, spec(2048, { kind: 'original' }, 'pad')).canvas).toEqual({ w: 800, h: 600 });
