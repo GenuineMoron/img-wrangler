@@ -6,7 +6,8 @@ import RECIPES from '../../../dev/recipes.json';
 import type { Recipe } from '$lib/types';
 import { ADDONS, CHANNELS, KEYS, MODULES, addonOf, hasDetails } from './registry';
 
-const shopify = RECIPES['shopify-product'] as unknown as Recipe;
+const STARTERS = RECIPES.entries.map(e => e.recipe) as unknown as Recipe[];
+const shopify = STARTERS.find(r => r.name === 'Shopify product')!;
 
 describe('module registry', () => {
   it('has unique ids in run order', () => {
@@ -44,6 +45,6 @@ describe('module registry', () => {
   });
 
   it('summarises every built-in recipe without throwing', () => {
-    for (const r of Object.values(RECIPES) as unknown as Recipe[]) for (const m of MODULES) expect(typeof m.summary(r)).toBe('string');
+    for (const r of [RECIPES.new as unknown as Recipe, ...STARTERS]) for (const m of MODULES) expect(typeof m.summary(r)).toBe('string');
   });
 });

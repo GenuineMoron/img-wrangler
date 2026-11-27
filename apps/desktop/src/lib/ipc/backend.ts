@@ -15,8 +15,22 @@ export interface Backend {
   recipes(): Promise<RecipeEntry[]>;
   /** A saved or built-in recipe; "new" gives the defaults. */
   loadRecipe(id: string): Promise<Recipe>;
+  /** Save under the recipe's name. Gives its id. */
   saveRecipe(recipe: Recipe): Promise<string>;
+  /** Save under a new name, leaving the recipe it came from (`from`) alone. Gives the new id. */
+  saveRecipeAs(recipe: Recipe, from: string): Promise<string>;
   deleteRecipe(id: string): Promise<void>;
+  /** Gives the new id. */
+  renameRecipe(id: string, name: string): Promise<string>;
+  /** A copy, placed after the original. Gives the copy's id. */
+  duplicateRecipe(id: string): Promise<string>;
+  /** Put a changed starter recipe back as it came. */
+  resetRecipe(id: string): Promise<void>;
+  /** Bring back the starter recipes that were deleted. */
+  restoreRecipes(): Promise<void>;
+  /** A recipe that's on is offered in the window, the right-click menus and the menu bar. */
+  setRecipeOn(id: string, on: boolean): Promise<void>;
+  setRecipeOrder(ids: string[]): Promise<void>;
 
   /** Add files and folders to the batch (or replace it); returns the whole batch. */
   scan(paths: string[], select: Select, append: boolean): Promise<SourceFile[]>;
@@ -57,12 +71,11 @@ export interface Backend {
   integrations(): Promise<Integrations>;
   /** Put Wrangler in every file manager's right-click menu, or take it out. */
   setMenus(on: boolean): Promise<Integrations>;
-  /** The recipes offered in the right-click and menu bar menus. Takes effect at once. */
-  setPins(pins: string[]): Promise<Integrations>;
 
   appSettings(): Promise<AppSettings>;
   setAppSettings(s: { menu_bar: boolean; auto_update: boolean; login: boolean }): Promise<AppSettings>;
-  setDropRecipe(id: string): Promise<void>;
+  /** The recipe images dropped on the menu bar icon run. Null opens them in the window. */
+  setDropRecipe(id: string | null): Promise<void>;
   /** Items from the menu bar menu that need the main window ("settings", "updates"). */
   onMenu(cb: (what: string) => void): Promise<() => void>;
 

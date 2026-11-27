@@ -17,7 +17,7 @@
   .row--wide { grid-template-columns: minmax(0, 1fr); }
   .row__label { line-height: 1.25; }
   .row__control { min-width: 0; display: flex; gap: var(--sp-3); align-items: center; }
-  .row__control > :global(.keys), .row__control > :global(.slider-wrap), .row__control > :global(.field) { flex: 1; }
+  .row__control > :global(.keys), .row__control > :global(.seg), .row__control > :global(.slider-wrap), .row__control > :global(.field) { flex: 1; }
   /* A key keeps room for its whole label; the field beside it gives way instead. */
   .row__control > :global(.key) { flex: none; }
   .row__control > :global(.field) { min-width: 64px; }

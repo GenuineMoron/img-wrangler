@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
-  A row of radio keys. Arrow keys move and select, as a radio group should; the lit key takes
-  the group's accent. -->
+  A selector: one of several. The places sit in one recessed track and a raised cap marks the
+  chosen one, so it never reads as a row of separate keys. Arrow keys move and choose, as a
+  radio group should. The cap takes the group's accent. -->
 <script lang="ts" module>
   import type { IconName } from './icons';
 
@@ -8,21 +9,23 @@
 </script>
 
 <script lang="ts" generics="T extends string | number">
-  import Key from './Key.svelte';
+  import Icon from './Icon.svelte';
 
-  let { label, options, value, onchange, accent, neutral = false, columns }: {
+  let { label, options, value, onchange, accent, neutral = false, class: cls = '' }: {
     label: string;
     options: Option<T>[];
+    /** Nothing chosen when null or not among the options. */
     value: T | null;
     onchange: (v: T) => void;
     /** An accent name from tokens.css: size, format, quality, name, trim, canvas, tool. */
     accent?: string;
+    /** A dark cap, for choices that belong to no channel. */
     neutral?: boolean;
-    columns?: number;
+    class?: string;
   } = $props();
 
-  let keys: HTMLButtonElement[] = $state([]);
-  const current = $derived(options.findIndex(o => o.id === value));
+  let els: HTMLButtonElement[] = $state([]);
+  const at = $derived(options.findIndex(o => o.id === value));
 
   function onkeydown(e: KeyboardEvent, i: number) {
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
@@ -30,32 +33,34 @@
     e.preventDefault();
     for (let n = 1; n <= options.length; n++) {
       const j = (i + step * n + options.length) % options.length;
-      if (!options[j].disabled) { keys[j]?.focus(); onchange(options[j].id); return; }
+      if (!options[j].disabled) { els[j]?.focus(); onchange(options[j].id); return; }
     }
   }
 </script>
 
 <div
-  class="keys"
-  class:keys--neutral={neutral}
+  class="seg {cls}"
+  class:seg--neutral={neutral}
   role="radiogroup"
   aria-label={label}
-  style:--n={columns ?? options.length}
+  style:--n={options.length}
+  style:--at={at}
   style:--accent={accent ? `var(--accent-${accent})` : undefined}
   style:--on-accent={accent ? `var(--on-${accent})` : undefined}
 >
+  {#if at >= 0}<i class="seg__cap" aria-hidden="true"></i>{/if}
   {#each options as o, i (o.id)}
-    <Key
-      bind:el={keys[i]}
-      label={o.label}
-      icon={o.icon}
-      checked={o.id === value}
+    <button
+      bind:this={els[i]}
+      type="button"
+      role="radio"
+      aria-checked={i === at}
       aria-label={o.aria}
       title={o.title}
       disabled={o.disabled}
-      tabindex={i === current || (current < 0 && i === 0) ? 0 : -1}
+      tabindex={i === at || (at < 0 && i === 0) ? 0 : -1}
       onclick={() => onchange(o.id)}
-      onkeydown={(e: KeyboardEvent) => onkeydown(e, i)}
-    />
+      onkeydown={e => onkeydown(e, i)}
+    >{#if o.icon}<Icon name={o.icon} />{/if}{#if o.label}<span>{o.label}</span>{/if}</button>
   {/each}
 </div>

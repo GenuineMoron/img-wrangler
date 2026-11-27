@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
   import Field from '$lib/components/Field.svelte';
-  import Key from '$lib/components/Key.svelte';
+  import Switch from '$lib/components/Switch.svelte';
   import Row from '$lib/components/Row.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
 
@@ -10,9 +10,7 @@
 </script>
 
 <div class="details">
-  <Row label="Folders">
-    <Key label="Look in subfolders" pressed={s.recursive} onclick={() => (s.recursive = !s.recursive)} />
-  </Row>
+  <Switch plate label="Look in subfolders too" on={s.recursive} onchange={on => (s.recursive = on)} />
   <Row label="Only" note="Name patterns, e.g. *.jpg IMG_*">
     <Field label="Only names matching" placeholder="every image" value={s.include.join(' ')} onchange={e => (s.include = list(e.currentTarget.value))} />
   </Row>

@@ -13,14 +13,13 @@ use crate::AppState;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
-    /// Recipes offered in the right-click menus and the menu bar menu.
-    pub pins: Vec<String>,
     /// Keep the hat in the menu bar or tray, with Wrangler running when its window closes.
     pub menu_bar: bool,
     /// Look for a new version now and then.
     pub auto_update: bool,
-    /// The recipe that runs on images dropped on the menu bar icon.
-    pub drop_recipe: String,
+    /// A recipe to run on images dropped on the menu bar icon. Without one they open in the
+    /// main window.
+    pub drop_runs: Option<String>,
     /// Wrangler has put itself in the file managers' right-click menus once. After that, the
     /// menus are only kept current where they still are, so removing them sticks.
     pub menus_set_up: bool,
@@ -28,7 +27,7 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { pins: vec!["web-ready".into(), "just-compress".into(), "shopify-product".into()], menu_bar: true, auto_update: true, drop_recipe: "web-ready".into(), menus_set_up: false }
+        Self { menu_bar: true, auto_update: true, drop_runs: None, menus_set_up: false }
     }
 }
 
@@ -58,19 +57,34 @@ fn program() -> Result<std::path::PathBuf, String> {
     }
 }
 
-/// What the right-click menus are built from: this copy of the app and the pinned recipes.
+/// What the right-click menus are built from: this copy of the app and the recipes that are on.
 /// `asked` says the person asked for the menus just now (see `wrangler_integrate::Setup`).
-pub fn menu_setup(app: &AppHandle, s: &Settings, asked: bool) -> Result<wrangler_integrate::Setup, String> {
+pub fn menu_setup(app: &AppHandle, asked: bool) -> Result<wrangler_integrate::Setup, String> {
     Ok(wrangler_integrate::Setup {
         program: program()?,
-        actions: pinned(app, s).into_iter().map(|(id, label)| wrangler_integrate::QuickAction { id, label }).collect(),
+        actions: menu_recipes(app).into_iter().map(|(id, label)| wrangler_integrate::QuickAction { id, label }).collect(),
         extensions: wrangler_engine::codec::Format::extensions().into_iter().map(String::from).collect(),
         asked,
     })
 }
 
-/// The pinned recipes that still exist, with their names.
-pub fn pinned(app: &AppHandle, s: &Settings) -> Vec<(String, String)> {
-    let dir = app.state::<AppState>().dirs.recipes();
-    s.pins.iter().filter_map(|id| presets::load(&dir, id).ok().map(|r| (id.clone(), r.name))).collect()
+/// The recipes the menus offer, with their names: the ones switched on, in their order.
+pub fn menu_recipes(app: &AppHandle) -> Vec<(String, String)> {
+    presets::enabled(&app.state::<AppState>().dirs.recipes()).into_iter().map(|e| (e.id, e.name)).collect()
+}
+
+/// A recipe changed, so the menus that name recipes are out of date: the tray's now, and the
+/// file managers' in the background (rewriting Finder's takes a moment).
+pub fn menus_changed(app: &AppHandle) {
+    crate::tray::refresh(app);
+    let app = app.clone();
+    std::thread::spawn(move || {
+        use wrangler_integrate as wi;
+        let Ok(setup) = menu_setup(&app, false) else { return };
+        for t in wi::targets().into_iter().filter(|t| wi::installed(*t)) {
+            if let Err(e) = wi::install(t, &setup) {
+                eprintln!("{}: {e}", t.label());
+            }
+        }
+    });
 }

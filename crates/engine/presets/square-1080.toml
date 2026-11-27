@@ -1,0 +1,12 @@
+name = "Square 1080"
+description = "Exactly 1080 × 1080, cropped from the centre to fill, JPEG."
+[size]
+shape = "1080x1080"
+fit = "crop"
+upscale = true
+[format]
+id = "jpg"
+[quality]
+look = "high"
+[destination]
+mode = "subfolder"

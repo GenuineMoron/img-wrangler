@@ -85,7 +85,6 @@ export interface Integration {
 
 export interface Integrations {
   targets: Integration[];
-  pins: string[];
 }
 
 /** What the self-test should do (see src/lib/selftest). */
@@ -116,9 +115,8 @@ export interface AppSettings {
   auto_update: boolean;
   /** Starts at login, in the menu bar. */
   login: boolean;
-  /** What images dropped on the menu bar icon run. */
-  drop_recipe: string;
-  pins: string[];
+  /** The recipe images dropped on the menu bar icon run. Null opens them in the window. */
+  drop_runs: string | null;
 }
 
 /** A newer version, with its changelog in Markdown. */

@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Sean Hawkey
 
 //! Wrangler in the menu bar (macOS) or the system tray (Windows, Linux): the hat and its menu.
-//! On a Mac, images dropped on the hat run straight away, and the small unit opens under it
-//! with the results and Undo.
+//! On a Mac, images dropped on the hat open in the main window, or run a recipe straight away
+//! if Settings says so, with the small unit opening under the hat.
 //!
 //! The menu is what someone reaches for without opening the window (see `model`). It's rebuilt
 //! whenever something it shows changes, so its labels are always current.
@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use tauri::image::Image;
-use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
 
@@ -48,26 +48,18 @@ fn images(n: u32) -> String {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Item {
     Action { id: String, text: String, enabled: bool },
-    /// A ticked choice inside a submenu.
-    Choice { id: String, text: String, chosen: bool },
-    Submenu { text: String, items: Vec<Item> },
     Line,
 }
 
-/// What the menu holds, top to bottom: open the window, run a pinned recipe on images chosen
-/// now, which recipe a drop on the hat runs (a Mac only: nothing else can drop on its icon),
+/// What the menu holds, top to bottom: open the window, run a recipe on images chosen now,
 /// take back the last run, then the app's own business.
-pub fn model(pinned: &[(String, String)], drop_recipe: &str, last_run: Option<(&str, &str, u32)>, update: Option<&str>, drops: bool) -> Vec<Item> {
+pub fn model(recipes: &[(String, String)], last_run: Option<(&str, &str, u32)>, update: Option<&str>) -> Vec<Item> {
     let action = |id: &str, text: String| Item::Action { id: id.into(), text, enabled: true };
     let mut m = vec![action("open", "Open Wrangler".into()), Item::Line];
-    for (id, name) in pinned {
+    for (id, name) in recipes {
         m.push(action(&format!("run:{id}"), format!("Run {name}…")));
     }
-    if drops && !pinned.is_empty() {
-        let items = pinned.iter().map(|(id, name)| Item::Choice { id: format!("drop:{id}"), text: name.clone(), chosen: id == drop_recipe }).collect();
-        m.push(Item::Submenu { text: "Images dropped on the hat run".into(), items });
-    }
-    if !pinned.is_empty() {
+    if !recipes.is_empty() {
         m.push(Item::Line);
     }
     m.push(match last_run {
@@ -85,24 +77,15 @@ pub fn model(pinned: &[(String, String)], drop_recipe: &str, last_run: Option<(&
 fn append(app: &AppHandle, to: &dyn Fn(&dyn tauri::menu::IsMenuItem<tauri::Wry>) -> tauri::Result<()>, item: &Item) -> tauri::Result<()> {
     match item {
         Item::Action { id, text, enabled } => to(&MenuItem::with_id(app, id, text, *enabled, None::<&str>)?),
-        Item::Choice { id, text, chosen } => to(&CheckMenuItem::with_id(app, id, text, true, *chosen, None::<&str>)?),
         Item::Line => to(&PredefinedMenuItem::separator(app)?),
-        Item::Submenu { text, items } => {
-            let sub = Submenu::new(app, text, true)?;
-            for i in items {
-                append(app, &|x| sub.append(x), i)?;
-            }
-            to(&sub)
-        }
     }
 }
 
 fn menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
-    let s = settings::load(app);
-    let pinned = settings::pinned(app, &s);
+    let recipes = settings::menu_recipes(app);
     let last = wrangler_engine::journal::history(&app.state::<AppState>().dirs.runs()).into_iter().find(|r| !r.undone && r.files > 0);
     let update = crate::updates::found(app).map(|u| u.version);
-    let items = model(&pinned, &s.drop_recipe, last.as_ref().map(|r| (r.id.as_str(), r.recipe.as_str(), r.files)), update.as_deref(), cfg!(target_os = "macos"));
+    let items = model(&recipes, last.as_ref().map(|r| (r.id.as_str(), r.recipe.as_str(), r.files)), update.as_deref());
     let menu = Menu::new(app)?;
     for item in &items {
         append(app, &|x| menu.append(x), item)?;
@@ -170,12 +153,6 @@ fn handle(app: &AppHandle, id: &str) {
                 }
             });
         }
-        drop if drop.starts_with("drop:") => {
-            let mut s = settings::load(app);
-            s.drop_recipe = drop[5..].to_string();
-            let _ = settings::save(app, &s);
-            refresh(app);
-        }
         undo if undo.starts_with("undo:") => {
             let (app, run) = (app.clone(), undo[5..].to_string());
             std::thread::spawn(move || {
@@ -227,34 +204,28 @@ mod tests {
             .iter()
             .map(|i| match i {
                 Item::Action { text, enabled, .. } => format!("{text}{}", if *enabled { "" } else { " (off)" }),
-                Item::Choice { text, chosen, .. } => format!("{}{text}", if *chosen { "✓ " } else { "" }),
-                Item::Submenu { text, items } => format!("{text} > {}", texts(items).join(", ")),
                 Item::Line => "---".into(),
             })
             .collect()
     }
 
     #[test]
-    fn the_menu_on_a_mac_with_a_run_to_undo() {
-        let pinned = vec![("web-ready".to_string(), "Web ready".to_string()), ("just-compress".to_string(), "Just compress".to_string())];
-        let m = model(&pinned, "just-compress", Some(("run-1", "Web ready", 8)), None, true);
+    fn the_menu_with_a_run_to_undo() {
+        let recipes = vec![("compress-for-web".to_string(), "Compress for web".to_string()), ("just-compress".to_string(), "Just compress".to_string())];
+        let m = model(&recipes, Some(("run-1", "Compress for web", 8)), None);
         assert_eq!(texts(&m), [
             "Open Wrangler", "---",
-            "Run Web ready…", "Run Just compress…", "Images dropped on the hat run > Web ready, ✓ Just compress", "---",
-            "Undo “Web ready” on 8 images", "---",
+            "Run Compress for web…", "Run Just compress…", "---",
+            "Undo “Compress for web” on 8 images", "---",
             "Check for updates…", "Settings…", "---",
             "Quit Wrangler",
         ]);
-        assert!(m.contains(&Item::Action { id: "undo:run-1".into(), text: "Undo “Web ready” on 8 images".into(), enabled: true }));
+        assert!(m.contains(&Item::Action { id: "undo:run-1".into(), text: "Undo “Compress for web” on 8 images".into(), enabled: true }));
     }
 
     #[test]
-    fn the_menu_elsewhere_with_nothing_pinned_and_an_update() {
-        let m = model(&[], "web-ready", None, Some("0.2.0"), false);
+    fn the_menu_with_every_recipe_off_and_an_update() {
+        let m = model(&[], None, Some("0.2.0"));
         assert_eq!(texts(&m), ["Open Wrangler", "---", "Nothing to undo (off)", "---", "Update to 0.2.0…", "Settings…", "---", "Quit Wrangler"]);
-        // Windows and Linux can't drop on a tray icon, so they aren't offered the choice.
-        let pinned = vec![("web-ready".to_string(), "Web ready".to_string())];
-        assert!(!texts(&model(&pinned, "web-ready", None, None, false)).iter().any(|t| t.contains("dropped")));
     }
 }
-

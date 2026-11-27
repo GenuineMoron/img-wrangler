@@ -59,8 +59,10 @@ Text pairs meet WCAG AA: ink on case 14.6:1, screen text from 17:1 down to the 4
 ## Components
 All in `design/system/components.css`, as Svelte components in `apps/desktop/src/lib/components`.
 
-- **Key**: the one button. Latching (`aria-pressed`), radio (`role=radio`), or plain. Lit keys take the nearest `--accent`. `.key--insert` prints a + for keys that add rather than latch.
-- **KeyGroup**: a row of radio keys. Arrows move and select.
+- **Key**: you press it and something happens. It never stays down. `.key--insert` prints a + for keys that add something.
+- **Switch**: a slide switch (`role=switch`), for every setting that's on or off. `plate` puts the label on the left and the switch on the right, to sit in a row with keys.
+- **Segmented**: a selector, for one of several (`role=radiogroup`). The places sit in one recessed track and a raised cap in the nearest `--accent` marks the chosen one. Arrows move and choose.
+- A person should be able to tell the three apart at a glance: raised and alone is a key, a slot with a cap is a switch, a track with a cap is a selector.
 - **ScreenChoice**: a choice printed on a screen (the size ruler, the format list, crop/pad/inside).
 - **Slider**: recessed slot, cap with an accent stripe, printed stops that are presses too.
 - **Field**: a text field set into the case like a small screen.
@@ -75,7 +77,7 @@ All in `design/system/components.css`, as Svelte components in `apps/desktop/src
 The window is the unit: a 56 px header, the display and the Recipe panel (`clamp(312px, 25vw, 372px)`), and a 252 px strip of four channels beside the Output panel. Gutter 12 px *tuned*. Minimum window 1200 × 760.
 
 ## Motion
-Keys press in 60 ms and latch in 120 ms. Screens change in 160 ms. All with `--ease-out`. Only transform and opacity animate. `prefers-reduced-motion` sets every duration to zero.
+Keys press in 60 ms. Switches and selectors move in 120 ms. Screens change in 160 ms. All with `--ease-out`. Only transform and opacity animate. `prefers-reduced-motion` sets every duration to zero.
 
 ## Accessibility
 Full keyboard: 1 to 4 focus the channels, arrows inside groups and the sheet, `⌘/Ctrl ↵` runs, `⌘/Ctrl K` opens commands, Space toggles the original. Every drag handle is a `role=slider` with arrow keys. Focus rings are 2 px, black on the case and white on screens. Colour is never the only cue: glyphs on channels, text on flags (`! CLASH`, `= KEPT`). `prefers-contrast: more` removes the pixel grid.

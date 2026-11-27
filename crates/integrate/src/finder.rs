@@ -200,7 +200,7 @@ mod tests {
     fn setup() -> Setup {
         Setup {
             program: "/Applications/Wrangler.app/Contents/MacOS/img-wrangler-app".into(),
-            actions: vec![QuickAction { id: "web-ready".into(), label: "Web ready".into() }],
+            actions: vec![QuickAction { id: "compress-for-web".into(), label: "Compress for web".into() }],
             extensions: vec!["jpg".into(), "png".into()],
             asked: true,
         }
@@ -209,8 +209,8 @@ mod tests {
     #[test]
     fn menu_lists_recipes_and_extensions() {
         let v: serde_json::Value = serde_json::from_str(&menu_json(&setup())).unwrap();
-        assert_eq!(v["recipes"][0]["id"], "web-ready");
-        assert_eq!(v["recipes"][0]["label"], "Web ready");
+        assert_eq!(v["recipes"][0]["id"], "compress-for-web");
+        assert_eq!(v["recipes"][0]["label"], "Compress for web");
         assert_eq!(v["extensions"], serde_json::json!(["jpg", "png"]));
         assert_eq!(v["open"], "Open in Wrangler…");
     }
@@ -221,14 +221,14 @@ mod tests {
         write_menu(dir.path(), &setup()).unwrap();
         let requests = dir.path().join("requests");
         let abs = if cfg!(windows) { r"C:\photos\a.jpg" } else { "/photos/a.jpg" };
-        fs::write(requests.join("1.json"), serde_json::json!({ "recipe": "web-ready", "paths": [abs, "relative/b.jpg"] }).to_string()).unwrap();
+        fs::write(requests.join("1.json"), serde_json::json!({ "recipe": "compress-for-web", "paths": [abs, "relative/b.jpg"] }).to_string()).unwrap();
         fs::write(requests.join("2.json"), serde_json::json!({ "paths": [abs] }).to_string()).unwrap();
         fs::write(requests.join("3.json"), "not json").unwrap();
         fs::write(requests.join("4.tmp"), "half written").unwrap();
 
         let mut taken = take_requests(dir.path());
         taken.sort_by_key(|r| r.recipe.is_none());
-        assert_eq!(taken, vec![Request { recipe: Some("web-ready".into()), paths: vec![abs.into()] }, Request { recipe: None, paths: vec![abs.into()] }]);
+        assert_eq!(taken, vec![Request { recipe: Some("compress-for-web".into()), paths: vec![abs.into()] }, Request { recipe: None, paths: vec![abs.into()] }]);
         assert!(take_requests(dir.path()).is_empty(), "each request is handed over once");
         assert!(requests.join("4.tmp").exists(), "a request still being written is left alone");
     }

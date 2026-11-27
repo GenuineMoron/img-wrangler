@@ -13,7 +13,7 @@ use wrangler_engine::{presets, process, quality};
 fn main() {
     let mut args = std::env::args().skip(1);
     let path = std::path::PathBuf::from(args.next().expect("usage: stages <image> [recipe]"));
-    let id = args.next().unwrap_or_else(|| "web-ready".into());
+    let id = args.next().unwrap_or_else(|| "compress-for-web".into());
     let recipe = presets::load(&AppDirs::detect().recipes(), &id).expect("recipe");
     let lap = |what: &str, t: Instant| println!("{what:<28}{:>8.1} ms", t.elapsed().as_secs_f64() * 1000.0);
 

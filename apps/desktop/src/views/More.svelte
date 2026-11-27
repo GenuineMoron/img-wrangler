@@ -4,7 +4,7 @@
   new module gets this for free. Add-ons carry their on switch in the header. -->
 <script lang="ts">
   import { tick } from 'svelte';
-  import Key from '$lib/components/Key.svelte';
+  import Switch from '$lib/components/Switch.svelte';
   import Popover from '$lib/components/Popover.svelte';
   import { addonOf, moduleById } from '$lib/modules/registry';
   import { recipe } from '$lib/state/recipe.svelte';
@@ -32,7 +32,7 @@
   {#key m.id}
     <Popover {anchor} {trigger} title={m.label} width={m.id === 'name' ? 400 : 340} onclose={() => (ui.more = null)}>
       {#snippet head()}
-        {#if m.kind === 'addon'}<Key label="On" pressed={!!addon?.enabled} onclick={off} title="Switch {m.label.toLowerCase()} off. Its settings are kept" />{/if}
+        {#if m.kind === 'addon'}<Switch label="On" on={!!addon?.enabled} onchange={off} title="Switch {m.label.toLowerCase()} off. Its settings are kept" />{/if}
       {/snippet}
       <div style:--accent="var(--accent-{m.accent})" style:--on-accent="var(--on-{m.accent})">
         {#if m.kind === 'addon'}

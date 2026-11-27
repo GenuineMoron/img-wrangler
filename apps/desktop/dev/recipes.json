@@ -1,456 +1,642 @@
 {
- "new": {
-  "version": 1,
-  "name": "Untitled",
-  "description": "",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "shape": "original",
-   "fit": "pad",
-   "anchor": "center",
-   "upscale": false,
-   "filter": "lanczos3",
-   "pad": {
-    "backdrop": "auto",
-    "fill": 100.0
-   },
-   "long_side": null,
-   "trim": null
-  },
-  "format": {
-   "id": "same",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "balanced",
-   "allow_downscale": false,
-   "never_bigger": true,
-   "progressive": true,
-   "max_kb": null
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "subfolder",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
+  "entries": [
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "2560 px on the long side, WebP. Saved into a Wrangled folder.",
+      "id": "compress-for-web",
+      "name": "Compress for web",
+      "on": true,
+      "recipe": {
+        "addons": [],
+        "description": "2560 px on the long side, WebP. Saved into a Wrangled folder.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "webp",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Compress for web",
+        "quality": {
+          "allow_downscale": false,
+          "look": "balanced",
+          "max_kb": null,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "pad",
+          "long_side": 2560,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 100.0
+          },
+          "shape": "original",
+          "trim": null,
+          "upscale": false
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "Same format and size, smaller files. Replaces the originals, with undo for 30 days.",
+      "id": "just-compress",
+      "name": "Just compress",
+      "on": true,
+      "recipe": {
+        "addons": [],
+        "description": "Same format and size, smaller files. Replaces the originals, with undo for 30 days.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "replace",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "same",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Just compress",
+        "quality": {
+          "allow_downscale": false,
+          "look": "high",
+          "max_kb": null,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "pad",
+          "long_side": null,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 100.0
+          },
+          "shape": "original",
+          "trim": null,
+          "upscale": false
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "Same size, saved as JPEG. For HEIC, PNG, WebP and anything else that won't open.",
+      "id": "convert-to-jpeg",
+      "name": "Convert to JPEG",
+      "on": true,
+      "recipe": {
+        "addons": [],
+        "description": "Same size, saved as JPEG. For HEIC, PNG, WebP and anything else that won't open.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "jpg",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Convert to JPEG",
+        "quality": {
+          "allow_downscale": false,
+          "look": "high",
+          "max_kb": null,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "pad",
+          "long_side": null,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 100.0
+          },
+          "shape": "original",
+          "trim": null,
+          "upscale": false
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "Exactly 1920 × 1080, cropped from the centre to fill, JPEG.",
+      "id": "1080p-16-9",
+      "name": "1080p, 16:9",
+      "on": true,
+      "recipe": {
+        "addons": [],
+        "description": "Exactly 1920 × 1080, cropped from the centre to fill, JPEG.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "jpg",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "1080p, 16:9",
+        "quality": {
+          "allow_downscale": false,
+          "look": "high",
+          "max_kb": null,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "crop",
+          "long_side": null,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 100.0
+          },
+          "shape": "1920x1080",
+          "trim": null,
+          "upscale": true
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "Exactly 1080 × 1080, cropped from the centre to fill, JPEG.",
+      "id": "square-1080",
+      "name": "Square 1080",
+      "on": true,
+      "recipe": {
+        "addons": [],
+        "description": "Exactly 1080 × 1080, cropped from the centre to fill, JPEG.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "jpg",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Square 1080",
+        "quality": {
+          "allow_downscale": false,
+          "look": "high",
+          "max_kb": null,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "crop",
+          "long_side": null,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 100.0
+          },
+          "shape": "1080x1080",
+          "trim": null,
+          "upscale": true
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "1200 px on the long side, JPEG, under 200 KB each.",
+      "id": "small-for-email",
+      "name": "Small for email",
+      "on": true,
+      "recipe": {
+        "addons": [],
+        "description": "1200 px on the long side, JPEG, under 200 KB each.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "jpg",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Small for email",
+        "quality": {
+          "allow_downscale": true,
+          "look": "balanced",
+          "max_kb": 200,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "pad",
+          "long_side": 1200,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 100.0
+          },
+          "shape": "original",
+          "trim": null,
+          "upscale": false
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "1200 × 628 link previews, cropped from the centre, JPEG.",
+      "id": "social-card",
+      "name": "Social card",
+      "on": false,
+      "recipe": {
+        "addons": [],
+        "description": "1200 × 628 link previews, cropped from the centre, JPEG.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "jpg",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Social card",
+        "quality": {
+          "allow_downscale": false,
+          "look": "high",
+          "max_kb": null,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "crop",
+          "long_side": null,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 100.0
+          },
+          "shape": "1200x628",
+          "trim": null,
+          "upscale": true
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "Trimmed, centred on a 2048 px square with the photo's own backdrop, WebP.",
+      "id": "shopify-product",
+      "name": "Shopify product",
+      "on": false,
+      "recipe": {
+        "addons": [],
+        "description": "Trimmed, centred on a 2048 px square with the photo's own backdrop, WebP.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "webp",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Shopify product",
+        "quality": {
+          "allow_downscale": false,
+          "look": "high",
+          "max_kb": 400,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "pad",
+          "long_side": 2048,
+          "pad": {
+            "backdrop": "auto",
+            "fill": 85.0
+          },
+          "shape": "1:1",
+          "trim": {
+            "margin": 0,
+            "tolerance": 4
+          },
+          "upscale": true
+        },
+        "version": 1
+      }
+    },
+    {
+      "built_in": true,
+      "changed": false,
+      "description": "Pure white 2000 px square, product filling 85%, JPEG.",
+      "id": "amazon-main-image",
+      "name": "Amazon main image",
+      "on": false,
+      "recipe": {
+        "addons": [],
+        "description": "Pure white 2000 px square, product filling 85%, JPEG.",
+        "destination": {
+          "folder": "Wrangled",
+          "keep_dates": false,
+          "mode": "subfolder",
+          "on_conflict": "number",
+          "suffix": "-web"
+        },
+        "format": {
+          "auto": false,
+          "id": "jpg",
+          "matte": "#ffffff"
+        },
+        "metadata": {
+          "keep": "none"
+        },
+        "name": "Amazon main image",
+        "quality": {
+          "allow_downscale": false,
+          "look": "high",
+          "max_kb": null,
+          "never_bigger": true,
+          "progressive": true
+        },
+        "rename": {
+          "case": "keep",
+          "list": "",
+          "mode": "keep",
+          "pattern": "{name}",
+          "replace": [],
+          "start": 1,
+          "step": 1
+        },
+        "select": {
+          "exclude": [],
+          "include": [],
+          "min_kb": null,
+          "recursive": false
+        },
+        "size": {
+          "anchor": "center",
+          "filter": "lanczos3",
+          "fit": "pad",
+          "long_side": 2000,
+          "pad": {
+            "backdrop": "#ffffff",
+            "fill": 85.0
+          },
+          "shape": "1:1",
+          "trim": {
+            "margin": 0,
+            "tolerance": 6
+          },
+          "upscale": true
+        },
+        "version": 1
+      }
+    }
+  ],
+  "new": {
+    "addons": [],
+    "description": "",
+    "destination": {
+      "folder": "Wrangled",
+      "keep_dates": false,
+      "mode": "subfolder",
+      "on_conflict": "number",
+      "suffix": "-web"
+    },
+    "format": {
+      "auto": false,
+      "id": "same",
+      "matte": "#ffffff"
+    },
+    "metadata": {
+      "keep": "none"
+    },
+    "name": "Untitled",
+    "quality": {
+      "allow_downscale": false,
+      "look": "balanced",
+      "max_kb": null,
+      "never_bigger": true,
+      "progressive": true
+    },
+    "rename": {
+      "case": "keep",
+      "list": "",
+      "mode": "keep",
+      "pattern": "{name}",
+      "replace": [],
+      "start": 1,
+      "step": 1
+    },
+    "select": {
+      "exclude": [],
+      "include": [],
+      "min_kb": null,
+      "recursive": false
+    },
+    "size": {
+      "anchor": "center",
+      "filter": "lanczos3",
+      "fit": "pad",
+      "long_side": null,
+      "pad": {
+        "backdrop": "auto",
+        "fill": 100.0
+      },
+      "shape": "original",
+      "trim": null,
+      "upscale": false
+    },
+    "version": 1
   }
- },
- "web-ready": {
-  "version": 1,
-  "name": "Web ready",
-  "description": "2560 px on the long side, WebP, balanced. Saved into a Wrangled folder.",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "long_side": 2560,
-   "shape": "original",
-   "fit": "pad",
-   "anchor": "center",
-   "upscale": false,
-   "filter": "lanczos3",
-   "pad": {
-    "backdrop": "auto",
-    "fill": 100.0
-   },
-   "trim": null
-  },
-  "format": {
-   "id": "webp",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "balanced",
-   "allow_downscale": false,
-   "never_bigger": true,
-   "progressive": true,
-   "max_kb": null
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "subfolder",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
-  }
- },
- "just-compress": {
-  "version": 1,
-  "name": "Just compress",
-  "description": "Same format and size, smaller files. Replaces the originals, with undo for 30 days.",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "shape": "original",
-   "fit": "pad",
-   "anchor": "center",
-   "upscale": false,
-   "filter": "lanczos3",
-   "pad": {
-    "backdrop": "auto",
-    "fill": 100.0
-   },
-   "long_side": null,
-   "trim": null
-  },
-  "format": {
-   "id": "same",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "high",
-   "allow_downscale": false,
-   "never_bigger": true,
-   "progressive": true,
-   "max_kb": null
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "replace",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
-  }
- },
- "shopify-product": {
-  "version": 1,
-  "name": "Shopify product",
-  "description": "Trimmed, centred on a 2048 px square with the photo's own backdrop, WebP.",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "long_side": 2048,
-   "shape": "1:1",
-   "fit": "pad",
-   "anchor": "center",
-   "upscale": true,
-   "filter": "lanczos3",
-   "trim": {
-    "tolerance": 4,
-    "margin": 0
-   },
-   "pad": {
-    "backdrop": "auto",
-    "fill": 85.0
-   }
-  },
-  "format": {
-   "id": "webp",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "high",
-   "max_kb": 400,
-   "allow_downscale": false,
-   "never_bigger": true,
-   "progressive": true
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "subfolder",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
-  }
- },
- "amazon-main-image": {
-  "version": 1,
-  "name": "Amazon main image",
-  "description": "Pure white 2000 px square, product filling 85%, JPEG.",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "long_side": 2000,
-   "shape": "1:1",
-   "fit": "pad",
-   "anchor": "center",
-   "upscale": true,
-   "filter": "lanczos3",
-   "trim": {
-    "tolerance": 6,
-    "margin": 0
-   },
-   "pad": {
-    "backdrop": "#ffffff",
-    "fill": 85.0
-   }
-  },
-  "format": {
-   "id": "jpg",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "high",
-   "allow_downscale": false,
-   "never_bigger": true,
-   "progressive": true,
-   "max_kb": null
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "subfolder",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
-  }
- },
- "email-safe": {
-  "version": 1,
-  "name": "Email safe",
-  "description": "1200 px, JPEG, under 200 KB each.",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "long_side": 1200,
-   "shape": "original",
-   "fit": "pad",
-   "anchor": "center",
-   "upscale": false,
-   "filter": "lanczos3",
-   "pad": {
-    "backdrop": "auto",
-    "fill": 100.0
-   },
-   "trim": null
-  },
-  "format": {
-   "id": "jpg",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "balanced",
-   "max_kb": 200,
-   "allow_downscale": true,
-   "never_bigger": true,
-   "progressive": true
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "subfolder",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
-  }
- },
- "social-card": {
-  "version": 1,
-  "name": "Social card",
-  "description": "1200 \u00d7 628 link previews, cropped from the centre, JPEG.",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "shape": "1200x628",
-   "fit": "crop",
-   "anchor": "center",
-   "upscale": true,
-   "filter": "lanczos3",
-   "pad": {
-    "backdrop": "auto",
-    "fill": 100.0
-   },
-   "long_side": null,
-   "trim": null
-  },
-  "format": {
-   "id": "jpg",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "high",
-   "allow_downscale": false,
-   "never_bigger": true,
-   "progressive": true,
-   "max_kb": null
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "subfolder",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
-  }
- },
- "square-thumbnails": {
-  "version": 1,
-  "name": "Square thumbnails",
-  "description": "800 px squares cropped from the centre, WebP.",
-  "addons": [],
-  "select": {
-   "include": [],
-   "exclude": [],
-   "recursive": false,
-   "min_kb": null
-  },
-  "size": {
-   "long_side": 800,
-   "shape": "1:1",
-   "fit": "crop",
-   "anchor": "center",
-   "upscale": false,
-   "filter": "lanczos3",
-   "pad": {
-    "backdrop": "auto",
-    "fill": 100.0
-   },
-   "trim": null
-  },
-  "format": {
-   "id": "webp",
-   "auto": false,
-   "matte": "#ffffff"
-  },
-  "quality": {
-   "look": "balanced",
-   "allow_downscale": false,
-   "never_bigger": true,
-   "progressive": true,
-   "max_kb": null
-  },
-  "rename": {
-   "mode": "keep",
-   "pattern": "{name}",
-   "case": "keep",
-   "replace": [],
-   "start": 1,
-   "step": 1,
-   "list": ""
-  },
-  "metadata": {
-   "keep": "none"
-  },
-  "destination": {
-   "mode": "subfolder",
-   "suffix": "-web",
-   "folder": "Wrangled",
-   "on_conflict": "number",
-   "keep_dates": false
-  }
- }
 }

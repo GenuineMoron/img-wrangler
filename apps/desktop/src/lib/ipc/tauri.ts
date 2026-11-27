@@ -29,7 +29,14 @@ export const tauri: Backend = {
   recipes: () => invoke('recipes'),
   loadRecipe: id => invoke('load_recipe', { id }),
   saveRecipe: recipe => invoke('save_recipe', { recipe }),
+  saveRecipeAs: (recipe, from) => invoke('save_recipe_as', { recipe, from }),
   deleteRecipe: id => invoke('delete_recipe', { id }),
+  renameRecipe: (id, name) => invoke('rename_recipe', { id, name }),
+  duplicateRecipe: id => invoke('duplicate_recipe', { id }),
+  resetRecipe: id => invoke('reset_recipe', { id }),
+  restoreRecipes: () => invoke('restore_recipes'),
+  setRecipeOn: (id, on) => invoke('set_recipe_on', { id, on }),
+  setRecipeOrder: ids => invoke('set_recipe_order', { ids }),
 
   scan: (paths, select, append) => invoke('scan', { paths, select, append }),
   forget: paths => invoke('forget', { paths }),
@@ -87,7 +94,6 @@ export const tauri: Backend = {
 
   integrations: () => invoke('integrations'),
   setMenus: on => invoke('set_menus', { on }),
-  setPins: pins => invoke('set_pins', { pins }),
 
   appSettings: () => invoke('app_settings'),
   setAppSettings: s => invoke('set_app_settings', s),

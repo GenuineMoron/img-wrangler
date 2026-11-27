@@ -59,15 +59,59 @@ pub fn load_recipe(state: State<AppState>, id: String) -> Res<Recipe> {
     presets::load(&state.dirs.recipes(), &id).map_err(err)
 }
 
-#[tauri::command]
-pub fn save_recipe(state: State<AppState>, recipe: Recipe) -> Res<String> {
-    recipe.validate().map_err(err)?;
-    presets::save(&state.dirs.recipes(), &recipe).map_err(err)
+/// Every change to the recipes below also brings the menus that name them up to date.
+fn shelf<T>(app: &AppHandle, change: impl FnOnce(&std::path::Path) -> wrangler_engine::Result<T>) -> Res<T> {
+    let done = change(&app.state::<AppState>().dirs.recipes()).map_err(err)?;
+    settings::menus_changed(app);
+    Ok(done)
 }
 
 #[tauri::command]
-pub fn delete_recipe(state: State<AppState>, id: String) -> Res<()> {
-    presets::delete(&state.dirs.recipes(), &id).map_err(err)
+pub fn save_recipe(app: AppHandle, recipe: Recipe) -> Res<String> {
+    shelf(&app, |dir| presets::save(dir, &recipe))
+}
+
+/// Save under a new name, leaving the recipe it came from as it was.
+#[tauri::command]
+pub fn save_recipe_as(app: AppHandle, recipe: Recipe, from: String) -> Res<String> {
+    shelf(&app, |dir| presets::save_as(dir, &recipe, &from))
+}
+
+#[tauri::command]
+pub fn delete_recipe(app: AppHandle, id: String) -> Res<()> {
+    shelf(&app, |dir| presets::delete(dir, &id))
+}
+
+#[tauri::command]
+pub fn rename_recipe(app: AppHandle, id: String, name: String) -> Res<String> {
+    shelf(&app, |dir| presets::rename(dir, &id, &name))
+}
+
+#[tauri::command]
+pub fn duplicate_recipe(app: AppHandle, id: String) -> Res<String> {
+    shelf(&app, |dir| presets::duplicate(dir, &id))
+}
+
+/// Put a changed starter recipe back as it came.
+#[tauri::command]
+pub fn reset_recipe(app: AppHandle, id: String) -> Res<()> {
+    shelf(&app, |dir| presets::reset(dir, &id))
+}
+
+/// Bring back the starter recipes that were deleted.
+#[tauri::command]
+pub fn restore_recipes(app: AppHandle) -> Res<()> {
+    shelf(&app, presets::restore)
+}
+
+#[tauri::command]
+pub fn set_recipe_on(app: AppHandle, id: String, on: bool) -> Res<()> {
+    shelf(&app, |dir| presets::set_on(dir, &id, on))
+}
+
+#[tauri::command]
+pub fn set_recipe_order(app: AppHandle, ids: Vec<String>) -> Res<()> {
+    shelf(&app, |dir| presets::set_order(dir, &ids))
 }
 
 // ---------- The batch ----------
@@ -289,12 +333,11 @@ pub struct Integration {
 #[derive(Debug, Clone, Serialize)]
 pub struct Integrations {
     pub targets: Vec<Integration>,
-    pub pins: Vec<String>,
 }
 
 #[tauri::command]
-pub fn integrations(app: AppHandle) -> Integrations {
-    Integrations { targets: wi::targets().into_iter().map(|t| Integration { target: t, label: t.label(), installed: wi::installed(t), place: wi::where_it_shows(t) }).collect(), pins: settings::load(&app).pins }
+pub fn integrations() -> Integrations {
+    Integrations { targets: wi::targets().into_iter().map(|t| Integration { target: t, label: t.label(), installed: wi::installed(t), place: wi::where_it_shows(t) }).collect() }
 }
 
 /// Put Wrangler in every file manager's right-click menu, or take it out of them all.
@@ -302,7 +345,7 @@ pub fn integrations(app: AppHandle) -> Integrations {
 pub fn set_menus(app: AppHandle, on: bool) -> Res<Integrations> {
     let mut problems = Vec::new();
     if on {
-        let setup = settings::menu_setup(&app, &settings::load(&app), true)?;
+        let setup = settings::menu_setup(&app, true)?;
         for t in wi::targets() {
             if let Err(e) = wi::install(t, &setup) {
                 problems.push(format!("{}: {e}", t.label()));
@@ -315,22 +358,7 @@ pub fn set_menus(app: AppHandle, on: bool) -> Res<Integrations> {
             }
         }
     }
-    if problems.is_empty() { Ok(integrations(app)) } else { Err(problems.join("\n")) }
-}
-
-/// Choose the recipes offered in the right-click menus and the menu bar menu. Menus that are
-/// installed are rewritten straight away.
-#[tauri::command]
-pub fn set_pins(app: AppHandle, pins: Vec<String>) -> Res<Integrations> {
-    let mut s = settings::load(&app);
-    s.pins = pins;
-    settings::save(&app, &s)?;
-    crate::tray::refresh(&app);
-    let setup = settings::menu_setup(&app, &s, false)?;
-    for t in wi::targets().into_iter().filter(|t| wi::installed(*t)) {
-        wi::install(t, &setup).map_err(err)?;
-    }
-    Ok(integrations(app))
+    if problems.is_empty() { Ok(integrations()) } else { Err(problems.join("\n")) }
 }
 
 // ---------- The app's own settings ----------
@@ -343,9 +371,8 @@ pub struct AppSettings {
     pub auto_update: bool,
     /// Wrangler starts at login, in the menu bar.
     pub login: bool,
-    /// What images dropped on the menu bar icon run.
-    pub drop_recipe: String,
-    pub pins: Vec<String>,
+    /// The recipe images dropped on the menu bar icon run. None opens them in the window.
+    pub drop_runs: Option<String>,
 }
 
 #[tauri::command]
@@ -357,8 +384,7 @@ pub fn app_settings(app: AppHandle) -> AppSettings {
         menu_bar_available: crate::tray::available(),
         auto_update: s.auto_update,
         login: app.autolaunch().is_enabled().unwrap_or(false),
-        drop_recipe: s.drop_recipe,
-        pins: s.pins,
+        drop_runs: s.drop_runs,
     }
 }
 
@@ -387,12 +413,10 @@ pub fn set_app_settings(app: AppHandle, menu_bar: bool, auto_update: bool, login
 }
 
 #[tauri::command]
-pub fn set_drop_recipe(app: AppHandle, id: String) -> Res<()> {
+pub fn set_drop_recipe(app: AppHandle, id: Option<String>) -> Res<()> {
     let mut s = settings::load(&app);
-    s.drop_recipe = id;
-    settings::save(&app, &s)?;
-    crate::tray::refresh(&app);
-    Ok(())
+    s.drop_runs = id;
+    settings::save(&app, &s)
 }
 
 /// A window has drawn its first frame: put it on screen, unless it's the main window and no one

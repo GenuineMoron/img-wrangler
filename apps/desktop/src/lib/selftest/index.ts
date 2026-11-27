@@ -180,7 +180,7 @@ async function switchRecipes(out: Result[]) {
   }
   out.push({ name: 'Next recipe: plan redrawn', ms: round(median(times)), note: `worst ${round(Math.max(...times))} ms` });
   out.push({ name: 'Switching recipes: frames', frames: stop() });
-  await recipe.load('web-ready');
+  await recipe.load('compress-for-web');
   await until(() => previewShown() && !batch.estimating, performance.now(), 60000);
 }
 
@@ -263,11 +263,14 @@ async function moreStates(take: (state: string) => void) {
   await open('size', 'size, padded and trimmed');
   r.size.fit = 'crop';
   await open('size', 'size, cropped');
+  Object.assign(r.size, { shape: '1920x1080', upscale: true });
+  await open('size', 'size, exact pixels');
   r.quality.max_kb = 200;
   r.quality.look = 80;
   await open('quality', 'quality, limit and fixed');
   for (const mode of ['pattern', 'replace', 'list'] as const) {
     r.rename.mode = mode;
+    if (mode === 'pattern') r.rename.pattern = 'spring catalogue-{name}-{n:000}-{date}-{w}x{h}';
     if (mode === 'replace' && r.rename.replace.length < 2) r.rename.replace.push({ find: 'IMG_', with: 'photo-', regex: false, ignore_case: false }, { find: ' ', with: '-', regex: false, ignore_case: false });
     await open('name', `name, ${mode}`);
   }
@@ -276,7 +279,11 @@ async function moreStates(take: (state: string) => void) {
     await open('save', `save, ${mode}`);
   }
   ui.more = null;
-  await recipe.load('web-ready');
+  ui.naming = true;
+  await settle();
+  take('header: naming a new recipe');
+  ui.naming = false;
+  await recipe.revert();
   await settle();
 }
 
@@ -314,7 +321,7 @@ export async function run(cfg: SelfTest, bootMs: number): Promise<Report> {
   const out = report.results;
   for (const f of cfg.fx ?? []) document.documentElement.classList.add(f === 'layers' ? 'fx-layers' : `fx-off-${f}`);
   try {
-    await recipe.load('web-ready');
+    await recipe.load('compress-for-web');
     await settle();
     // The automatic effects check, as on a first launch, unless the test asks for one (for this
     // run only: the person's own setting stays as it is).

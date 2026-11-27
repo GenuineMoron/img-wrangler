@@ -13,7 +13,7 @@ body:
     id: recipe
     attributes:
       label: The recipe
-      description: "Paste it if you can. In the app: Commands, then Save recipe as. On the command line: img-wrangler recipes show <name>."
+      description: "Paste it if you can. On the command line: img-wrangler recipes show <name>. The files are in the folder that img-wrangler recipes path prints."
       render: toml
   - type: input
     id: version

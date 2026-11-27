@@ -796,8 +796,8 @@ mod tests {
     #[test]
     fn finder_starts_the_app_through_launch_services() {
         let app = PathBuf::from("/Applications/Wrangler.app/Contents/MacOS/img-wrangler-app");
-        let a = QuickAction { id: "web-ready".into(), label: "Web ready".into() };
-        assert_eq!(finder_command(&app, Some(&a)), "/usr/bin/open -n -a '/Applications/Wrangler.app' --args 'quick' '--recipe' 'web-ready'");
+        let a = QuickAction { id: "compress-for-web".into(), label: "Compress for web".into() };
+        assert_eq!(finder_command(&app, Some(&a)), "/usr/bin/open -n -a '/Applications/Wrangler.app' --args 'quick' '--recipe' 'compress-for-web'");
         assert_eq!(finder_command(Path::new("/usr/local/bin/img-wrangler"), None), "'/usr/local/bin/img-wrangler' 'open'");
     }
 

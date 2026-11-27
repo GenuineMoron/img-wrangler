@@ -1,7 +1,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
   The Size screen is the control: drag the frame's corner to resize, type the number, pick a stop
   on the ruler, and choose how the picture meets the frame. The diagram draws the selected image
-  to scale: its original outline, the frame it goes into, and where the picture lands. -->
+  to scale: its original outline, the frame it goes into, and where the picture lands. With
+  "Enlarge smaller images" on, the diagram zooms out so the frame can be dragged past the
+  original, up to twice its size. Any size can be typed. -->
 <script lang="ts">
   import ScreenChoice from '$lib/components/ScreenChoice.svelte';
   import { layout, parseShape, specOf } from '$lib/geometry';
@@ -17,12 +19,15 @@
   const shape = $derived(spec.shape);
   const l = $derived(layout(src, spec));
   const maxSrc = $derived(Math.max(src.w, src.h));
-  // Drawn to an area scale: the original fills the box, and the frame's area shows how much
-  // smaller it is (a third of the pixels looks like a third). Linear scale made common sizes
-  // too small to read.
-  const ratio = $derived(Math.max(l.canvas.w, l.canvas.h) / maxSrc);
-  const scale = $derived((BOX * Math.min(1, Math.sqrt(ratio))) / Math.max(l.canvas.w, l.canvas.h));
-  const srcScale = $derived(BOX / maxSrc);
+  const outLong = $derived(Math.max(l.canvas.w, l.canvas.h));
+  // How far the box reaches, in originals: just the original, or twice it when enlarging.
+  const reach = $derived(size.upscale ? 2 : 1);
+  // Drawn to an area scale: the frame's area shows how much smaller or bigger it is (a third of
+  // the pixels looks like a third). Linear scale made common sizes too small to read.
+  const scale = $derived((BOX * Math.min(1, Math.sqrt(outLong / maxSrc / reach))) / outLong);
+  const srcScale = $derived((BOX * Math.sqrt(1 / reach)) / maxSrc);
+  /** This image is smaller than the size asked for, and isn't being enlarged. */
+  const short = $derived(!size.upscale && shape.kind !== 'exact' && size.long_side != null && maxSrc < size.long_side);
 
   // Frame (the output canvas), anchored bottom-left.
   const fw = $derived(Math.max(6, l.canvas.w * scale));
@@ -51,9 +56,10 @@
   function fromPointer(e: PointerEvent, box: DOMRect) {
     const frac = Math.max((e.clientX - box.left) / box.width, (box.bottom - e.clientY) / box.height);
     // Inverse of the area scale above.
-    const px = Math.max(100, Math.round((Math.min(1, Math.max(0.1, frac)) ** 2 * maxSrc) / 10) * 10);
+    const px = Math.max(100, Math.round((Math.min(1, Math.max(0.1, frac)) ** 2 * reach * maxSrc) / 10) * 10);
     const snap = STOPS.find(s => s.px && Math.abs(s.px - px) < maxSrc * 0.035);
-    setLong(snap?.px ?? px);
+    // The original's own size is "full": no resizing at all.
+    setLong(snap?.px ?? (Math.abs(px - maxSrc) < maxSrc * 0.035 ? null : px));
   }
 
   let svg: SVGSVGElement;
@@ -75,10 +81,10 @@
     const dir = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
     if (!dir) return;
     e.preventDefault();
-    const cur = Math.max(l.canvas.w, l.canvas.h);
-    const list = [...new Set([...STOPS.map(s => s.px ?? maxSrc), maxSrc])].sort((a, b) => a - b);
+    const cur = size.long_side ?? maxSrc;
+    const list = [...new Set([...STOPS.map(s => s.px ?? maxSrc), maxSrc, ...(size.upscale ? [maxSrc * 2] : [])])].filter(px => px <= maxSrc * reach).sort((a, b) => a - b);
     const next = dir > 0 ? list.find(px => px > cur) : [...list].reverse().find(px => px < cur);
-    if (next) setLong(next >= maxSrc && !size.upscale ? null : next);
+    if (next) setLong(next === maxSrc ? null : next);
   }
 
   function startTyping() {
@@ -96,13 +102,9 @@
   }
 
   const bigText = $derived(shape.kind === 'exact' ? `${shape.w}×${shape.h}` : size.long_side ? String(size.long_side) : 'full');
+  /** What the big number is, in a few words. */
+  const unit = $derived(shape.kind === 'exact' ? 'exact pixels' : size.long_side ? 'px long side' : 'size, not resized');
   const approx = $derived(size.trim ? '≈ ' : '');
-  const note = $derived(
-    shape.kind === 'original'
-      ? size.long_side && maxSrc < size.long_side && !size.upscale ? 'smaller, left as is' : 'keeps each shape'
-      : size.fit === 'pad' ? `pad · ${backdrop === 'transparent' ? 'clear' : backdrop} · ${Math.round(size.pad.fill)}%`
-      : size.fit === 'crop' ? 'crops to fill' : 'fits inside',
-  );
 </script>
 
 <div class="w-size">
@@ -133,9 +135,9 @@
       tabindex="0"
       aria-label="Output size. Drag the corner or use the arrow keys, Enter to type"
       aria-valuemin="16"
-      aria-valuemax={maxSrc}
-      aria-valuenow={Math.max(l.canvas.w, l.canvas.h)}
-      aria-valuetext="{Math.max(l.canvas.w, l.canvas.h)} pixels on the long side"
+      aria-valuemax={maxSrc * reach}
+      aria-valuenow={outLong}
+      aria-valuetext="{outLong} pixels on the long side"
       style:left="{(fw / BOX) * 100}%"
       style:top="{(fy / BOX) * 100}%"
       onkeydown={handleKey}
@@ -153,11 +155,10 @@
       <button type="button" class="value-btn glow" class:small={shape.kind === 'exact'} onclick={startTyping} disabled={shape.kind === 'exact'}
         aria-label={shape.kind === 'exact' ? `Exact size ${bigText}` : `Long side ${bigText}. Press to type a size`}>{bigText}</button>
     {/if}
-    <span class="sub" title="This image comes out at {l.canvas.w} × {l.canvas.h} pixels">{approx}{l.canvas.w}×{l.canvas.h}</span>
+    <span class="scr-label unit">{unit}</span>
+    <span class="sub" class:short title="This image comes out at {l.canvas.w} × {l.canvas.h} pixels" data-long>{short ? 'smaller: stays ' : '→ '}{approx}{l.canvas.w}×{l.canvas.h}</span>
     {#if shape.kind !== 'original'}
       <ScreenChoice label="How the picture meets the frame" items={[...FITS]} value={size.fit} onchange={(v: Fit) => (size.fit = v)} />
-    {:else}
-      <span class="scr-label">{note}</span>
     {/if}
   </div>
 
@@ -186,11 +187,13 @@
   .handle:focus-visible { outline: var(--focus-on-screen); outline-offset: 2px; }
   .vals { display: grid; gap: 4px; align-content: center; justify-items: start; min-width: 0; color: var(--accent-size-text); }
   .value-btn { all: unset; cursor: text; font: var(--value-weight) var(--fs-value)/1 var(--font-value); border-radius: 2px; color: var(--accent-size-text); }
-  .value-btn.small { font-size: 19px; cursor: default; }
+  .value-btn.small { font-size: 17px; cursor: default; }
   .value-btn:hover:not(:disabled) { box-shadow: 0 1px 0 currentColor; }
   .value-btn:focus-visible { outline: var(--focus-on-screen); outline-offset: 2px; }
   .value-input { all: unset; width: 100%; font: var(--value-weight) var(--fs-value)/1 var(--font-value); color: var(--accent-size-text); box-shadow: 0 1px 0 var(--accent-size-text); }
-  .sub { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .unit { color: var(--screen-3); margin-top: -1px; white-space: nowrap; }
+  .sub { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-top: 3px; }
+  .sub.short { color: var(--accent-quality); }
   .vals :global(.choice) { --accent: var(--accent-size); --on-accent: #fff; margin-left: -5px; }
   @container channel (max-width: 210px) {
     .w-size { grid-template-columns: 62px minmax(0, 1fr); column-gap: var(--sp-7); }

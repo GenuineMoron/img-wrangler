@@ -2,6 +2,21 @@
 
 Notable changes, newest first. Versions follow [semantic versioning](https://semver.org).
 
+## 0.1.0-alpha.5, 27 November 2026
+
+Controls that look like what they are, names built from pieces, and recipes you can look after.
+
+- **Keys, switches and selectors.** A key does something when you press it. A switch is on or off. A selector picks one of several, with one raised cap in a track. Every toggle and every choice in the app is now the right one of the three, so nothing that stays on looks like a button any more. Each screen has two rows of them beneath it, and the step keys carry a lamp that's lit while the step is on.
+- **Size makes sense.** Type any size, or switch on "Enlarge smaller images" and drag the frame past the original. With it off, the screen says when an image is smaller and stays as it is. The big number says what it is (pixels on the long side). A "W:H" place on the shape selector takes any ratio in two fields, or pixels for an exact size, with a key to turn it on its side.
+- **Names built from pieces.** The Name screen shows the new name as blocks: the old name, a number, a date, the size, the folder, your own text. Press a piece to add it, drag blocks to reorder them, drag one away to remove it, press one for its options (a number's digits, the date the photo was taken). Letter case is a selector under the screen.
+- **Recipes you can look after.** The recipe list says what each recipe does, read from its settings. Rename, copy, delete, drag into order, and switch any of them on or off. Changes you haven't saved wait with their recipe while you look at another. Save keeps the changes, and Save as new names a new recipe right on the recipe screen.
+- **A plainer starter set.** Compress for web, Just compress, Convert to JPEG, 1080p 16:9, Square 1080 and Small for email are on. Social card, Shopify product and Amazon main image come switched off. Web ready is now Compress for web, and Email safe is Small for email (`-r compress-for-web` on the command line).
+- **One list for the menus.** The recipes that are on are what the right-click menu and the menu bar offer, in your order. The separate list of pinned recipes in Settings is gone.
+- Images dropped on the hat in the menu bar open in Wrangler. Settings can have a drop run a recipe instead. The choice has left the hat's menu.
+- Fixed in Finder: "Wrangler" showed twice for files on an external or network drive, the hat was squashed, and there was an empty row above "Open in Wrangler…".
+- Settings uses switches, and says where to choose the menu's recipes.
+- The self-test now uses the controls the way a person does (pressing, dragging and typing) and checks what happened, in Chromium and WebKit on every push.
+
 ## 0.1.0-alpha.4, 26 November 2026
 
 Every setting in one place, Wrangler in Finder's own menu, and set up from the first launch.

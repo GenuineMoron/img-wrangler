@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
-  import KeyGroup from '$lib/components/KeyGroup.svelte';
+  import Segmented from '$lib/components/Segmented.svelte';
   import Row from '$lib/components/Row.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
   import type { KeepMeta } from '$lib/types';
@@ -15,7 +15,7 @@
 
 <div class="details">
   <Row label="Camera data" note={NOTES[m.keep]}>
-    <KeyGroup label="Metadata to keep" neutral value={m.keep} onchange={v => (m.keep = v)}
+    <Segmented label="Metadata to keep" neutral value={m.keep} onchange={v => (m.keep = v)}
       options={[{ id: 'none', label: 'None' }, { id: 'safe', label: 'Safe' }, { id: 'all', label: 'All' }]} />
   </Row>
 </div>

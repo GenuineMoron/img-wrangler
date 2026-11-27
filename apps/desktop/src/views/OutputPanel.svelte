@@ -4,7 +4,7 @@
   places to save are keys here, and the rest of Save's settings open from the line above them. -->
 <script lang="ts">
   import Key from '$lib/components/Key.svelte';
-  import KeyGroup from '$lib/components/KeyGroup.svelte';
+  import Segmented from '$lib/components/Segmented.svelte';
   import Ladder from '$lib/components/Ladder.svelte';
   import Screen from '$lib/components/Screen.svelte';
   import { backend } from '$lib/ipc';
@@ -78,7 +78,7 @@
       <button type="button" class="more" id="more-save" aria-expanded={ui.more === 'save'} aria-haspopup="dialog" onclick={() => ui.toggleMore('save')}
         title="More save settings: the folder's name, names already taken, file dates">{recipe.value ? save.summary(recipe.value) : ''} ›</button>
     </div>
-    {#if d}<KeyGroup label="Save to" neutral options={MODES} value={d.mode} onchange={setMode} />{/if}
+    {#if d}<Segmented label="Save to" neutral options={MODES} value={d.mode} onchange={setMode} />{/if}
   </div>
 
   <div class="go">

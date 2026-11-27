@@ -23,7 +23,7 @@ enum Tests {
         defer { try? FileManager.default.removeItem(at: folder) }
 
         check(WranglerMenu.load(from: folder) == nil, "no menu file, no menu")
-        let json = #"{"extensions":["jpg","png"],"open":"Open in Wrangler…","recipes":[{"id":"web-ready","label":"Web ready"},{"id":"just-compress","label":"Just compress"}]}"#
+        let json = #"{"extensions":["jpg","png"],"open":"Open in Wrangler…","recipes":[{"id":"compress-for-web","label":"Compress for web"},{"id":"just-compress","label":"Just compress"}]}"#
         try json.write(to: folder.appendingPathComponent("menu.json"), atomically: true, encoding: .utf8)
         guard let menu = WranglerMenu.load(from: folder) else {
             print("FAILED: the menu file didn't load")
@@ -41,8 +41,22 @@ enum Tests {
         let built = menu.build(action: #selector(NSObject.description), hat: nil)
         check(built.items.map(\.title) == ["Wrangler"], "one entry in Finder's menu")
         let sub = built.items[0].submenu?.items ?? []
-        check(sub.map(\.title) == ["Web ready", "Just compress", "", "Open in Wrangler…"], "recipes, a line, then open: \(sub.map(\.title))")
-        check(sub.filter { !$0.isSeparatorItem }.map(\.tag) == [0, 1, 2], "tags count up")
+        check(sub.map(\.title) == ["Compress for web", "Just compress", "Open in Wrangler…"], "recipes, then open, with no gap: \(sub.map(\.title))")
+        check(sub.map(\.tag) == [0, 1, 2], "tags count up")
+
+        // The hat is half as tall again as it is wide. Its menu icon must be square, with the
+        // hat keeping its shape inside: ink across the width, clear rows above and below.
+        let ink = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 66, pixelsHigh: 44, bitsPerSample: 8, samplesPerPixel: 4,
+                                   hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        for x in 0..<66 { for y in 0..<44 { ink.setColor(NSColor(deviceRed: 0, green: 0, blue: 0, alpha: 1), atX: x, y: y) } }
+        let wide = NSImage(size: NSSize(width: 66, height: 44))
+        wide.addRepresentation(ink)
+        let icon = WranglerMenu.icon(wide)
+        let rep = icon.representations.first as? NSBitmapImageRep
+        check(icon.size.width == icon.size.height && icon.isTemplate, "the menu icon is square and takes the menu's colour")
+        let alpha = { (x: Int, y: Int) in rep?.colorAt(x: x, y: y)?.alphaComponent ?? -1 }
+        check(alpha(1, 16) > 0.9 && alpha(30, 16) > 0.9, "the hat spans the icon's width")
+        check(alpha(16, 1) == 0 && alpha(16, 30) == 0, "and keeps its shape, with nothing above or below")
 
         let urls = [file("/a/one.jpg"), file("/a/two with space.png")]
         let run = menu.request(tag: 1, urls: urls)
@@ -56,7 +70,7 @@ enum Tests {
         let left = try FileManager.default.contentsOfDirectory(atPath: folder.appendingPathComponent("requests").path)
         check(left.count == 1 && left[0].hasSuffix(".json"), "one whole request, nothing half written: \(left)")
 
-        print(failed == 0 ? "Finder extension: 14 checks passed" : "Finder extension: \(failed) failed")
+        print(failed == 0 ? "Finder extension: 17 checks passed" : "Finder extension: \(failed) failed")
         exit(failed == 0 ? 0 : 1)
     }
 }

@@ -31,7 +31,7 @@ Every feature is a module. A module has an engine half (Rust) and an app half (S
    };
    export default watermark;
    ```
-3. `WatermarkDetails.svelte` takes `{ value }` (the add-on's settings, edited in place) and is built from the shared components (`Row`, `Key`, `KeyGroup`, `Slider`, `Field`, `ColourKey`, `AnchorPad`).
+3. `WatermarkDetails.svelte` takes `{ value }` (the add-on's settings, edited in place) and is built from the shared components (`Row`, `Key`, `Switch`, `Segmented`, `Slider`, `Field`, `ColourKey`, `AnchorPad`).
 4. Add it to `MODULES` in `apps/desktop/src/lib/modules/registry.ts`. It now has a key in the row of steps, in run order. Pressing the key switches it on and opens its settings, with an On switch in the header.
 
 **CLI**: add-ons are read from recipe files automatically. Add a flag in `crates/cli` only if it is common enough to deserve one.

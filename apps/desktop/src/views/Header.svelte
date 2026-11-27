@@ -2,6 +2,7 @@
   The top of the unit: the mark, the recipe selector, and the keys for adding images, past runs
   and settings. The empty parts drag the window. -->
 <script lang="ts">
+  import { tick } from 'svelte';
   import Key from '$lib/components/Key.svelte';
   import HatScreen from '$lib/components/HatScreen.svelte';
   import Screen from '$lib/components/Screen.svelte';
@@ -28,9 +29,24 @@
   }
 
   async function save() {
-    if (recipe.entry?.built_in) ui.dialog = 'recipes';
-    else { await recipe.save(); ui.say(`Saved “${recipe.value?.name}”.`); }
+    await recipe.save();
+    ui.say(`Saved “${recipe.value?.name}”.`);
   }
+
+  // Saving as a new recipe: its name is typed on the recipe screen, where the name lives.
+  let newName = $state('');
+  $effect(() => { if (ui.naming) newName = `${recipe.value?.name ?? 'Recipe'} copy`; });
+
+  async function saveNew() {
+    const name = newName.trim();
+    if (!name) return;
+    ui.naming = false;
+    await recipe.saveAs(name);
+    ui.say(`Saved “${recipe.value?.name}” as a new recipe.`);
+  }
+
+  // Selected once the suggested name is in, so typing replaces it.
+  const focus = (el: HTMLInputElement) => { el.focus(); tick().then(() => el.select()); };
 </script>
 
 <header class="head" data-tauri-drag-region>
@@ -40,14 +56,27 @@
   <div class="recipe">
     <Key icon="prev" aria-label="Previous recipe" onclick={() => recipe.step(-1)} />
     <Screen class="recipe__screen">
-      <button type="button" class="recipe__name" onclick={() => (ui.dialog = 'recipes')} aria-label="Recipe: {recipe.value?.name}{recipe.edited ? ', edited' : ''}. Press to choose or manage recipes">
-        <span class="num">{String(recipe.index + 1).padStart(2, '0')}</span>
-        <span class="label" data-long>{recipe.value?.name.toUpperCase() ?? '--'}</span>
-        {#if recipe.edited}<span class="edited">● edited</span>{/if}
-      </button>
+      {#if ui.naming}
+        <input class="recipe__new" aria-label="Name for the new recipe" spellcheck="false" autocomplete="off" bind:value={newName} use:focus
+          onkeydown={e => { if (e.key === 'Enter') saveNew(); if (e.key === 'Escape') ui.naming = false; }} />
+      {:else}
+        <button type="button" class="recipe__name" onclick={() => (ui.dialog = 'recipes')} title="Choose a recipe, or look after them"
+          aria-label="Recipe: {recipe.value?.name}{recipe.edited ? ', with changes not saved' : ''}. Press to choose a recipe or look after them">
+          <span class="num">{recipe.index < 0 ? '--' : String(recipe.index + 1).padStart(2, '0')}</span>
+          <span class="label" data-long>{recipe.value?.name.toUpperCase() ?? '--'}</span>
+          {#if recipe.edited}<span class="edited">● edited</span>{/if}
+        </button>
+      {/if}
     </Screen>
     <Key icon="next" aria-label="Next recipe" onclick={() => recipe.step(1)} />
-    <Key label="Save recipe" disabled={!recipe.edited} onclick={save} title="Save your changes to this recipe ({mod}S)" />
+    {#if ui.naming}
+      <Key dark label="Save" disabled={!newName.trim()} onclick={saveNew} />
+      <Key label="Cancel" onclick={() => (ui.naming = false)} />
+    {:else}
+      <Key label="Save" disabled={!recipe.edited} onclick={save} title="Save your changes to this recipe ({mod}S)" />
+      <Key insert label="Save as new" onclick={() => (ui.naming = true)} title="Leave this recipe as it was and save what’s on the controls as a new one ({mod}⇧S)" />
+      {#if recipe.edited}<Key icon="undo" aria-label="Undo your changes to this recipe" title="Undo your changes to this recipe" onclick={() => recipe.revert()} />{/if}
+    {/if}
   </div>
 
   <div class="right">
@@ -70,6 +99,7 @@
   .recipe__name { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; height: 100%; display: flex; align-items: center; gap: var(--sp-6); padding: 0 var(--sp-6);
     font: 12.5px/1 var(--font-data); white-space: nowrap; overflow: hidden; }
   .recipe__name:focus-visible { outline: var(--focus-on-screen); outline-offset: -3px; }
+  .recipe__new { all: unset; box-sizing: border-box; width: 100%; height: 100%; padding: 0 var(--sp-6); font: 12.5px/1 var(--font-data); color: var(--screen-1); box-shadow: inset 0 0 0 1px var(--output); border-radius: var(--r-screen); }
   .num { color: var(--output); }
   .label { overflow: hidden; text-overflow: ellipsis; }
   .edited { margin-left: auto; color: var(--output); font-size: var(--fs-small); }

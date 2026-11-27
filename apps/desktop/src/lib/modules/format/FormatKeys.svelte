@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
   import ColourKey from '$lib/components/ColourKey.svelte';
-  import Key from '$lib/components/Key.svelte';
+  import Switch from '$lib/components/Switch.svelte';
   import { catalog } from '$lib/state/catalog.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
 
@@ -9,8 +9,6 @@
   const opaque = $derived(f.id !== 'same' && !f.auto && catalog.info(f.id)?.alpha === false);
 </script>
 
-<div class="keys" style:--n="2" style:--accent="var(--accent-format)" style:--on-accent="var(--on-format)">
-  <Key label="Auto per image" pressed={f.auto} onclick={() => (f.auto = !f.auto)} title="WebP for photos, PNG for graphics and screenshots" />
-  <ColourKey label="Matte" value={f.matte} onchange={hex => (f.matte = hex)} />
-</div>
-{#if opaque}<span class="sr-only">Transparent areas are filled with the matte colour.</span>{/if}
+<Switch plate label="Pick per image" on={f.auto} onchange={on => (f.auto = on)} title="Chooses for each image: WebP for photos, PNG for graphics and screenshots" />
+<ColourKey plate label="Behind clear areas" value={f.matte} onchange={hex => (f.matte = hex)} title="The colour behind see-through areas when the format has none, like JPEG" />
+{#if opaque}<span class="sr-only">Transparent areas are filled with this colour.</span>{/if}

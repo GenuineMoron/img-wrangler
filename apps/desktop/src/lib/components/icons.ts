@@ -35,6 +35,11 @@ export const ICONS = {
   drop: '<path d="M8 1.5v8M4.5 6 8 9.5 11.5 6"/><path d="M2 10.5v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2"/>',
   stamp: '<path d="M5.5 9.5V8a2.5 2.5 0 1 1 5 0v1.5"/><path d="M6.5 6.5 6 3.5a2 2 0 0 1 4 0l-.5 3"/><rect x="2.5" y="9.5" width="11" height="3" rx="1"/><path d="M3.5 14.5h9"/>',
   list: '<path d="M6 4h8M6 8h8M6 12h8"/><path d="M2.5 4h.01M2.5 8h.01M2.5 12h.01"/>',
+  swap: '<path d="M2.5 5.5h10M10 3l2.5 2.5L10 8"/><path d="M13.5 10.5h-10M6 8l-2.5 2.5L6 13"/>',
+  pencil: '<path d="M10.5 3 13 5.5 5.5 13H3v-2.5z"/><path d="M9 4.5 11.5 7"/>',
+  copy: '<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5"/>',
+  grip: '<path d="M6 4h.01M10 4h.01M6 8h.01M10 8h.01M6 12h.01M10 12h.01"/>',
+  restore: '<path d="M2.5 8a5.5 5.5 0 1 0 1.7-4"/><path d="M2.5 2.5v3.4h3.4"/>',
   split: '<rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M8 1v14"/>',
 } as const;
 

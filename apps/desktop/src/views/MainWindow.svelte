@@ -37,7 +37,7 @@
         backend.selftest().then(async cfg => {
           if (!cfg) return;
           const t = await import('$lib/selftest');
-          (window as unknown as { __wrangler: unknown }).__wrangler = { layoutHere: t.layoutHere, ui, batch };
+          (window as unknown as { __wrangler: unknown }).__wrangler = { layoutHere: t.layoutHere, ui, batch, recipe };
           await t.run(cfg, booted);
         });
       })
@@ -53,7 +53,7 @@
     if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); batch.add(await backend.pick(e.shiftKey ? 'folder' : 'files')); return; }
     if (mod && e.key.toLowerCase() === 's') {
       e.preventDefault();
-      if (recipe.entry?.built_in || e.shiftKey) ui.dialog = 'recipes';
+      if (e.shiftKey) ui.naming = true;
       else if (recipe.edited) { await recipe.save(); ui.say(`Saved “${recipe.value?.name}”.`); }
       return;
     }

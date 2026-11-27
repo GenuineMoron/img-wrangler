@@ -1,0 +1,10 @@
+name = "Compress for web"
+description = "2560 px on the long side, WebP. Saved into a Wrangled folder."
+[size]
+long_side = 2560
+[format]
+id = "webp"
+[quality]
+look = "balanced"
+[destination]
+mode = "subfolder"

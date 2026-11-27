@@ -12,8 +12,10 @@ Thanks for helping. A few things make reviews quick:
 - **Plain words everywhere.** Labels say what things do. Errors say what went wrong and how to
   fix it. In docs and in the app: British spelling, sentence case, no em dashes, no semicolons.
 - **Fast, and fitting, on every screen.** If you change the interface, run `pnpm selftest browser`
-  in `apps/desktop` (and `pnpm selftest app` if you can build the app). It times the everyday steps
-  and fails on cut-off or overlapping controls. Avoid effects that are redrawn on every repaint
+  in `apps/desktop` (and `pnpm selftest app` if you can build the app). It times the everyday steps,
+  fails on cut-off or overlapping controls, and then presses, drags and types its way through the
+  controls to check they do what they say (`scripts/interact.mjs`, the place to add a check for a
+  new control). Avoid effects that are redrawn on every repaint
   (blend modes, filters, big soft shadows): WebKitGTK without a graphics card draws them slowly.
   Textures are baked with `pnpm textures`.
 - **The README's graphics are built, not drawn.** If you change how the app looks, run

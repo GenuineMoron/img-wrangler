@@ -10,6 +10,8 @@ class UiState {
   /** The module whose further settings are open, above its control. One at a time. */
   more = $state<string | null>(null);
   dialog = $state<DialogId>(null);
+  /** A new recipe is being named on the header's recipe screen. */
+  naming = $state(false);
   dropping = $state(false);
   /** A short message on the status line, read out by screen readers. */
   message = $state<{ text: string; alarm: boolean } | null>(null);

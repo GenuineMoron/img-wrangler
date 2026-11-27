@@ -1,5 +1,5 @@
-name = "Email safe"
-description = "1200 px, JPEG, under 200 KB each."
+name = "Small for email"
+description = "1200 px on the long side, JPEG, under 200 KB each."
 [size]
 long_side = 1200
 [format]

@@ -37,9 +37,9 @@
   .more { all: unset; cursor: pointer; border-radius: 2px; margin-left: auto; font: var(--fs-small)/1 var(--font-data); color: var(--ink-2); }
   .more:hover, .more[aria-expanded='true'] { color: var(--ink-1); }
   .more:focus-visible { outline: var(--focus); outline-offset: 2px; }
-  /* A narrow window: four keys to a row still fit their labels. */
+  /* A narrow window: every place on a selector still fits its label. */
   @container channel (max-width: 210px) {
-    .channels :global(.channel__controls .keys) { gap: 4px; }
-    .channels :global(.channel__controls .keys > .key) { padding: 0 1px; letter-spacing: .02em; }
+    .channels :global(.channel__controls .seg > button) { letter-spacing: 0; font-size: 9.5px; }
+    .channels :global(.channel__controls .switch) { letter-spacing: .02em; }
   }
 </style>

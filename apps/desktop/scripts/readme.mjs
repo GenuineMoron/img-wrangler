@@ -76,9 +76,9 @@ const photos = fs.readdirSync(SAMPLES).filter(f => f.endsWith('.jpg')).sort();
 const thumbDir = wrangle(photos.map(f => path.join(SAMPLES, f)), ['--shape', '1:1', '--fit', 'crop', '--size', '128', '--format', 'jpg', '--look', 'high'], path.join(TMP, 'thumbs'));
 const thumb = i => dataUri(path.join(thumbDir, photos[i % photos.length]));
 
-// A real run of the Web ready recipe over the sample photos. Every figure on the hero and the
+// A real run of the Compress for web recipe over the sample photos. Every figure on the hero and the
 // right-click card comes from these files.
-const webDir = wrangle(photos.map(f => path.join(SAMPLES, f)), ['-r', 'web-ready'], path.join(TMP, 'web-ready'));
+const webDir = wrangle(photos.map(f => path.join(SAMPLES, f)), ['-r', 'compress-for-web'], path.join(TMP, 'compress-for-web'));
 const files = photos.map(f => ({ in: fs.statSync(path.join(SAMPLES, f)).size, out: fs.statSync(path.join(webDir, f.replace(/\.jpg$/, '.webp'))).size }));
 const totalIn = files.reduce((a, f) => a + f.in, 0);
 const size = n => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.round(n / 1e3)} KB`);
@@ -138,7 +138,7 @@ function hero() {
   inner.push(`<text x="58" y="${sh - 18}" class="dm" font-size="12" fill="${C.screen2}">done · into Wrangled/</text>`);
   b.push(screen(606, 52, sw, sh, inner.join('')));
   css.push(`@media (prefers-reduced-motion: reduce){.final{opacity:1!important}${Array.from({ length: 24 }, (_, i) => (i >= lit(N) ? `.seg${i}{fill:#1b1b1b}` : '')).join('')}}`);
-  return svg(W, H, `Wrangler, a batch image unit. A real run plays on its screen: ${N} photos through the Web ready recipe, ${size(totalIn)} to ${size(totalOut)}, ${Math.round((1 - totalOut / totalIn) * 100)} percent smaller.`, css.join(''), b.join(''));
+  return svg(W, H, `Wrangler, a batch image unit. A real run plays on its screen: ${N} photos through the Compress for web recipe, ${size(totalIn)} to ${size(totalOut)}, ${Math.round((1 - totalOut / totalIn) * 100)} percent smaller.`, css.join(''), b.join(''));
 }
 
 // ---------------------------------------------------------------- right-click, then the quick window
@@ -173,8 +173,8 @@ function rightClick() {
     return o.join('') + '</g>';
   };
   b.push(menu(mx, my, ['Open', 'Get Info', 'Rename…', '-', 'Wrangler ›', 'Copy'], 'menu', 4, 'hiw'));
-  b.push(menu(mx + 204, my + 76, ['Web ready', 'Email safe', 'Just compress', '-', 'Open in Wrangler…'], 'sub', 0, 'his'));
-  // the pointer: right-click on the selection, along to Wrangler, across to Web ready, click
+  b.push(menu(mx + 204, my + 76, ['Compress for web', 'Just compress', 'Convert to JPEG', 'Open in Wrangler…'], 'sub', 0, 'his'));
+  // the pointer: right-click on the selection, along to Wrangler, across to Compress for web, click
   css.push(`@keyframes ptr{0%{transform:translate(300px,120px)}5%{transform:translate(340px,150px)}10%,14%{transform:translate(${mx + 70}px,${my + 104}px)}20%{transform:translate(${mx + 240}px,${my + 104}px)}24%,100%{transform:translate(${mx + 240}px,${my + 91}px)}}.ptr{animation:ptr ${T}s ease-in-out infinite}`);
   b.push('<g class="ptr"><path d="M0 0L0 17L4.5 13L7.5 20L10 19L7 12L13 12Z" fill="#111" stroke="#fff" stroke-width="1.2"/></g>');
   // the quick window, showing the same real run
@@ -201,7 +201,7 @@ function rightClick() {
   q.push('</g>');
   b.push(q.join(''));
   css.push('@media (prefers-reduced-motion: reduce){.final{opacity:1!important}.ptr,.menu,.sub{display:none}}');
-  return svg(W, H, `${N} photos selected in a file manager. Right-click, Wrangler, Web ready. A small Wrangler window runs the recipe: ${size(totalIn)} to ${size(totalOut)}, ${Math.round((1 - totalOut / totalIn) * 100)} percent smaller, with Undo, Show and Open.`, css.join(''), b.join(''));
+  return svg(W, H, `${N} photos selected in a file manager. Right-click, Wrangler, Compress for web. A small Wrangler window runs the recipe: ${size(totalIn)} to ${size(totalOut)}, ${Math.round((1 - totalOut / totalIn) * 100)} percent smaller, with Undo, Show and Open.`, css.join(''), b.join(''));
 }
 
 // ---------------------------------------------------------------- social preview (upload it in the repo's Settings)
@@ -255,15 +255,13 @@ if (process.argv.includes('--shots')) {
     // pick a recipe from the list
     await p.click('.recipe__name');
     await p.waitForTimeout(900);
-    await p.click('dialog[open] button.pick:has-text("Email safe")');
-    await p.waitForTimeout(700);
-    await p.click('dialog[open] button:has-text("Done")');
-    await p.waitForTimeout(1100);
-    // switch a step on: its settings open right above its key
-    await p.click('#more-sharpen');
-    await p.waitForTimeout(1500);
-    await p.keyboard.press('Escape');
-    await p.waitForTimeout(700);
+    await p.click('dialog[open] button.pick:has-text("Small for email")');
+    await p.waitForTimeout(1300);
+    // build the names from pieces: the old name, then a number
+    await p.click('#chan-name .seg button:has-text("Build")');
+    await p.waitForTimeout(900);
+    await p.click('#chan-name .tray button:has-text("001")');
+    await p.waitForTimeout(1300);
     const h = await p.locator('#chan-size .handle').boundingBox();
     await p.mouse.move(h.x + 6, h.y + 6);
     await p.mouse.down();

@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later
-  The small unit. It runs a pinned recipe at once on images from a file manager's right-click,
+  The small unit. It runs a recipe at once on images from a file manager's right-click,
   from the menu bar icon's menu, or dropped on the icon itself (on a Mac, where it opens under
   the icon). It shows where the files went and what was saved, with Undo one press away. -->
 <script lang="ts">

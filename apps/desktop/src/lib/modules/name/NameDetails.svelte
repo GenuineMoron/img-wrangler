@@ -2,11 +2,9 @@
 <script lang="ts">
   import Field from '$lib/components/Field.svelte';
   import Key from '$lib/components/Key.svelte';
-  import KeyGroup from '$lib/components/KeyGroup.svelte';
   import Row from '$lib/components/Row.svelte';
+  import Switch from '$lib/components/Switch.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
-  import type { Case } from '$lib/types';
-  import { TOKENS } from './index';
   import { batch } from '$lib/state/batch.svelte';
 
   async function load(e: Event & { currentTarget: HTMLInputElement }) {
@@ -16,25 +14,16 @@
   }
 
   const r = $derived(recipe.value!.rename);
-  const CASES: { id: Case; label: string; aria: string }[] = [
-    { id: 'keep', label: 'Aa', aria: 'Keep case' }, { id: 'lower', label: 'aa', aria: 'lower case' }, { id: 'upper', label: 'AA', aria: 'UPPER CASE' },
-    { id: 'title', label: 'Title', aria: 'Title Case' }, { id: 'slug', label: 'slug', aria: 'web-safe slug' },
-  ];
 </script>
 
 <div class="details" style:--accent="var(--accent-name)" style:--on-accent="var(--on-name)">
-  <Row label="Case">
-    <div class="case"><KeyGroup label="Letter case" options={CASES} value={r.case} accent="name" onchange={v => (r.case = v)} /></div>
-  </Row>
+  {#if r.mode === 'keep'}
+    <p class="note">Names stay as they are. Build makes each name from pieces, Replace finds and replaces in them, and List takes them from a spreadsheet. The letter case is set under the screen.</p>
+  {/if}
   {#if r.mode === 'pattern'}
-    <Row label="Numbers">
+    <Row label="Numbers" note="Where the number block starts, and what it counts up by. Press the block on the screen to choose its digits.">
       <Field label="First number" type="number" min="0" value={r.start} unit="from" oninput={e => (r.start = Math.max(0, Number(e.currentTarget.value) || 0))} />
       <Field label="Count by" type="number" min="1" value={r.step} unit="step" oninput={e => (r.step = Math.max(1, Number(e.currentTarget.value) || 1))} />
-    </Row>
-    <Row label="Tokens" wide>
-      <dl class="tokens">
-        {#each TOKENS as t (t.token)}<dt>{t.token}</dt><dd>{t.means}</dd>{/each}
-      </dl>
     </Row>
   {/if}
   {#if r.mode === 'list'}
@@ -49,21 +38,20 @@
     </Row>
   {/if}
   {#if r.mode === 'replace' && r.replace[0]}
-    <Row label="Find as" note="A pattern is a regular expression, like IMG_(\d+).">
-      <Key label="Pattern" pressed={r.replace[0].regex} onclick={() => (r.replace[0].regex = !r.replace[0].regex)} />
-    </Row>
+    <Switch plate label="Find as a pattern" on={r.replace[0].regex} onchange={on => (r.replace[0].regex = on)} />
+    <p class="note">A pattern is a regular expression, like IMG_(\d+).</p>
   {/if}
   {#if r.mode === 'pattern' || r.mode === 'replace'}
     <!-- In Replace, the first find and replace is typed on the Name screen. These come after it. -->
     {@const from = r.mode === 'replace' ? 1 : 0}
-    <Row label={from ? 'Then replace' : 'Replace'} wide note={r.mode === 'pattern' ? 'Applied to the original name before {name} is used.' : undefined}>
+    <Row label={from ? 'Then replace' : 'Replace'} wide note={r.mode === 'pattern' ? 'Changes made to the original name before the name block uses it.' : undefined}>
       <div class="rules">
         {#each r.replace as rule, i (i)}
           {#if i >= from}
             <div class="rule">
               <Field label="Find" placeholder="find" bind:value={rule.find} />
               <Field label="Replace with" placeholder="with" bind:value={rule.with} />
-              <Key label=".*" pressed={rule.regex} aria-label="Find as a pattern (regular expression)" onclick={() => (rule.regex = !rule.regex)} />
+              <Switch label=".*" on={rule.regex} aria-label="Find as a pattern (regular expression)" title="Find as a pattern (regular expression)" onchange={on => (rule.regex = on)} />
               <Key icon="x" aria-label="Remove this rule" onclick={() => r.replace.splice(i, 1)} />
             </div>
           {/if}
@@ -75,13 +63,7 @@
 </div>
 
 <style>
-  .tokens { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; font: var(--fs-small)/1.4 var(--font-data); margin: 0; }
-  .tokens dt { color: var(--ink-1); }
-  .tokens dd { margin: 0; color: var(--ink-2); }
   .rules { display: grid; gap: var(--sp-3); width: 100%; justify-items: start; }
-  .case { flex: 1; display: grid; }
-  /* keys print in capitals; these show what the case looks like */
-  .case :global(.key) { text-transform: none; letter-spacing: 0; font-size: 11.5px; }
   .list { display: grid; gap: var(--sp-4); width: 100%; }
   .area { height: 132px; padding: 8px 10px; align-items: stretch; resize: vertical; font: 12px/1.5 var(--font-data); color: var(--screen-1); border: 0; white-space: pre; overflow: auto; -webkit-user-select: text; user-select: text; }
   .area:focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); }

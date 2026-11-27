@@ -84,10 +84,10 @@ enum RecipeCmd {
 enum IntegrateCmd {
     /// Which file managers have Wrangler actions.
     Status,
-    /// Install actions for the given recipes (and "Open in Wrangler").
+    /// Install actions for the recipes that are switched on (and "Open in Wrangler").
     Install {
-        /// Recipes to offer in the right-click menu.
-        #[arg(long = "pin", default_values_t = ["web-ready".to_string(), "just-compress".to_string(), "shopify-product".to_string()])]
+        /// Offer these recipes instead of the ones switched on.
+        #[arg(long = "pin")]
         pins: Vec<String>,
         /// Program the actions run (defaults to the Wrangler app, then this CLI).
         #[arg(long)]
@@ -380,7 +380,7 @@ fn real_main() -> Result<ExitCode> {
             match action.unwrap_or(RecipeCmd::List) {
                 RecipeCmd::List => {
                     for e in presets::list(&dirs.recipes()) {
-                        println!("{:<20} {}{}  {}", e.id, e.name, if e.built_in { "" } else { " (yours)" }, e.description);
+                        println!("{:<20} {}{}{}  {}", e.id, e.name, if e.built_in { "" } else { " (yours)" }, if e.on { "" } else { " (off)" }, e.description);
                     }
                 }
                 RecipeCmd::Show { name } => print!("{}", presets::load(&dirs.recipes(), &name)?.to_toml()?),
@@ -443,10 +443,13 @@ fn integrate(action: IntegrateCmd, dirs: &AppDirs) -> Result<ExitCode> {
         }
         IntegrateCmd::Install { pins, program } => {
             let program = program.or_else(wi::default_program).unwrap_or(std::env::current_exe()?);
-            let actions = pins
-                .iter()
-                .map(|p| presets::load(&dirs.recipes(), p).map(|r| wi::QuickAction { id: wrangler_engine::naming::slug(p), label: r.name }))
-                .collect::<Result<Vec<_>, _>>()?;
+            let actions = if pins.is_empty() {
+                presets::enabled(&dirs.recipes()).into_iter().map(|e| wi::QuickAction { id: e.id, label: e.name }).collect()
+            } else {
+                pins.iter()
+                    .map(|p| presets::load(&dirs.recipes(), p).map(|r| wi::QuickAction { id: wrangler_engine::naming::slug(p), label: r.name }))
+                    .collect::<Result<Vec<_>, _>>()?
+            };
             let setup = wi::Setup { program, actions, extensions: wrangler_engine::codec::Format::extensions().into_iter().map(String::from).collect(), asked: true };
             for t in wi::targets() {
                 match wi::install(t, &setup) {

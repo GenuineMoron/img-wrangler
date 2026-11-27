@@ -60,7 +60,7 @@ mod tests {
         let (a, b) = (a.as_str(), b.as_str());
         assert_eq!(parse(&args(&[]), &cwd), Launch::Plain);
         assert_eq!(parse(&args(&["open", a]), &cwd), Launch::Open(vec![a.into()]));
-        assert_eq!(parse(&args(&["quick", "--recipe", "web-ready", a, b]), &cwd), Launch::Quick { recipe: "web-ready".into(), paths: vec![a.into(), b.into()] });
+        assert_eq!(parse(&args(&["quick", "--recipe", "compress-for-web", a, b]), &cwd), Launch::Quick { recipe: "compress-for-web".into(), paths: vec![a.into(), b.into()] });
         assert_eq!(parse(&args(&[a]), &cwd), Launch::Open(vec![a.into()]));
         assert_eq!(parse(&args(&["-psn_0_123"]), &cwd), Launch::Plain);
         assert_eq!(parse(&args(&["--hidden"]), &cwd), Launch::Plain);
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn names_are_taken_from_the_folder_the_launch_came_from() {
         let cwd = std::env::temp_dir().join("shoot");
-        assert_eq!(parse(&args(&["quick", "--recipe", "web-ready", "two words.jpg"]), &cwd), Launch::Quick { recipe: "web-ready".into(), paths: vec![cwd.join("two words.jpg")] });
+        assert_eq!(parse(&args(&["quick", "--recipe", "compress-for-web", "two words.jpg"]), &cwd), Launch::Quick { recipe: "compress-for-web".into(), paths: vec![cwd.join("two words.jpg")] });
         assert_eq!(parse(&args(&["open", "a.jpg"]), &cwd), Launch::Open(vec![cwd.join("a.jpg")]));
     }
 }

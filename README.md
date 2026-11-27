@@ -1,4 +1,4 @@
-<img src=".github/assets/hero.svg" width="1200" alt="Wrangler, a batch image unit. A real run plays on its screen: eight photos through the Web ready recipe, 135 KB to 57 KB, 58 percent smaller." />
+<img src=".github/assets/hero.svg" width="1200" alt="Wrangler, a batch image unit. A real run plays on its screen: eight photos through the Compress for web recipe, 135 KB to 57 KB, 58 percent smaller." />
 
 <p align="center">
   <b>Batch image processing for people with a few thousand photos and a deadline.</b><br />
@@ -31,18 +31,18 @@ It all happens on your computer. No accounts, no uploads, no telemetry.
 
 ## See every file before anything is written
 
-<img src=".github/assets/demo.webp" width="1080" alt="The Wrangler window: photos are added, the Email safe recipe is chosen from the list, Sharpen is switched on, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
+<img src=".github/assets/demo.webp" width="1080" alt="The Wrangler window: photos are added, the Small for email recipe is chosen from the list, a number is added to the names, the size frame is dragged smaller and Run processes every photo, each tile ticking off as it finishes." />
 
-<sub>Recorded from the browser preview of the app, which plays sample photos with simulated sizes. The figures in the banner above and the right-click card are from a real run of the Web ready recipe on eight sample photos.</sub>
+<sub>Recorded from the browser preview of the app, which plays sample photos with simulated sizes. The figures in the banner above and the right-click card are from a real run of the Compress for web recipe on eight sample photos.</sub>
 
 ## What it does
 
 | | |
 |---|---|
-| Resize and reshape | A long side like 2048, or full size. Keep each photo's shape, or make them all 1:1, 4:5, 3:2, 16:9 or exact pixels, by cropping, padding onto a backdrop or fitting inside. Empty background can be trimmed first. |
+| Resize and reshape | A long side like 2048, or full size, and bigger than the original if you switch enlarging on. Keep each photo's shape, or make them all 1:1, 4:5, 3:2, 16:9, any ratio you type or exact pixels, by cropping, padding onto a backdrop or fitting inside. Empty background can be trimmed first. |
 | Compress | Choose a look (small, balanced, high or pristine) instead of an encoder number. Each aims at a measured visual score ([SSIMULACRA 2](https://github.com/cloudinary/ssimulacra2)), and Wrangler finds the setting that reaches it for every image. Add a size limit if a platform has one. |
 | Convert | Reads 14 formats, HEIC, AVIF and JPEG XL included. Writes JPEG (MozJPEG), PNG (oxipng), WebP, AVIF, GIF, TIFF, BMP, ICO, QOI, TGA and PNM. Or keeps each file's own format, or picks WebP or PNG per image. |
-| Rename | Patterns with numbers, sizes and dates (`spring-24-{n:000}`), find and replace, or old and new names pasted from a spreadsheet. Clashes get numbered rather than overwritten. |
+| Rename | Names built from pieces you drag into order: the old name, a number, a date, the size, the folder, your own text. Or find and replace, or old and new names pasted from a spreadsheet. Clashes get numbered rather than overwritten. |
 | Watermark | A logo in the same place on every image, sized to each one so portraits and landscapes match. |
 | Rotate and sharpen | Quarter turns and flips, and sharpening to bring back crispness after shrinking. |
 | Metadata | Strip it all, keep the camera and copyright details without the location, or keep everything. |
@@ -52,7 +52,9 @@ It all happens on your computer. No accounts, no uploads, no telemetry.
 
 ### The window
 
-Drop files or folders anywhere on it. The four screens along the bottom are the everyday controls, and each screen is the control itself: drag the corner of the size frame, drag the red line to set a size limit, pick the format from the list. The row of keys above them holds the other steps: which files to take, rotate, sharpen, watermark, metadata. Every setting has one home, and the rest of a control's settings open right above it.
+Drop files or folders anywhere on it. The four screens along the bottom are the everyday controls, and each screen is the control itself: drag the corner of the size frame, drag the red line to set a size limit, pick the format from the list, build a name from blocks. The row of keys above them holds the other steps: which files to take, rotate, sharpen, watermark, metadata. Every setting has one home, and the rest of a control's settings open right above it.
+
+Three kinds of control, and each looks like what it is. A key does something when you press it. A switch is on or off. A selector picks one of several.
 
 Arrow through the images and each preview shows at once: a draft of the framing first, then the exact result with its real file size a moment later. The next image's preview is already being made while you look at this one. Right-click an image to open it, show it in its folder, compare before and after, or run the recipe on just that one.
 
@@ -60,39 +62,45 @@ Arrow through the images and each preview shows at once: a draft of the framing 
 
 <img src=".github/assets/right-click.svg" width="1200" alt="Eight photos selected in a file manager. Right-click, Wrangler, Web ready. A small Wrangler window runs the recipe: 135 KB to 57 KB, with Undo, Show and Open." />
 
-Wrangler puts itself in the right-click menu of Finder, Explorer, Dolphin, Files (Nautilus), Nemo, Thunar, Caja, PCManFM and Luciole the first time it runs. Pick a recipe there and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. Settings chooses which recipes are offered, or takes the menus out again. From a terminal it's `img-wrangler integrate install`.
+Wrangler puts itself in the right-click menu of Finder, Explorer, Dolphin, Files (Nautilus), Nemo, Thunar, Caja, PCManFM and Luciole the first time it runs. Pick a recipe there and a small window runs it straight away, shows what was saved, and keeps Undo one press away. "Open in Wrangler…" loads the selection into the main window instead. The menu offers the recipes you have switched on, and Settings takes the menus out again. From a terminal it's `img-wrangler integrate install`.
 
 In Finder it's a "Wrangler" entry in the menu itself, from a small Finder extension inside the app. If macOS won't load the extension, the recipes go under Finder's Quick Actions instead.
 
 ### The menu bar
 
-The hat sits in the menu bar on a Mac, and in the system tray on Windows and Linux. Its menu runs a pinned recipe on images you choose and takes back the last run, without opening the window. On a Mac, drop images straight on the hat: they run with the recipe you picked for drops, and the small window opens under it with the results. Closing the main window leaves Wrangler there, and it can start at login.
+The hat sits in the menu bar on a Mac, and in the system tray on Windows and Linux. Its menu runs a recipe on images you choose and takes back the last run, without opening the window. On a Mac, drop images straight on the hat and they open in Wrangler. Settings can have a drop run a recipe there and then instead, with the small window opening under the hat. Closing the main window leaves Wrangler there, and it can start at login.
 
 ### The command line
 
 ```sh
-img-wrangler plan ~/Pictures/to-sort -r web-ready     # what would happen, nothing written
-img-wrangler run ~/Pictures/to-sort -r web-ready       # do it
+img-wrangler plan ~/Pictures/to-sort -r compress-for-web   # what would happen, nothing written
+img-wrangler run ~/Pictures/to-sort -r compress-for-web    # do it
 img-wrangler run ~/Pictures/to-sort --size 2048 --format webp --look balanced --to replace
 img-wrangler run ~/Pictures/to-sort --names new-names.csv --watermark logo.png
-img-wrangler undo                                      # put the last run back
+img-wrangler undo                                          # put the last run back
 ```
 
 `--json` turns the progress into JSON lines for scripts.
 
 ## Recipes
 
-A recipe is every setting in one plain TOML file. `img-wrangler recipes show web-ready` prints one to start your own from. The app, the command line and the right-click menu all read the same files, so a recipe you tune in the window runs exactly the same from a script. These come built in:
+A recipe is every setting in one plain TOML file. The app, the command line and the right-click menu all read the same files, so a recipe you tune in the window runs exactly the same from a script. `img-wrangler recipes show compress-for-web` prints one to start your own from.
+
+In the window, the recipe list says what each one does, read from its settings. Change the controls and press Save, or Save as new and type a name. Recipes can be renamed, copied, deleted, dragged into order and switched off. The ones that are on are what the window, the right-click menu and the menu bar offer.
+
+These come with it. The first six start switched on, and the last three are there to switch on if you sell on those sites:
 
 | Recipe | What it makes |
 |---|---|
-| Web ready | 2560 px on the long side, WebP, balanced. Saved into a Wrangled folder. |
+| Compress for web | 2560 px on the long side, WebP. Saved into a Wrangled folder. |
 | Just compress | Same format and size, smaller files. Replaces the originals, with undo for 30 days. |
+| Convert to JPEG | Same size, saved as JPEG. For HEIC, PNG, WebP and anything else that won't open. |
+| 1080p, 16:9 | Exactly 1920 × 1080, cropped from the centre to fill, JPEG. |
+| Square 1080 | Exactly 1080 × 1080, cropped from the centre to fill, JPEG. |
+| Small for email | 1200 px on the long side, JPEG, under 200 KB each. |
+| Social card | 1200 × 628 link previews, cropped from the centre, JPEG. |
 | Shopify product | Trimmed, centred on a 2048 px square with the photo's own backdrop, WebP. |
 | Amazon main image | Pure white 2000 px square, product filling 85%, JPEG. |
-| Email safe | 1200 px, JPEG, under 200 KB each. |
-| Social card | 1200 × 628 link previews, cropped from the centre, JPEG. |
-| Square thumbnails | 800 px squares cropped from the centre, WebP. |
 
 ## Get it
 

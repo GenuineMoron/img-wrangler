@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
   import Field from '$lib/components/Field.svelte';
-  import Key from '$lib/components/Key.svelte';
-  import KeyGroup from '$lib/components/KeyGroup.svelte';
+  import Segmented from '$lib/components/Segmented.svelte';
+  import Switch from '$lib/components/Switch.svelte';
   import Row from '$lib/components/Row.svelte';
   import { recipe } from '$lib/state/recipe.svelte';
 
@@ -26,10 +26,8 @@
     <p class="note">Originals are replaced in place. They stay in the undo store for 30 days.</p>
   {/if}
   <Row label="Name taken">
-    <KeyGroup label="When a name is taken" neutral value={d.on_conflict} onchange={v => (d.on_conflict = v)}
+    <Segmented label="When a name is taken" neutral value={d.on_conflict} onchange={v => (d.on_conflict = v)}
       options={[{ id: 'number', label: 'Add -2' }, { id: 'skip', label: 'Skip' }, { id: 'overwrite', label: 'Replace' }]} />
   </Row>
-  <Row label="Dates">
-    <Key label="Keep file dates" pressed={d.keep_dates} onclick={() => (d.keep_dates = !d.keep_dates)} title="New files get the original’s modified date" />
-  </Row>
+  <Switch plate label="Keep each file’s date" on={d.keep_dates} onchange={on => (d.keep_dates = on)} title="New files get the original’s modified date" />
 </div>

@@ -7,7 +7,8 @@
 //       --images it makes a folder of camera-sized test photos with the CLI.
 //   pnpm selftest browser [--files 1000] [--engines chromium,webkit]
 //       The interface in a browser with the stand-in backend: speed with thousands of files, the
-//       layout at three viewport sizes, and screenshots of every state for a look.
+//       layout at three viewport sizes, screenshots of every state for a look, and then the
+//       controls used the way a person uses them (scripts/interact.mjs).
 //   pnpm selftest compare before.json after.json
 //       Two reports side by side.
 //
@@ -22,6 +23,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { interact } from './interact.mjs';
 
 const APP = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ROOT = path.resolve(APP, '../..');
@@ -181,9 +183,15 @@ async function runBrowser() {
           }
           await p.close();
         }
+        // Then use it: press, drag and type, and check what happened.
+        const used = await interact(browser, base);
+        report.interactions = used;
         const file = path.join(OUT, `${name}-${stamp}.json`);
         fs.writeFileSync(file, JSON.stringify(report, null, 2));
         print(report, `${name} (browser preview)`);
+        console.log(`\nusing it: ${used.count - used.failed.length} of ${used.count} checks passed`);
+        for (const f of used.failed) console.log(`  FAILED  ${f}`);
+        if (used.failed.length) process.exitCode = 1;
         console.log(`\nreport: ${file}\nscreenshots: ${shots}`);
       } finally {
         await browser.close();

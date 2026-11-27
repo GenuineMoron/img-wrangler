@@ -4,7 +4,7 @@
 // on a canvas with the same frame layout as the engine. Open with ?demo to start with files.
 
 import type {
-  Dims, Estimate, Format, FormatInfo, Integrations, Plan, PlanItem, Preview, Recipe, RecipeEntry, RunEvent, RunInfo, SourceFile, Status, Summary,
+  Dims, Estimate, Format, FormatInfo, Integrations, MenuLine, Plan, PlanItem, Preview, Recipe, RecipeEntry, RunEvent, RunInfo, SourceFile, Status, Summary,
 } from '$lib/types';
 import { layout, specOf } from '$lib/geometry';
 import type { Backend } from './backend';
@@ -44,15 +44,54 @@ const FORMATS: FormatInfo[] = ([
 ] as const).map(([id, label, ext, encode, alpha, animation, lossy, lossless, browsers, size_vs_jpeg, primary, hint]) =>
   ({ id, label, ext, mime: `image/${ext}`, decode: true, encode, alpha, animation, lossy, lossless, browsers, size_vs_jpeg, primary, hint }) as FormatInfo);
 
-const recipes = structuredClone(RECIPES) as unknown as Record<string, Recipe>;
+// The recipe shelf, as the engine keeps it (presets.rs): the starters, then whatever is saved.
+const STARTERS = RECIPES.entries as unknown as RecipeEntry[];
+let shelf: RecipeEntry[] = structuredClone(STARTERS);
+const find = (id: string) => shelf.find(e => e.id === id);
+const freeName = (want: string, but?: string) => {
+  for (let n = 1; ; n++) {
+    const name = n === 1 ? want : `${want} ${n}`;
+    if (!shelf.some(e => e.id === slug(name) && e.id !== but)) return name;
+  }
+};
+const entry = (r: Recipe, from?: RecipeEntry): RecipeEntry =>
+  ({ id: slug(r.name), name: r.name, description: r.description, built_in: STARTERS.some(e => e.id === slug(r.name)), changed: false, on: from?.on ?? true, recipe: structuredClone(r) });
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+// A stand-in for the system's menu, where the pointer last was: enough to use the preview.
+let pointer = { x: 0, y: 0 };
+globalThis.addEventListener?.('pointerdown', e => (pointer = { x: e.clientX, y: e.clientY }), true);
+function showMenu(lines: MenuLine[]) {
+  document.querySelector('.mock-menu')?.remove();
+  const menu = document.createElement('div');
+  menu.className = 'mock-menu';
+  menu.setAttribute('role', 'menu');
+  menu.style.cssText = `position:fixed;z-index:99;left:${Math.min(pointer.x, innerWidth - 240)}px;top:${Math.min(pointer.y + 6, innerHeight - lines.length * 26 - 12)}px;min-width:200px;padding:5px;border-radius:8px;background:#f4f4f2;box-shadow:0 0 0 1px rgba(0,0,0,.2),0 12px 30px rgba(0,0,0,.35);font:13px/1 system-ui,sans-serif;color:#1f2023`;
+  const close = () => { menu.remove(); removeEventListener('pointerdown', away, true); removeEventListener('keydown', esc, true); };
+  const away = (e: Event) => { if (!menu.contains(e.target as Node)) close(); };
+  const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  for (const l of lines) {
+    const item = document.createElement(l ? 'button' : 'hr');
+    if (l) {
+      item.textContent = `${l.checked ? '✓' : l.checked === false ? ' ' : ''} ${l.text}`.trimStart();
+      item.setAttribute('role', l.checked == null ? 'menuitem' : 'menuitemradio');
+      (item as HTMLButtonElement).disabled = l.enabled === false;
+      item.style.cssText = 'all:unset;display:block;box-sizing:border-box;width:100%;padding:6px 10px;border-radius:5px;cursor:default;white-space:pre';
+      item.onpointerenter = () => (item.style.background = '#dcdcd8');
+      item.onpointerleave = () => (item.style.background = '');
+      item.onclick = () => { close(); l.action(); };
+    } else item.style.cssText = 'border:0;border-top:1px solid rgba(0,0,0,.14);margin:4px 2px';
+    menu.append(item);
+  }
+  document.body.append(menu);
+  setTimeout(() => { addEventListener('pointerdown', away, true); addEventListener('keydown', esc, true); });
+}
 const clone = <T>(v: T): T => structuredClone(v);
 
 let batch: SourceFile[] = [];
 let cancelled = false;
 const history: RunInfo[] = [];
-let pins = ['web-ready', 'just-compress', 'shopify-product'];
-const appSettings = { menu_bar: true, menu_bar_available: true, auto_update: true, login: false, drop_recipe: 'web-ready' };
+const appSettings = { menu_bar: true, menu_bar_available: true, auto_update: true, login: false, drop_runs: null as string | null };
 const fakeUpdate = () => new URLSearchParams(location.search).has('update')
   ? { version: '0.1.0-alpha.3', current: __APP_VERSION__, date: '2026-11-19', manual: null,
       notes: 'Faster everywhere, a menu bar icon, and updates from inside the app.\n\n- Previews show in a moment, then sharpen to the exact result.\n- Drop images on the hat in the menu bar.\n- Wrangler tells you when there\'s a new version, with what changed.' }
@@ -197,10 +236,48 @@ export const mock: Backend = {
   platform: /Mac/.test(navigator.userAgent) ? 'mac' : 'linux',
 
   formats: async () => clone(FORMATS),
-  recipes: async () => Object.entries(recipes).filter(([id]) => id !== 'new').map(([id, r]): RecipeEntry => ({ id, name: r.name, description: r.description, built_in: id in RECIPES })),
-  loadRecipe: async id => { if (!recipes[id]) throw new Error(`no recipe called "${id}"`); return clone(recipes[id]); },
-  saveRecipe: async r => { const id = slug(r.name); recipes[id] = clone(r); return id; },
-  deleteRecipe: async id => { delete recipes[id]; },
+  recipes: async () => clone(shelf),
+  loadRecipe: async id => {
+    if (id === 'new') return clone(RECIPES.new as unknown as Recipe);
+    const e = find(id);
+    if (!e) throw new Error(`no recipe called "${id}"`);
+    return clone(e.recipe);
+  },
+  saveRecipe: async r => {
+    const made = entry(r, find(slug(r.name)));
+    made.changed = made.built_in;
+    const at = shelf.findIndex(e => e.id === made.id);
+    if (at >= 0) shelf[at] = made; else shelf.push(made);
+    return made.id;
+  },
+  saveRecipeAs: async (r, from) => {
+    const made = entry({ ...r, name: freeName(r.name.trim()) });
+    shelf.splice(shelf.findIndex(e => e.id === from) + 1 || shelf.length, 0, made);
+    return made.id;
+  },
+  deleteRecipe: async id => { shelf = shelf.filter(e => e.id !== id); },
+  renameRecipe: async (id, name) => {
+    const at = shelf.findIndex(e => e.id === id);
+    if (at < 0 || !slug(name)) throw new Error('a recipe needs a name');
+    shelf[at] = entry({ ...shelf[at].recipe, name: freeName(name.trim(), id) }, shelf[at]);
+    return shelf[at].id;
+  },
+  duplicateRecipe: async id => {
+    const at = shelf.findIndex(e => e.id === id);
+    const made = entry({ ...shelf[at].recipe, name: freeName(`${shelf[at].name} copy`) }, shelf[at]);
+    shelf.splice(at + 1, 0, made);
+    return made.id;
+  },
+  resetRecipe: async id => {
+    const at = shelf.findIndex(e => e.id === id);
+    const came = STARTERS.find(e => e.id === id);
+    if (at >= 0 && came) shelf[at] = { ...clone(came), on: shelf[at].on };
+  },
+  restoreRecipes: async () => {
+    for (const s of STARTERS) if (!find(s.id)) shelf.push(clone(s));
+  },
+  setRecipeOn: async (id, on) => { const e = find(id); if (e) e.on = on; },
+  setRecipeOrder: async ids => { shelf.sort((a, b) => (ids.indexOf(a.id) + 1 || 1e9) - (ids.indexOf(b.id) + 1 || 1e9)); },
 
   scan: async (paths, _select, append) => {
     await delay(120);
@@ -255,7 +332,7 @@ export const mock: Backend = {
     return sum;
   },
   async quickRun(recipeId, paths, onEvent) {
-    const recipe = clone(recipes[recipeId] ?? recipes['web-ready']);
+    const recipe = clone((find(recipeId) ?? shelf[0]).recipe);
     if (!batch.length) await this.scan(paths, recipe.select, false);
     const summary = await this.run(recipe, onEvent);
     return { recipe, summary, first_output: `${HOME}/Wrangled/${SAMPLES[0].name}` };
@@ -292,13 +369,9 @@ export const mock: Backend = {
   openImage: async path => console.info('open', path),
   thumbUrl: path => photoUrl(sampleFor(path)?.photo ?? 1),
 
-  integrations: async (): Promise<Integrations> => ({ targets: ['Finder', 'Dolphin', 'Nautilus'].map(l => ({ target: l.toLowerCase(), label: l, installed: installed.has(l), place: installed.has(l) ? 'right-click, then Wrangler' : null })), pins: [...pins] }),
+  integrations: async (): Promise<Integrations> => ({ targets: ['Finder', 'Dolphin', 'Nautilus'].map(l => ({ target: l.toLowerCase(), label: l, installed: installed.has(l), place: installed.has(l) ? 'right-click, then Wrangler' : null })) }),
   async setMenus(on) {
     for (const l of ['Finder', 'Dolphin', 'Nautilus']) on ? installed.add(l) : installed.delete(l);
-    return this.integrations();
-  },
-  async setPins(p) {
-    pins = p;
     return this.integrations();
   },
 
@@ -320,9 +393,9 @@ export const mock: Backend = {
   },
   setWindowSize: async () => false,
 
-  appSettings: async () => ({ ...appSettings, pins }),
-  setAppSettings: async s => { Object.assign(appSettings, s); return { ...appSettings, pins }; },
-  setDropRecipe: async id => { appSettings.drop_recipe = id; },
+  appSettings: async () => ({ ...appSettings }),
+  setAppSettings: async s => { Object.assign(appSettings, s); return { ...appSettings }; },
+  setDropRecipe: async id => { appSettings.drop_runs = id; },
   onMenu: async () => () => {},
   // ?update shows what a new version looks like.
   updateCheck: async () => { await delay(600); return fakeUpdate(); },
@@ -332,5 +405,5 @@ export const mock: Backend = {
     for (let i = 1; i <= 20; i++) { await delay(80); progress(i * 1.2e6, 24e6); }
   },
   openUrl: async url => { window.open(url, '_blank'); },
-  contextMenu: async lines => console.info('menu', lines.map(l => l?.text ?? '—')),
+  contextMenu: async lines => showMenu(lines),
 };

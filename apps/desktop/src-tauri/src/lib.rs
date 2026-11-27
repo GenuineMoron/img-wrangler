@@ -97,10 +97,16 @@ pub fn set_popover(app: &tauri::AppHandle, on: bool) {
 /// opens under the icon with the results.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn drop_on_icon(app: &tauri::AppHandle, paths: Vec<PathBuf>) {
-    let recipe = settings::load(app).drop_recipe;
-    deliver(app, Launch::Quick { recipe, paths });
-    set_popover(app, true);
-    tray::place_under_icon(app);
+    // Into the main window, unless Settings names a recipe to run on them there and then.
+    let runs = settings::load(app).drop_runs.filter(|id| settings::menu_recipes(app).iter().any(|r| r.0 == *id));
+    match runs {
+        Some(recipe) => {
+            deliver(app, Launch::Quick { recipe, paths });
+            set_popover(app, true);
+            tray::place_under_icon(app);
+        }
+        None => deliver(app, Launch::Open(paths)),
+    }
 }
 
 pub(crate) fn deliver(app: &tauri::AppHandle, launch: Launch) {
@@ -137,7 +143,7 @@ fn keep_menus_current(app: &tauri::AppHandle) {
     let mut s = settings::load(app);
     let first_time = !s.menus_set_up;
     let targets: Vec<_> = wi::targets().into_iter().filter(|t| first_time || wi::installed(*t)).collect();
-    if let Ok(setup) = settings::menu_setup(app, &s, false) {
+    if let Ok(setup) = settings::menu_setup(app, false) {
         for t in targets {
             let _ = wi::install(t, &setup);
         }
@@ -265,7 +271,13 @@ pub fn run() {
             commands::take_launch,
             commands::integrations,
             commands::set_menus,
-            commands::set_pins,
+            commands::rename_recipe,
+            commands::duplicate_recipe,
+            commands::save_recipe_as,
+            commands::reset_recipe,
+            commands::restore_recipes,
+            commands::set_recipe_on,
+            commands::set_recipe_order,
             commands::app_settings,
             commands::set_app_settings,
             commands::set_drop_recipe,

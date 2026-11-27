@@ -1,0 +1,8 @@
+name = "Convert to JPEG"
+description = "Same size, saved as JPEG. For HEIC, PNG, WebP and anything else that won't open."
+[format]
+id = "jpg"
+[quality]
+look = "high"
+[destination]
+mode = "subfolder"
