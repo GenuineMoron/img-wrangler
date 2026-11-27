@@ -128,6 +128,12 @@ async function runApp() {
     child.on('error', reject);
   });
   fs.rmSync(dir, { recursive: true, force: true });
+  // Starting a built copy on a Mac makes macOS notice the Finder extension inside it. Left
+  // known, it would show a second "Wrangler" in Finder beside the installed app's, so forget it.
+  const appex = bundle && !bundle.startsWith('/Applications/') && path.join(bundle, 'Contents/PlugIns/WranglerFinder.appex');
+  if (appex && fs.existsSync(appex)) {
+    try { execFileSync('pluginkit', ['-r', appex], { stdio: 'ignore' }); } catch { /* it wasn't known */ }
+  }
   if (!fs.existsSync(report)) throw new Error('the app quit without writing a report');
   print(JSON.parse(fs.readFileSync(report, 'utf8')), `app on ${process.platform}`);
   console.log(`\nreport: ${report}`);
